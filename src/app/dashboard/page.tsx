@@ -74,6 +74,8 @@ import { FloatingActionMenu } from "@/components/feed/quick-actions-bar";
 import { ContentCalendar } from "@/components/feed/content-calendar";
 import { SourceCredibility, SourceTrustBadge } from "@/components/feed/source-credibility";
 import { MilestoneCheck, MilestonesButton } from "@/components/feed/reading-milestones";
+import { ReadingJournal, JournalPrompt } from "@/components/feed/reading-journal";
+import { ArticleClustering } from "@/components/feed/article-clustering";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1195,6 +1197,14 @@ function DashboardContent() {
         readIds={readIds}
         stats={{ articlesRead: readIds.size, currentStreak: 0, uniqueSources: new Set(allItems.map((i) => i.source)).size, bookmarksCount: bookmarkedIds.size, readingHours: Math.round(readIds.size * 3 / 60) }}
       />
+
+      {/* Reading Journal */}
+      {!initialLoading && <ReadingJournal />}
+
+      {/* Article Clustering */}
+      {allItems.length > 3 && (
+        <ArticleClustering items={allItems} />
+      )}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
