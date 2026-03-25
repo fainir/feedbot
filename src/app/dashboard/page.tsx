@@ -59,6 +59,9 @@ import { ArticleComparison, CompareButton } from "@/components/feed/article-comp
 import { FeedWidgets } from "@/components/feed/feed-widgets";
 import { StoryTracker, TrackStoryButton, StoryBadge } from "@/components/feed/story-tracker";
 import { FocusTimer, FocusTimerPill } from "@/components/feed/focus-timer";
+import { ReadingSpeedAnalyzer, SpeedBadge, useReadingSpeed } from "@/components/feed/reading-speed";
+import { MoodBoard, MoodBoardToggle } from "@/components/feed/mood-board";
+import { SmartReminders } from "@/components/feed/smart-reminders";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1124,6 +1127,17 @@ function DashboardContent() {
 
       {/* Feed Widgets */}
       {!initialLoading && <FeedWidgets />}
+
+      {/* Reading Speed Analyzer */}
+      {!initialLoading && <ReadingSpeedAnalyzer />}
+
+      {/* Smart Reminders */}
+      {!initialLoading && (
+        <SmartReminders
+          unreadCount={allItems.length - readIds.size}
+          todayReadCount={readIds.size}
+        />
+      )}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
