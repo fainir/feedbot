@@ -26,6 +26,12 @@ import { ReadingHistory } from "@/components/feed/reading-history";
 import { SavedCollections, type SavedCollection } from "@/components/feed/saved-collections";
 import { SourceMuteManager, filterMutedSources, type MutedSource } from "@/components/feed/source-mute";
 import { QuickShareMenu } from "@/components/feed/quick-share";
+import { EmojiReactions, useReactions } from "@/components/feed/emoji-reactions";
+import { PushNotificationToggle, sendKeywordNotification } from "@/components/feed/push-notifications";
+import { ReadingProgressBar } from "@/components/feed/reading-progress";
+import { ForYouRecommendations } from "@/components/feed/for-you-recommendations";
+import { GlobalSearch } from "@/components/feed/global-search";
+import { ReadingGoals } from "@/components/feed/reading-goals";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -151,6 +157,8 @@ function DashboardContent() {
   const [mutedSources, setMutedSources] = useState<MutedSource[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const { reactions, toggleReaction } = useReactions();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -207,6 +215,10 @@ function DashboardContent() {
     try {
       const collectionsData = localStorage.getItem("feedbot-collections");
       if (collectionsData) setSavedCollections(JSON.parse(collectionsData));
+    } catch {}
+    try {
+      const notifEnabled = localStorage.getItem("feedbot-notifications");
+      if (notifEnabled === "true") setNotificationsEnabled(true);
     } catch {}
   }, []);
 
@@ -730,6 +742,11 @@ function DashboardContent() {
     localStorage.setItem("feedbot-read", "[]");
   }, []);
 
+  const toggleNotifications = useCallback((enabled: boolean) => {
+    setNotificationsEnabled(enabled);
+    localStorage.setItem("feedbot-notifications", enabled ? "true" : "false");
+  }, []);
+
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
     try {
       const res = await fetch("/api/feeds", {
@@ -983,6 +1000,10 @@ function DashboardContent() {
             </span>
           )}
           <NewItemsBell allItems={allItems} onOpenReader={(item) => setReaderItem(item)} />
+          <PushNotificationToggle
+            enabled={notificationsEnabled}
+            onToggle={toggleNotifications}
+          />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1054,9 +1075,16 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Reading Streak */}
+      {/* Reading Progress + Streak */}
       {allItems.length > 0 && !initialLoading && (
-        <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
+        <>
+          <ReadingProgressBar
+            totalItems={allItems.length}
+            readCount={allItems.filter((i) => readIds.has(i.id)).length}
+            bookmarkCount={bookmarkedIds.size}
+          />
+          <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
+        </>
       )}
 
       {/* Feed Folders */}
@@ -1779,6 +1807,15 @@ function DashboardContent() {
                   onOpenReader={() => setReaderItem(item)}
                   trendingReasons={trendingMap.get(item.id)}
                 />
+                {!compactView && (
+                  <div className="mt-1 pl-1">
+                    <EmojiReactions
+                      itemId={item.id}
+                      reactions={reactions}
+                      onReact={toggleReaction}
+                    />
+                  </div>
+                )}
                 </div>
               </div>
             );
