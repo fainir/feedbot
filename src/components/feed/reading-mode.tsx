@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import {
   X,
   ChevronUp,
@@ -517,7 +518,7 @@ export function ReadingMode({ title, summary, source, url, content, onClose }: R
             style={{
               color: theme.text,
             }}
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
           />
 
           {/* Footer */}

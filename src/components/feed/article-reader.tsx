@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check, BookOpenText } from "lucide-react";
+import DOMPurify from "isomorphic-dompurify";
 import { ArticleSummarizer } from "./article-summarizer";
 
 interface ArticleReaderProps {
@@ -254,7 +255,7 @@ export function ArticleReader({
 
               <div
                 className={`article-content prose prose-neutral dark:prose-invert max-w-none ${fontSizeClass}`}
-                dangerouslySetInnerHTML={{ __html: article.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
               />
             </article>
           )}
