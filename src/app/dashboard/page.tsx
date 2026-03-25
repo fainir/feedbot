@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical, Eye, EyeOff, TrendingUp } from "lucide-react";
 import Link from "next/link";
@@ -40,12 +40,12 @@ import { OnboardingTour } from "@/components/feed/onboarding-tour";
 import { ActivityHeatmap } from "@/components/feed/activity-heatmap";
 import { usePinnedArticles, PinnedArticles, sortWithPinned } from "@/components/feed/pin-articles";
 import { SimilarArticles } from "@/components/feed/similar-articles";
-import { FeedAnalyticsPanel } from "@/components/feed/feed-analytics";
-import { SourceAnalytics } from "@/components/feed/source-analytics";
+const FeedAnalyticsPanel = lazy(() => import("@/components/feed/feed-analytics").then(m => ({ default: m.FeedAnalyticsPanel })));
+const SourceAnalytics = lazy(() => import("@/components/feed/source-analytics").then(m => ({ default: m.SourceAnalytics })));
 import { ShareFeed } from "@/components/feed/share-feed";
 import { useBookmarkTags, BookmarkTagPicker, BookmarkTagFilter, BookmarkTagBadge } from "@/components/feed/bookmark-tags";
 import { FeedHealthScore, FeedHealthBadge } from "@/components/feed/feed-health-score";
-import { ReadingMode } from "@/components/feed/reading-mode";
+const ReadingMode = lazy(() => import("@/components/feed/reading-mode").then(m => ({ default: m.ReadingMode })));
 import { useReadLater, ReadLaterButton, ReadLaterQueue } from "@/components/feed/read-later-queue";
 import { FeedBackup } from "@/components/feed/feed-backup";
 import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
@@ -62,6 +62,9 @@ import { FocusTimer, FocusTimerPill } from "@/components/feed/focus-timer";
 import { ReadingSpeedAnalyzer, SpeedBadge, useReadingSpeed } from "@/components/feed/reading-speed";
 import { MoodBoard, MoodBoardToggle } from "@/components/feed/mood-board";
 import { SmartReminders } from "@/components/feed/smart-reminders";
+import { TTSButton, TTSMiniPlayer } from "@/components/feed/text-to-speech";
+import { SocialImport } from "@/components/feed/social-import";
+import { ReadingChallenges, ChallengesBadge } from "@/components/feed/reading-challenges";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1012,7 +1015,7 @@ function DashboardContent() {
             enabled={notificationsEnabled}
             onToggle={toggleNotifications}
           />
-          <FeedAnalyticsPanel />
+          <Suspense><FeedAnalyticsPanel /></Suspense>
           <TeamFeedsBadge />
           <PowerModeToggle />
           <WeeklyReportButton />
@@ -1139,6 +1142,12 @@ function DashboardContent() {
         />
       )}
 
+      {/* Social Import */}
+      {!initialLoading && <SocialImport />}
+
+      {/* Reading Challenges */}
+      {!initialLoading && <ReadingChallenges readIds={readIds} />}
+
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
         <ForYouRecommendations
@@ -1173,7 +1182,7 @@ function DashboardContent() {
 
       {/* Source Analytics */}
       {showAnalytics && allItems.length > 0 && (
-        <SourceAnalytics items={allItems} />
+        <Suspense><SourceAnalytics items={allItems} /></Suspense>
       )}
 
       {/* Tabs Bar */}
@@ -1998,14 +2007,16 @@ function DashboardContent() {
 
       {/* Reading Mode */}
       {readingModeItem && (
-        <ReadingMode
-          title={readingModeItem.title}
-          summary={readingModeItem.summary}
-          content={readingModeItem.summary}
-          source={readingModeItem.source}
-          url={readingModeItem.url}
-          onClose={() => setReadingModeItem(null)}
-        />
+        <Suspense>
+          <ReadingMode
+            title={readingModeItem.title}
+            summary={readingModeItem.summary}
+            content={readingModeItem.summary}
+            source={readingModeItem.source}
+            url={readingModeItem.url}
+            onClose={() => setReadingModeItem(null)}
+          />
+        </Suspense>
       )}
 
       {/* Article Comparison */}
