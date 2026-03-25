@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
+import { canCreateFeed } from "@/lib/usage";
 
 export async function GET() {
   const supabase = await createClient();
@@ -28,6 +29,15 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Enforce plan limits
+  const allowed = await canCreateFeed(user.id);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Feed limit reached. Upgrade to Pro for unlimited feeds." },
+      { status: 403 }
+    );
   }
 
   let body: Record<string, unknown>;
