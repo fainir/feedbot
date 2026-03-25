@@ -1170,7 +1170,7 @@ function DashboardContent() {
 
       {/* Mood Playlists */}
       {allItems.length > 0 && !initialLoading && (
-        <MoodPlaylists items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source }))} />
+        <MoodPlaylists items={allItems} />
       )}
 
       {/* Word Cloud */}

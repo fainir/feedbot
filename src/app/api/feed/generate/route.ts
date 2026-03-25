@@ -1,18 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getClientKey } from "@/lib/rate-limit";
-
-// Feed generation endpoint — takes a prompt, returns curated internet content
-// For MVP: uses web search simulation. Production: integrate real search API.
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 // Generate feed items based on a prompt
 // MVP: returns simulated results based on topic keywords

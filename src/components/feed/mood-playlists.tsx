@@ -16,13 +16,7 @@ import {
   Music,
   Palette,
 } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface MoodPreset {
   id: string;
