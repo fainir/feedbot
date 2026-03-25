@@ -187,6 +187,20 @@ export default function DashboardPage() {
             }`}
           >
             {tab.name}
+            {!tab.loading && tab.items.length > 0 && tab.id !== "all" && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                activeTabId === tab.id ? "bg-white/20" : "bg-border text-text-muted"
+              }`}>
+                {tab.items.length}
+              </span>
+            )}
+            {tab.id === "all" && allItems.length > 0 && !tabs.some((t) => t.loading) && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                activeTabId === "all" ? "bg-white/20" : "bg-border text-text-muted"
+              }`}>
+                {allItems.length}
+              </span>
+            )}
             {tab.loading && (
               <RefreshCw className="h-3 w-3 animate-spin" />
             )}
