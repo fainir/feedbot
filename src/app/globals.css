@@ -16,6 +16,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Light theme */
+html.light {
+  --color-bg: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+}
+
 body {
   background-color: var(--color-bg);
   color: var(--color-text);

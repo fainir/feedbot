@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2 } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { timeAgo } from "@/lib/utils";
@@ -101,7 +102,10 @@ function DashboardContent() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const searchParams = useSearchParams();
+  const { theme, setTheme } = useTheme();
 
   // Get user on mount
   useEffect(() => {
@@ -199,9 +203,41 @@ function DashboardContent() {
     loadFeeds();
   }, []);
 
-  // Keyboard shortcuts: Ctrl+1-9 to switch tabs, Ctrl+T for new tab
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
+
+      // ? to show shortcuts (only when not typing)
+      if (e.key === "?" && !isInput) {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+        return;
+      }
+
+      // Escape to close modals
+      if (e.key === "Escape") {
+        setShowShortcuts(false);
+        setShowSearch(false);
+        setShowNewTab(false);
+        return;
+      }
+
+      // / to focus search (only when not typing)
+      if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        setShowSearch(true);
+        return;
+      }
+
+      // d to toggle dark mode (only when not typing)
+      if (e.key === "d" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setTheme(theme === "dark" ? "light" : "dark");
+        return;
+      }
+
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.key >= "1" && e.key <= "9") {
         e.preventDefault();
@@ -215,7 +251,7 @@ function DashboardContent() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [tabs, showNewTab]);
+  }, [tabs, showNewTab, theme, setTheme]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -365,6 +401,33 @@ function DashboardContent() {
     feedTabs.forEach((t) => refreshTab(t.id));
   }, [tabs, refreshTab]);
 
+  const shareFeed = useCallback(async () => {
+    const tab = tabs.find((t) => t.id === activeTabId);
+    if (!tab || activeTabId === "all") return;
+    const params = new URLSearchParams({ name: tab.name, prompt: tab.prompt });
+    const shareUrl = `${window.location.origin}/dashboard?share=${encodeURIComponent(params.toString())}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }, [activeTabId, tabs]);
+
+  // Auto-import shared feed from URL
+  useEffect(() => {
+    const shareParam = searchParams.get("share");
+    if (!shareParam) return;
+    try {
+      const params = new URLSearchParams(shareParam);
+      const name = params.get("name");
+      const prompt = params.get("prompt");
+      if (name && prompt) {
+        window.history.replaceState({}, "", "/dashboard");
+        createFeed(name, prompt).then((feedId) => {
+          if (feedId) setActiveTabId(feedId);
+        });
+      }
+    } catch {}
+  }, [searchParams, createFeed]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -408,7 +471,7 @@ function DashboardContent() {
           </div>
           <span className="text-lg font-bold text-text">FeedBot</span>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={handleUpgrade}
             disabled={checkingOut}
@@ -423,6 +486,20 @@ function DashboardContent() {
               {user.email}
             </span>
           )}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode (D)`}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setShowShortcuts(true)}
+            className="hidden rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text sm:flex"
+            title="Keyboard shortcuts (?)"
+          >
+            <Keyboard className="h-4 w-4" />
+          </button>
           <button
             onClick={handleLogout}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -590,6 +667,17 @@ function DashboardContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {activeTabId !== "all" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={shareFeed}
+              className="text-text-muted"
+              title="Share this feed"
+            >
+              {shareCopied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -752,6 +840,46 @@ function DashboardContent() {
               sourceIcon={item.sourceIcon}
             />
           ))}
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-text">Keyboard Shortcuts</h2>
+              <button
+                onClick={() => setShowShortcuts(false)}
+                className="rounded-lg p-1 text-text-muted hover:bg-bg-hover hover:text-text"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { keys: "?", desc: "Toggle this help" },
+                { keys: "/", desc: "Focus search" },
+                { keys: "D", desc: "Toggle dark/light mode" },
+                { keys: "Esc", desc: "Close modal / search" },
+                { keys: "Ctrl+1–9", desc: "Switch to tab 1–9" },
+                { keys: "Ctrl+T", desc: "Create new tab" },
+              ].map(({ keys, desc }) => (
+                <div key={keys} className="flex items-center justify-between">
+                  <span className="text-sm text-text-muted">{desc}</span>
+                  <kbd className="rounded-md border border-border bg-bg px-2 py-1 text-xs font-mono text-text">
+                    {keys}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
