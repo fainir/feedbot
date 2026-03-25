@@ -18,6 +18,14 @@ import { NewItemsBell } from "@/components/feed/new-items-bell";
 import { FilterChips, applyFilter, type FilterChipType } from "@/components/feed/filter-chips";
 import { FeedFolders, type FeedFolder } from "@/components/feed/feed-folders";
 import { KeywordAlerts, type KeywordAlert, computeKeywordMatches, HighlightKeywords } from "@/components/feed/keyword-alerts";
+import { CatchMeUp } from "@/components/feed/catch-me-up";
+import { SmartSortButton, smartSort, type SortMode } from "@/components/feed/smart-sort";
+import { TopicClusterView } from "@/components/feed/topic-clusters";
+import { FeedSuggestions } from "@/components/feed/feed-suggestions";
+import { ReadingHistory } from "@/components/feed/reading-history";
+import { SavedCollections, type SavedCollection } from "@/components/feed/saved-collections";
+import { SourceMuteManager, filterMutedSources, type MutedSource } from "@/components/feed/source-mute";
+import { QuickShareMenu } from "@/components/feed/quick-share";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -138,6 +146,11 @@ function DashboardContent() {
   const [folders, setFolders] = useState<FeedFolder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [keywordAlerts, setKeywordAlerts] = useState<KeywordAlert[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [showClusters, setShowClusters] = useState(false);
+  const [mutedSources, setMutedSources] = useState<MutedSource[]>([]);
+  const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
+  const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -186,6 +199,14 @@ function DashboardContent() {
     try {
       const alertsData = localStorage.getItem("feedbot-alerts");
       if (alertsData) setKeywordAlerts(JSON.parse(alertsData));
+    } catch {}
+    try {
+      const mutedData = localStorage.getItem("feedbot-muted-sources");
+      if (mutedData) setMutedSources(JSON.parse(mutedData));
+    } catch {}
+    try {
+      const collectionsData = localStorage.getItem("feedbot-collections");
+      if (collectionsData) setSavedCollections(JSON.parse(collectionsData));
     } catch {}
   }, []);
 
@@ -518,7 +539,19 @@ function DashboardContent() {
     return base;
   }, [activeTabId, dedupedAllItems, bookmarkedItems, trendingItems, activeTab.items, activeFolderId, folders, allItems, tabs]);
 
-  const displayItems = folderFilteredItems;
+  // Apply source muting
+  const unmutedItems = useMemo(
+    () => filterMutedSources(folderFilteredItems, mutedSources),
+    [folderFilteredItems, mutedSources]
+  );
+
+  // Apply smart sort
+  const sortedItems = useMemo(
+    () => smartSort(unmutedItems, sortMode, { bookmarkedIds, readIds }),
+    [unmutedItems, sortMode, bookmarkedIds, readIds]
+  );
+
+  const displayItems = sortedItems;
 
   // Compute keyword alert matches
   const keywordMatchedIds = useMemo(
@@ -636,6 +669,65 @@ function DashboardContent() {
   const updateAlerts = useCallback((newAlerts: KeywordAlert[]) => {
     setKeywordAlerts(newAlerts);
     localStorage.setItem("feedbot-alerts", JSON.stringify(newAlerts));
+  }, []);
+
+  const updateMutedSources = useCallback((sources: MutedSource[]) => {
+    setMutedSources(sources);
+    localStorage.setItem("feedbot-muted-sources", JSON.stringify(sources));
+  }, []);
+
+  const updateCollections = useCallback((collections: SavedCollection[]) => {
+    setSavedCollections(collections);
+    localStorage.setItem("feedbot-collections", JSON.stringify(collections));
+  }, []);
+
+  const addToCollection = useCallback((collectionId: string, itemId: string) => {
+    setSavedCollections((prev) => {
+      const next = prev.map((c) =>
+        c.id === collectionId && !c.itemIds.includes(itemId)
+          ? { ...c, itemIds: [...c.itemIds, itemId] }
+          : c
+      );
+      localStorage.setItem("feedbot-collections", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const removeFromCollection = useCallback((collectionId: string, itemId: string) => {
+    setSavedCollections((prev) => {
+      const next = prev.map((c) =>
+        c.id === collectionId
+          ? { ...c, itemIds: c.itemIds.filter((id) => id !== itemId) }
+          : c
+      );
+      localStorage.setItem("feedbot-collections", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const muteSource = useCallback((domain: string, hours: number) => {
+    const clean = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0];
+    if (!clean) return;
+    setMutedSources((prev) => {
+      const existing = prev.filter((s) => s.domain !== clean);
+      const muteUntil = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
+      const next = [...existing, { domain: clean, muteUntil, mutedAt: new Date().toISOString() }];
+      localStorage.setItem("feedbot-muted-sources", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const unmuteSource = useCallback((domain: string) => {
+    setMutedSources((prev) => {
+      const next = prev.filter((s) => s.domain !== domain);
+      localStorage.setItem("feedbot-muted-sources", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const clearReadingHistory = useCallback(() => {
+    setReadIds(new Set());
+    localStorage.setItem("feedbot-read", "[]");
   }, []);
 
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
@@ -1473,13 +1565,92 @@ function DashboardContent() {
         <TrendingHeader count={trendingItems.length} />
       )}
 
-      {/* Filter Chips */}
+      {/* Filter Chips + Smart Sort + Catch Me Up + Mute */}
       {displayItems.length > 0 && !activeTab.loading && (
-        <FilterChips
-          active={activeFilter}
-          onChange={setActiveFilter}
-          unreadCount={unreadCount}
-          todayCount={todayCount}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <FilterChips
+            active={activeFilter}
+            onChange={setActiveFilter}
+            unreadCount={unreadCount}
+            todayCount={todayCount}
+          />
+          <div className="flex items-center gap-1 ml-auto">
+            <CatchMeUp
+              unreadItems={displayItems
+                .filter((i) => !readIds.has(i.id))
+                .map((i) => ({ title: i.title, summary: i.summary, source: i.source }))}
+            />
+            <SmartSortButton active={sortMode} onChange={setSortMode} />
+            <button
+              onClick={() => setShowClusters((v) => !v)}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                showClusters
+                  ? "bg-primary/10 text-primary"
+                  : "text-text-muted hover:bg-bg-hover hover:text-text"
+              }`}
+              title="Group by topic"
+            >
+              Topics
+            </button>
+            <SourceMuteManager
+              mutedSources={mutedSources}
+              onUpdateMuted={updateMutedSources}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Feed Suggestions */}
+      {activeTabId === "all" && tabs.filter((t) => t.id !== "all").length > 0 && (
+        <FeedSuggestions
+          existingFeeds={tabs.filter((t) => t.id !== "all").map((t) => ({ id: t.id, name: t.name, prompt: t.prompt }))}
+          onCreateFeed={async (name, prompt) => {
+            const feedId = await createFeed(name, prompt);
+            if (feedId) {
+              setActiveTabId(feedId);
+              toast(`"${name}" feed created`, "success");
+            }
+          }}
+        />
+      )}
+
+      {/* Saved Collections (in Saved tab) */}
+      {activeTabId === "saved" && (
+        <SavedCollections
+          collections={savedCollections}
+          onUpdate={updateCollections}
+          activeCollectionId={activeCollectionId}
+          onSelectCollection={setActiveCollectionId}
+          bookmarkCount={bookmarkedIds.size}
+        />
+      )}
+
+      {/* Reading History */}
+      {activeTabId === "all" && allItems.length > 0 && readIds.size > 0 && (
+        <ReadingHistory
+          readIds={readIds}
+          allItems={allItems}
+          onOpenReader={(item) => setReaderItem(item)}
+          onClearHistory={clearReadingHistory}
+        />
+      )}
+
+      {/* Topic Clusters */}
+      {showClusters && (
+        <TopicClusterView
+          items={filteredItems}
+          enabled={showClusters}
+          renderItem={(item) => (
+            <FeedCard
+              title={item.title}
+              summary={item.summary}
+              source={item.source}
+              url={item.url}
+              publishedAt={item.publishedAt}
+              sourceIcon={item.sourceIcon}
+              compact={compactView}
+            />
+          )}
         />
       )}
 
