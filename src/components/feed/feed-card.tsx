@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, readingTime } from "@/lib/utils";
 
 interface FeedCardProps {
   title: string;
@@ -85,6 +85,8 @@ export function FeedCard({
           </div>
           <span className="text-border">|</span>
           <span>{timeAgo(publishedAt)}</span>
+          <span className="text-border">|</span>
+          <span>{readingTime(summary)}</span>
         </div>
 
         <div className="flex items-center gap-1">

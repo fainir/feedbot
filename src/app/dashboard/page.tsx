@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings } from "lucide-react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
@@ -107,9 +108,32 @@ function DashboardContent() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(15);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+
+  // Reset visible count when switching tabs
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [activeTabId]);
+
+  // Infinite scroll — load more items when sentinel is visible
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount((prev) => prev + 15);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Load bookmarks from localStorage
   useEffect(() => {
@@ -575,6 +599,13 @@ function DashboardContent() {
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          <Link
+            href="/dashboard/settings"
+            className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+            title="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
           <button
             onClick={() => setShowShortcuts(true)}
             className="hidden rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text sm:flex"
@@ -955,7 +986,7 @@ function DashboardContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredItems.map((item) => (
+          {filteredItems.slice(0, visibleCount).map((item) => (
             <FeedCard
               key={item.id}
               title={item.title}
@@ -968,6 +999,16 @@ function DashboardContent() {
               onToggleBookmark={() => toggleBookmark(item)}
             />
           ))}
+          {filteredItems.length > visibleCount && (
+            <div ref={loadMoreRef} className="flex justify-center py-4">
+              <RefreshCw className="h-5 w-5 animate-spin text-text-muted" />
+            </div>
+          )}
+          {filteredItems.length > 0 && filteredItems.length <= visibleCount && (
+            <p className="py-4 text-center text-xs text-text-muted">
+              {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
       )}
 

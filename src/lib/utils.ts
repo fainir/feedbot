@@ -14,6 +14,12 @@ export function formatDate(date: string) {
   }).format(new Date(date));
 }
 
+export function readingTime(text: string): string {
+  const words = text.trim().split(/\s+/).length;
+  const minutes = Math.max(1, Math.ceil(words / 200));
+  return `${minutes} min read`;
+}
+
 export function timeAgo(date: string) {
   const seconds = Math.floor(
     (Date.now() - new Date(date).getTime()) / 1000
