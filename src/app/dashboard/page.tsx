@@ -1,144 +1,337 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Rss, Search, SlidersHorizontal } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Rss, Search, X, RefreshCw, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
-import { CreateFeedModal } from "@/components/feed/create-feed-modal";
 
-const MOCK_ITEMS = [
+interface Tab {
+  id: string;
+  name: string;
+  prompt: string;
+  items: FeedItem[];
+  loading: boolean;
+  lastRefresh: string | null;
+}
+
+interface FeedItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  publishedAt: string;
+}
+
+const DEFAULT_TABS: Tab[] = [
   {
-    id: "1",
-    title: "GPT-5 Technical Report: Reasoning, Multimodality, and Safety",
-    summary:
-      "OpenAI released the full technical report for GPT-5, detailing advances in chain-of-thought reasoning, native multimodal understanding, and a new alignment framework that significantly reduces hallucination rates.",
-    source: "OpenAI Blog",
-    url: "https://openai.com/blog",
-    publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "2",
-    title: "State Space Models vs Transformers: A Practical Benchmark",
-    summary:
-      "A comprehensive benchmark comparing Mamba-2, RWKV-7, and Transformer++ across 15 NLP tasks. SSMs show 3x inference speedup at comparable quality for sequences under 8K tokens.",
-    source: "arXiv",
-    url: "https://arxiv.org",
-    publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "3",
-    title: "Claude's Constitutional AI: Year Two Retrospective",
-    summary:
-      "Anthropic shares lessons learned from two years of Constitutional AI research, including new techniques for scalable oversight and improved harmlessness without sacrificing helpfulness.",
-    source: "Anthropic Research",
-    url: "https://anthropic.com",
-    publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "4",
-    title: "The Rise of AI-Native Developer Tools in 2026",
-    summary:
-      "A deep dive into how AI-native IDEs and coding assistants are reshaping developer workflows, with data from 10,000 professional developers on productivity gains and adoption patterns.",
-    source: "The Pragmatic Engineer",
-    url: "https://blog.pragmaticengineer.com",
-    publishedAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "5",
-    title: "Y Combinator W26 Batch: AI Startups to Watch",
-    summary:
-      "An overview of the most promising AI companies from YC's Winter 2026 batch, spanning developer tools, healthcare, education, and autonomous agents.",
-    source: "TechCrunch",
-    url: "https://techcrunch.com",
-    publishedAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "6",
-    title: "Next.js 16: What You Need to Know About the New Compiler",
-    summary:
-      "The new Rust-based compiler in Next.js 16 delivers 5x faster builds and native RSC streaming. Here are the migration steps and gotchas from upgrading a large production app.",
-    source: "Vercel Blog",
-    url: "https://vercel.com/blog",
-    publishedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    id: "all",
+    name: "All",
+    prompt: "",
+    items: [],
+    loading: false,
+    lastRefresh: null,
   },
 ];
 
+function generateId() {
+  return Math.random().toString(36).slice(2, 9);
+}
+
+function loadTabs(): Tab[] {
+  if (typeof window === "undefined") return DEFAULT_TABS;
+  try {
+    const saved = localStorage.getItem("feedbot-tabs");
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return DEFAULT_TABS;
+}
+
+function saveTabs(tabs: Tab[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("feedbot-tabs", JSON.stringify(tabs));
+}
+
 export default function DashboardPage() {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEmpty] = useState(false);
+  const [tabs, setTabs] = useState<Tab[]>(DEFAULT_TABS);
+  const [activeTabId, setActiveTabId] = useState("all");
+  const [showNewTab, setShowNewTab] = useState(false);
+  const [newTabName, setNewTabName] = useState("");
+  const [newTabPrompt, setNewTabPrompt] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Load tabs from localStorage on mount
+  useEffect(() => {
+    setTabs(loadTabs());
+  }, []);
+
+  // Save tabs when they change
+  useEffect(() => {
+    if (tabs !== DEFAULT_TABS) saveTabs(tabs);
+  }, [tabs]);
+
+  const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+
+  // Get all items across all tabs for the "All" view
+  const allItems = tabs
+    .filter((t) => t.id !== "all")
+    .flatMap((t) => t.items)
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+  const displayItems = activeTabId === "all" ? allItems : activeTab.items;
+  const filteredItems = searchQuery
+    ? displayItems.filter(
+        (item) =>
+          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.summary.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : displayItems;
+
+  const addTab = () => {
+    if (!newTabName.trim() || !newTabPrompt.trim()) return;
+    const tab: Tab = {
+      id: generateId(),
+      name: newTabName.trim(),
+      prompt: newTabPrompt.trim(),
+      items: [],
+      loading: false,
+      lastRefresh: null,
+    };
+    setTabs((prev) => [...prev, tab]);
+    setActiveTabId(tab.id);
+    setShowNewTab(false);
+    setNewTabName("");
+    setNewTabPrompt("");
+    // Auto-refresh the new tab
+    refreshTab(tab.id, tab.prompt);
+  };
+
+  const deleteTab = (id: string) => {
+    if (id === "all") return;
+    setTabs((prev) => prev.filter((t) => t.id !== id));
+    if (activeTabId === id) setActiveTabId("all");
+  };
+
+  const refreshTab = useCallback(
+    async (tabId: string, prompt?: string) => {
+      const tab = tabs.find((t) => t.id === tabId);
+      if (!tab && tabId !== "all") return;
+      const searchPrompt = prompt || tab?.prompt;
+      if (!searchPrompt) return;
+
+      setTabs((prev) =>
+        prev.map((t) => (t.id === tabId ? { ...t, loading: true } : t))
+      );
+
+      try {
+        const res = await fetch("/api/feed/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: searchPrompt }),
+        });
+        if (!res.ok) throw new Error("Failed to fetch feed");
+        const data = await res.json();
+        setTabs((prev) =>
+          prev.map((t) =>
+            t.id === tabId
+              ? {
+                  ...t,
+                  items: data.items || [],
+                  loading: false,
+                  lastRefresh: new Date().toISOString(),
+                }
+              : t
+          )
+        );
+      } catch (e) {
+        setTabs((prev) =>
+          prev.map((t) => (t.id === tabId ? { ...t, loading: false } : t))
+        );
+      }
+    },
+    [tabs]
+  );
 
   return (
-    <>
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text">Your Feed</h1>
-            <p className="mt-1 text-sm text-text-muted">
-              {MOCK_ITEMS.length} items from all feeds
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-text-muted"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-text-muted"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4" />
-              New Feed
-            </Button>
-          </div>
-        </div>
-
-        {showEmpty ? (
-          /* Empty state */
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-24">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <Rss className="h-8 w-8 text-primary" />
-            </div>
-            <h2 className="mb-2 text-lg font-semibold text-text">
-              Create your first feed
-            </h2>
-            <p className="mb-6 max-w-sm text-center text-sm text-text-muted">
-              Describe what you want to follow in plain English. FeedBot will
-              scan the internet and deliver matching content to you.
-            </p>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4" />
-              Create Feed
-            </Button>
-          </div>
-        ) : (
-          /* Feed items */
-          <div className="space-y-3">
-            {MOCK_ITEMS.map((item) => (
-              <FeedCard
-                key={item.id}
-                title={item.title}
-                summary={item.summary}
-                source={item.source}
-                url={item.url}
-                publishedAt={item.publishedAt}
-              />
-            ))}
-          </div>
-        )}
+    <div className="mx-auto max-w-4xl px-6 py-8">
+      {/* Tabs Bar */}
+      <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTabId(tab.id)}
+            className={`group relative flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              activeTabId === tab.id
+                ? "bg-primary text-white"
+                : "text-text-muted hover:bg-surface hover:text-text"
+            }`}
+          >
+            {tab.name}
+            {tab.loading && (
+              <RefreshCw className="h-3 w-3 animate-spin" />
+            )}
+            {tab.id !== "all" && activeTabId === tab.id && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteTab(tab.id);
+                }}
+                className="ml-1 rounded p-0.5 hover:bg-white/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </button>
+        ))}
+        <button
+          onClick={() => setShowNewTab(true)}
+          className="flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text"
+        >
+          <Plus className="h-4 w-4" />
+          New Tab
+        </button>
       </div>
 
-      <CreateFeedModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-      />
-    </>
+      {/* New Tab Form */}
+      {showNewTab && (
+        <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-text">
+            Create New Tab
+          </h3>
+          <div className="space-y-3">
+            <input
+              type="text"
+              placeholder="Tab name (e.g., AI News, Startup Ideas)"
+              value={newTabName}
+              onChange={(e) => setNewTabName(e.target.value)}
+              className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+              autoFocus
+            />
+            <textarea
+              placeholder="What should this feed show? (e.g., Latest AI research papers and breakthroughs)"
+              value={newTabPrompt}
+              onChange={(e) => setNewTabPrompt(e.target.value)}
+              rows={2}
+              className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+            />
+            <div className="flex gap-2">
+              <Button onClick={addTab} disabled={!newTabName.trim() || !newTabPrompt.trim()}>
+                <Plus className="h-4 w-4" />
+                Create Tab
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowNewTab(false);
+                  setNewTabName("");
+                  setNewTabPrompt("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text">{activeTab.name}</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            {activeTab.prompt || `${allItems.length} items from all feeds`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSearch(!showSearch)}
+            className="text-text-muted"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          {activeTabId !== "all" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refreshTab(activeTabId)}
+              className="text-text-muted"
+              disabled={activeTab.loading}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${activeTab.loading ? "animate-spin" : ""}`}
+              />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Search */}
+      {showSearch && (
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search feed items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Feed */}
+      {activeTab.loading ? (
+        <div className="flex flex-col items-center justify-center py-24">
+          <RefreshCw className="mb-4 h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-text-muted">
+            Generating your feed...
+          </p>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-24">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <Rss className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="mb-2 text-lg font-semibold text-text">
+            {activeTabId === "all"
+              ? "Create your first tab"
+              : "No items yet"}
+          </h2>
+          <p className="mb-6 max-w-sm text-center text-sm text-text-muted">
+            {activeTabId === "all"
+              ? "Click '+ New Tab' to create a custom feed with any topic."
+              : "Click the refresh button to generate content for this tab."}
+          </p>
+          {activeTabId === "all" && (
+            <Button onClick={() => setShowNewTab(true)}>
+              <Plus className="h-4 w-4" />
+              New Tab
+            </Button>
+          )}
+          {activeTabId !== "all" && (
+            <Button onClick={() => refreshTab(activeTabId)}>
+              <RefreshCw className="h-4 w-4" />
+              Generate Feed
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((item) => (
+            <FeedCard
+              key={item.id}
+              title={item.title}
+              summary={item.summary}
+              source={item.source}
+              url={item.url}
+              publishedAt={item.publishedAt}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
