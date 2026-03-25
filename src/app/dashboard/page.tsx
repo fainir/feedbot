@@ -47,6 +47,9 @@ import { ReadingMode } from "@/components/feed/reading-mode";
 import { useReadLater, ReadLaterButton, ReadLaterQueue } from "@/components/feed/read-later-queue";
 import { FeedBackup } from "@/components/feed/feed-backup";
 import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
+import { DigestScheduler } from "@/components/feed/digest-scheduler";
+import { TeamFeedsPanel, TeamFeedsBadge } from "@/components/feed/team-feeds";
+import { AllAnnotations } from "@/components/feed/article-annotations";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -1056,6 +1059,7 @@ function DashboardContent() {
             onToggle={toggleNotifications}
           />
           <FeedAnalyticsPanel />
+          <TeamFeedsBadge />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1145,6 +1149,14 @@ function DashboardContent() {
       {allItems.length > 0 && !initialLoading && (
         <ReadingGoals readIds={readIds} allItems={allItems} />
       )}
+
+      {/* Digest Scheduler */}
+      {allItems.length > 0 && !initialLoading && (
+        <DigestScheduler />
+      )}
+
+      {/* Team Feeds */}
+      {!initialLoading && <TeamFeedsPanel />}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
