@@ -3,8 +3,7 @@ import { rateLimit, getClientKey } from "@/lib/rate-limit";
 import type { FeedItem } from "@/lib/feed-types";
 
 // Generate feed items based on a prompt
-// MVP: returns simulated results based on topic keywords
-// TODO: Integrate real web search API (SerpAPI, Brave Search, or Google Custom Search)
+// Uses Brave Search API when available, falls back to mock content
 async function generateFeedItems(prompt: string): Promise<FeedItem[]> {
   const now = Date.now();
 
