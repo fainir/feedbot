@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
-
-function getUserId(request: NextRequest): string | null {
-  return request.headers.get("x-user-id");
-}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { id } = await params;
-  const supabase = getServiceClient();
 
   const { data: feed, error: feedError } = await supabase
     .from("feeds")
     .select("*")
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
 
   if (feedError || !feed) {
@@ -50,9 +47,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -99,13 +97,11 @@ export async function PATCH(
     );
   }
 
-  const supabase = getServiceClient();
-
   const { data: existing } = await supabase
     .from("feeds")
     .select("id")
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
 
   if (!existing) {
@@ -130,27 +126,29 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { id } = await params;
-  const supabase = getServiceClient();
 
   const { data: existing } = await supabase
     .from("feeds")
     .select("id")
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
 
   if (!existing) {
     return NextResponse.json({ error: "Feed not found" }, { status: 404 });
   }
 
-  await supabase.from("feed_items").delete().eq("feed_id", id);
-  await supabase.from("notifications").delete().eq("feed_id", id);
+  // Use service client for deleting feed_items (no INSERT/DELETE RLS policy)
+  const service = getServiceClient();
+  await service.from("feed_items").delete().eq("feed_id", id);
+  await service.from("notifications").delete().eq("feed_id", id);
 
   const { error } = await supabase.from("feeds").delete().eq("id", id);
 

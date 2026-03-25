@@ -62,33 +62,21 @@ const FEED_TEMPLATES = [
   },
 ];
 
-const DEFAULT_TABS: Tab[] = [
-  {
-    id: "all",
-    name: "All",
-    prompt: "",
-    items: [],
-    loading: false,
-    lastRefresh: null,
-  },
-];
-
-function generateId() {
-  return Math.random().toString(36).slice(2, 9);
-}
-
-function loadTabs(): Tab[] {
-  if (typeof window === "undefined") return DEFAULT_TABS;
+function mapDbItemToFeedItem(item: Record<string, unknown>): FeedItem {
+  const source = (item.source as string) || "";
+  let hostname = source;
   try {
-    const saved = localStorage.getItem("feedbot-tabs");
-    if (saved) return JSON.parse(saved);
+    if (item.url) hostname = new URL(item.url as string).hostname.replace("www.", "");
   } catch {}
-  return DEFAULT_TABS;
-}
-
-function saveTabs(tabs: Tab[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("feedbot-tabs", JSON.stringify(tabs));
+  return {
+    id: item.id as string,
+    title: item.title as string,
+    summary: item.summary as string,
+    source,
+    url: item.url as string,
+    publishedAt: (item.published_at as string) || (item.created_at as string),
+    sourceIcon: (item.image_url as string) || `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
+  };
 }
 
 export default function DashboardPage() {
@@ -100,7 +88,9 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const [tabs, setTabs] = useState<Tab[]>(DEFAULT_TABS);
+  const [tabs, setTabs] = useState<Tab[]>([
+    { id: "all", name: "All", prompt: "", items: [], loading: false, lastRefresh: null },
+  ]);
   const [activeTabId, setActiveTabId] = useState("all");
   const [showNewTab, setShowNewTab] = useState(false);
   const [newTabName, setNewTabName] = useState("");
@@ -110,6 +100,7 @@ function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const searchParams = useSearchParams();
 
   // Get user on mount
@@ -126,15 +117,52 @@ function DashboardContent() {
     }
   }, [searchParams]);
 
-  // Load tabs from localStorage on mount
+  // Load feeds from Supabase on mount
   useEffect(() => {
-    setTabs(loadTabs());
-  }, []);
+    async function loadFeeds() {
+      try {
+        const res = await fetch("/api/feeds");
+        if (!res.ok) return;
+        const { feeds } = await res.json();
+        if (!feeds || feeds.length === 0) {
+          setInitialLoading(false);
+          return;
+        }
 
-  // Save tabs when they change
-  useEffect(() => {
-    if (tabs !== DEFAULT_TABS) saveTabs(tabs);
-  }, [tabs]);
+        // Load items for each feed in parallel
+        const feedTabs: Tab[] = await Promise.all(
+          feeds.map(async (feed: Record<string, unknown>) => {
+            let items: FeedItem[] = [];
+            try {
+              const itemsRes = await fetch(`/api/feeds/${feed.id}`);
+              if (itemsRes.ok) {
+                const data = await itemsRes.json();
+                items = (data.items || []).map(mapDbItemToFeedItem);
+              }
+            } catch {}
+            return {
+              id: feed.id as string,
+              name: feed.name as string,
+              prompt: feed.query_text as string,
+              items,
+              loading: false,
+              lastRefresh: feed.last_refreshed_at as string | null,
+            };
+          })
+        );
+
+        setTabs([
+          { id: "all", name: "All", prompt: "", items: [], loading: false, lastRefresh: null },
+          ...feedTabs,
+        ]);
+      } catch (err) {
+        console.error("Failed to load feeds:", err);
+      } finally {
+        setInitialLoading(false);
+      }
+    }
+    loadFeeds();
+  }, []);
 
   // Keyboard shortcuts: Ctrl+1-9 to switch tabs, Ctrl+T for new tab
   useEffect(() => {
@@ -171,87 +199,136 @@ function DashboardContent() {
       )
     : displayItems;
 
-  const addTab = () => {
+  const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
+    try {
+      const res = await fetch("/api/feeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, query_text: prompt, description: prompt }),
+      });
+      if (!res.ok) return null;
+      const { feed, initial_items_count } = await res.json();
+
+      // Load the items that were just created
+      let items: FeedItem[] = [];
+      if (initial_items_count > 0) {
+        try {
+          const itemsRes = await fetch(`/api/feeds/${feed.id}`);
+          if (itemsRes.ok) {
+            const data = await itemsRes.json();
+            items = (data.items || []).map(mapDbItemToFeedItem);
+          }
+        } catch {}
+      }
+
+      const tab: Tab = {
+        id: feed.id,
+        name: feed.name,
+        prompt: feed.query_text,
+        items,
+        loading: false,
+        lastRefresh: feed.last_refreshed_at,
+      };
+      setTabs((prev) => [...prev, tab]);
+      return feed.id;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const addTab = async () => {
     if (!newTabName.trim() || !newTabPrompt.trim()) return;
-    const tab: Tab = {
-      id: generateId(),
-      name: newTabName.trim(),
-      prompt: newTabPrompt.trim(),
+    const name = newTabName.trim();
+    const prompt = newTabPrompt.trim();
+
+    // Show loading state immediately
+    const tempId = "creating-" + Date.now();
+    const tempTab: Tab = {
+      id: tempId,
+      name,
+      prompt,
       items: [],
       loading: true,
       lastRefresh: null,
     };
-    setTabs((prev) => [...prev, tab]);
-    setActiveTabId(tab.id);
+    setTabs((prev) => [...prev, tempTab]);
+    setActiveTabId(tempId);
     setShowNewTab(false);
     setNewTabName("");
     setNewTabPrompt("");
-    // Auto-generate feed for the new tab
-    fetchFeedItems(tab.id, tab.prompt);
+
+    const feedId = await createFeed(name, prompt);
+    if (feedId) {
+      // Replace temp tab with real one
+      setTabs((prev) => prev.filter((t) => t.id !== tempId));
+      setActiveTabId(feedId);
+    } else {
+      // Remove temp tab on failure
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === tempId
+            ? { ...t, loading: false, error: "Failed to create feed. Try again." }
+            : t
+        )
+      );
+    }
   };
 
-  const deleteTab = (id: string) => {
+  const deleteTab = async (id: string) => {
     if (id === "all") return;
     setTabs((prev) => prev.filter((t) => t.id !== id));
     if (activeTabId === id) setActiveTabId("all");
+
+    // Delete from Supabase in background
+    try {
+      await fetch(`/api/feeds/${id}`, { method: "DELETE" });
+    } catch {}
   };
 
-  const fetchFeedItems = useCallback(
-    async (tabId: string, prompt: string) => {
+  const refreshTab = useCallback(
+    async (tabId: string) => {
+      const tab = tabs.find((t) => t.id === tabId);
+      if (!tab || !tab.prompt || tabId === "all") return;
+
+      setTabs((prev) =>
+        prev.map((t) => (t.id === tabId ? { ...t, loading: true, error: null } : t))
+      );
+
       try {
-        const res = await fetch("/api/feed/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        });
-        if (!res.ok) throw new Error("Failed to fetch feed");
+        // Refresh via API (discovers new items + saves to DB)
+        await fetch(`/api/feeds/${tabId}/refresh`, { method: "POST" });
+
+        // Reload all items for this feed
+        const res = await fetch(`/api/feeds/${tabId}`);
+        if (!res.ok) throw new Error("Failed to load feed");
         const data = await res.json();
+        const items = (data.items || []).map(mapDbItemToFeedItem);
+
         setTabs((prev) =>
           prev.map((t) =>
             t.id === tabId
-              ? {
-                  ...t,
-                  items: data.items || [],
-                  loading: false,
-                  error: null,
-                  lastRefresh: new Date().toISOString(),
-                }
+              ? { ...t, items, loading: false, error: null, lastRefresh: new Date().toISOString() }
               : t
           )
         );
-      } catch (e) {
+      } catch {
         setTabs((prev) =>
           prev.map((t) =>
             t.id === tabId
-              ? { ...t, loading: false, error: "Failed to generate feed. Try again." }
+              ? { ...t, loading: false, error: "Failed to refresh feed. Try again." }
               : t
           )
         );
       }
     },
-    []
-  );
-
-  const refreshTab = useCallback(
-    (tabId: string) => {
-      const tab = tabs.find((t) => t.id === tabId);
-      if (!tab || !tab.prompt) return;
-      setTabs((prev) =>
-        prev.map((t) => (t.id === tabId ? { ...t, loading: true } : t))
-      );
-      fetchFeedItems(tabId, tab.prompt);
-    },
-    [tabs, fetchFeedItems]
+    [tabs]
   );
 
   const refreshAllTabs = useCallback(() => {
     const feedTabs = tabs.filter((t) => t.id !== "all" && t.prompt);
     if (feedTabs.length === 0) return;
-    setTabs((prev) =>
-      prev.map((t) => (t.id !== "all" && t.prompt ? { ...t, loading: true } : t))
-    );
-    feedTabs.forEach((t) => fetchFeedItems(t.id, t.prompt));
-  }, [tabs, fetchFeedItems]);
+    feedTabs.forEach((t) => refreshTab(t.id));
+  }, [tabs, refreshTab]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -273,6 +350,17 @@ function DashboardContent() {
       alert("Failed to start checkout");
     }
     setCheckingOut(false);
+  }
+
+  if (initialLoading) {
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="flex flex-col items-center justify-center py-24">
+          <RefreshCw className="mb-4 h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-text-muted">Loading your feeds...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -560,18 +648,32 @@ function DashboardContent() {
                 {FEED_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.name}
-                    onClick={() => {
-                      const tab: Tab = {
-                        id: generateId(),
+                    onClick={async () => {
+                      const tempId = "creating-" + Date.now();
+                      const tempTab: Tab = {
+                        id: tempId,
                         name: tpl.name,
                         prompt: tpl.prompt,
                         items: [],
                         loading: true,
                         lastRefresh: null,
                       };
-                      setTabs((prev) => [...prev, tab]);
-                      setActiveTabId(tab.id);
-                      fetchFeedItems(tab.id, tab.prompt);
+                      setTabs((prev) => [...prev, tempTab]);
+                      setActiveTabId(tempId);
+
+                      const feedId = await createFeed(tpl.name, tpl.prompt);
+                      if (feedId) {
+                        setTabs((prev) => prev.filter((t) => t.id !== tempId));
+                        setActiveTabId(feedId);
+                      } else {
+                        setTabs((prev) =>
+                          prev.map((t) =>
+                            t.id === tempId
+                              ? { ...t, loading: false, error: "Failed to create feed." }
+                              : t
+                          )
+                        );
+                      }
                     }}
                     className="flex flex-col items-start rounded-xl border border-border bg-bg-card p-4 text-left transition-all hover:border-primary/40 hover:bg-bg-hover/50"
                   >

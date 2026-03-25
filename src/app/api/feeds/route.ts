@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
 
-function getUserId(request: NextRequest): string | null {
-  return request.headers.get("x-user-id");
-}
-
-export async function GET(request: NextRequest) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const supabase = getServiceClient();
   const { data: feeds, error } = await supabase
     .from("feeds")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -27,9 +24,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   let body: Record<string, unknown>;
@@ -62,12 +60,10 @@ export async function POST(request: NextRequest) {
     ? schedule
     : "daily";
 
-  const supabase = getServiceClient();
-
   const { data: feed, error } = await supabase
     .from("feeds")
     .insert({
-      user_id: userId,
+      user_id: user.id,
       name,
       description: description || query_text,
       query_text,
@@ -100,7 +96,7 @@ export async function POST(request: NextRequest) {
         published_at: item.published_at,
       }));
 
-      await supabase.from("feed_items").insert(rows);
+      await getServiceClient().from("feed_items").insert(rows);
 
       await supabase
         .from("feeds")

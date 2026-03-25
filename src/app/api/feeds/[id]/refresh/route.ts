@@ -1,29 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { refreshFeed } from "@/lib/feed-engine";
 import type { Feed } from "@/types/database";
-
-function getUserId(request: NextRequest): string | null {
-  return request.headers.get("x-user-id");
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
-  if (!userId) {
-    return NextResponse.json({ error: "Missing x-user-id header" }, { status: 401 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { id } = await params;
-  const supabase = getServiceClient();
 
   const { data: feed, error: feedError } = await supabase
     .from("feeds")
     .select("*")
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
 
   if (feedError || !feed) {
@@ -70,7 +67,7 @@ export async function POST(
         published_at: item.published_at,
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await getServiceClient()
         .from("feed_items")
         .insert(rows);
 
