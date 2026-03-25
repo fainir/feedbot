@@ -508,8 +508,16 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-          <div className="mt-8 text-center text-sm text-text-muted">
-            &copy; {new Date().getFullYear()} FeedBot. All rights reserved.
+          <div className="mt-8 flex flex-col items-center gap-2 text-center text-sm text-text-muted">
+            <div className="flex gap-4">
+              <Link href="/privacy" className="transition-colors hover:text-text">
+                Privacy
+              </Link>
+              <Link href="/terms" className="transition-colors hover:text-text">
+                Terms
+              </Link>
+            </div>
+            <span>&copy; {new Date().getFullYear()} FeedBot. All rights reserved.</span>
           </div>
         </div>
       </footer>
