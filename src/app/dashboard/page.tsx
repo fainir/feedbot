@@ -76,6 +76,9 @@ import { SourceCredibility, SourceTrustBadge } from "@/components/feed/source-cr
 import { MilestoneCheck, MilestonesButton } from "@/components/feed/reading-milestones";
 import { ReadingJournal, JournalPrompt } from "@/components/feed/reading-journal";
 import { ArticleClustering } from "@/components/feed/article-clustering";
+import { PrivacyDashboard } from "@/components/feed/privacy-dashboard";
+import { ArticleMindMap } from "@/components/feed/article-mind-map";
+import { NotificationsCenter, NotificationBell } from "@/components/feed/notifications-center";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1032,6 +1035,7 @@ function DashboardContent() {
           <WeeklyReportButton />
           <AccessibilityToggle />
           <MilestonesButton onClick={() => {}} />
+          <NotificationBell unreadCount={0} onClick={() => {}} />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1205,6 +1209,14 @@ function DashboardContent() {
       {allItems.length > 3 && (
         <ArticleClustering items={allItems} />
       )}
+
+      {/* Article Mind Map */}
+      {allItems.length > 5 && (
+        <ArticleMindMap items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source }))} />
+      )}
+
+      {/* Privacy Dashboard */}
+      {!initialLoading && <PrivacyDashboard />}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
