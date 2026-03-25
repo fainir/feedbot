@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2 } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
+import { SkeletonFeed } from "@/components/feed/skeleton-card";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -104,8 +105,36 @@ function DashboardContent() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
+
+  // Load bookmarks from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("feedbot-bookmarks");
+      if (saved) setBookmarkedIds(new Set(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
+  const toggleBookmark = useCallback((item: FeedItem) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(item.id)) {
+        next.delete(item.id);
+      } else {
+        next.add(item.id);
+        // Also persist the item data for the Saved tab
+        try {
+          const savedItems = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}");
+          savedItems[item.id] = item;
+          localStorage.setItem("feedbot-bookmark-items", JSON.stringify(savedItems));
+        } catch {}
+      }
+      localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
 
   // Get user on mount
   useEffect(() => {
@@ -238,6 +267,13 @@ function DashboardContent() {
         return;
       }
 
+      // b to go to saved/bookmarks (only when not typing)
+      if (e.key === "b" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setActiveTabId("saved");
+        return;
+      }
+
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.key >= "1" && e.key <= "9") {
         e.preventDefault();
@@ -261,7 +297,29 @@ function DashboardContent() {
     .flatMap((t) => t.items)
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
-  const displayItems = activeTabId === "all" ? allItems : activeTab.items;
+  // Get bookmarked items for the Saved tab
+  const bookmarkedItems: FeedItem[] = (() => {
+    const allCurrentItems = tabs.filter((t) => t.id !== "all").flatMap((t) => t.items);
+    const items: FeedItem[] = [];
+    const found = new Set<string>();
+    for (const item of allCurrentItems) {
+      if (bookmarkedIds.has(item.id) && !found.has(item.id)) {
+        items.push(item);
+        found.add(item.id);
+      }
+    }
+    try {
+      const savedItems = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}");
+      for (const id of bookmarkedIds) {
+        if (!found.has(id) && savedItems[id]) {
+          items.push(savedItems[id]);
+        }
+      }
+    } catch {}
+    return items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  })();
+
+  const displayItems = activeTabId === "all" ? allItems : activeTabId === "saved" ? bookmarkedItems : activeTab.items;
   const filteredItems = searchQuery
     ? displayItems.filter(
         (item) =>
@@ -453,10 +511,24 @@ function DashboardContent() {
   if (initialLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-col items-center justify-center py-24">
-          <RefreshCw className="mb-4 h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-text-muted">Loading your feeds...</p>
+        {/* Header skeleton */}
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-bg-hover" />
+            <div className="h-5 w-24 animate-pulse rounded-md bg-bg-hover" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-20 animate-pulse rounded-lg bg-bg-hover" />
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-bg-hover" />
+          </div>
         </div>
+        {/* Tab bar skeleton */}
+        <div className="mb-6 flex gap-2 border-b border-border pb-2">
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-bg-hover" />
+          <div className="h-9 w-24 animate-pulse rounded-lg bg-bg-hover" />
+          <div className="h-9 w-20 animate-pulse rounded-lg bg-bg-hover" />
+        </div>
+        <SkeletonFeed count={5} />
       </div>
     );
   }
@@ -573,6 +645,24 @@ function DashboardContent() {
             )}
           </button>
         ))}
+        <button
+          onClick={() => setActiveTabId("saved")}
+          className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            activeTabId === "saved"
+              ? "bg-secondary text-black"
+              : "text-text-muted hover:bg-surface hover:text-text"
+          }`}
+        >
+          <Bookmark className={`h-3.5 w-3.5 ${activeTabId === "saved" ? "fill-black" : ""}`} />
+          Saved
+          {bookmarkedIds.size > 0 && (
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+              activeTabId === "saved" ? "bg-black/20" : "bg-border text-text-muted"
+            }`}>
+              {bookmarkedIds.size}
+            </span>
+          )}
+        </button>
         <button
           onClick={() => setShowNewTab(true)}
           className="flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text"
@@ -745,24 +835,23 @@ function DashboardContent() {
 
       {/* Feed */}
       {activeTab.loading ? (
-        <div className="flex flex-col items-center justify-center py-24">
-          <RefreshCw className="mb-4 h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-text-muted">
-            Generating your feed...
-          </p>
-        </div>
+        <SkeletonFeed count={5} />
       ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Rss className="h-8 w-8 text-primary" />
           </div>
           <h2 className="mb-2 text-lg font-semibold text-text">
-            {activeTabId === "all"
+            {activeTabId === "saved"
+              ? "No saved items"
+              : activeTabId === "all"
               ? "Create your first feed"
               : "No items yet"}
           </h2>
           <p className="mb-6 max-w-sm text-center text-sm text-text-muted">
-            {activeTabId === "all"
+            {activeTabId === "saved"
+              ? "Bookmark articles from your feeds to save them here for later."
+              : activeTabId === "all"
               ? "Pick a template below or create a custom feed with any topic."
               : "Click the refresh button to generate content for this tab."}
           </p>
@@ -838,6 +927,8 @@ function DashboardContent() {
               url={item.url}
               publishedAt={item.publishedAt}
               sourceIcon={item.sourceIcon}
+              bookmarked={bookmarkedIds.has(item.id)}
+              onToggleBookmark={() => toggleBookmark(item)}
             />
           ))}
         </div>
@@ -867,6 +958,7 @@ function DashboardContent() {
                 { keys: "?", desc: "Toggle this help" },
                 { keys: "/", desc: "Focus search" },
                 { keys: "D", desc: "Toggle dark/light mode" },
+                { keys: "B", desc: "Go to Saved items" },
                 { keys: "Esc", desc: "Close modal / search" },
                 { keys: "Ctrl+1–9", desc: "Switch to tab 1–9" },
                 { keys: "Ctrl+T", desc: "Create new tab" },

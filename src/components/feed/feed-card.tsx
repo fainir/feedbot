@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon } from "lucide-react";
+import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { timeAgo } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ interface FeedCardProps {
   url: string;
   publishedAt: string;
   sourceIcon?: string;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 export function FeedCard({
@@ -21,6 +23,8 @@ export function FeedCard({
   url,
   publishedAt,
   sourceIcon,
+  bookmarked,
+  onToggleBookmark,
 }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -83,6 +87,22 @@ export function FeedCard({
           <span>{timeAgo(publishedAt)}</span>
         </div>
 
+        <div className="flex items-center gap-1">
+          {/* Bookmark button */}
+          {onToggleBookmark && (
+            <button
+              onClick={onToggleBookmark}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-all sm:opacity-0 sm:group-hover:opacity-100 ${
+                bookmarked
+                  ? "text-secondary"
+                  : "text-text-muted hover:bg-bg-hover hover:text-text"
+              }`}
+              title={bookmarked ? "Remove bookmark" : "Bookmark"}
+            >
+              <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? "fill-secondary" : ""}`} />
+            </button>
+          )}
+
         {/* Share button */}
         <div className="relative">
           <button
@@ -121,6 +141,7 @@ export function FeedCard({
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </Card>
