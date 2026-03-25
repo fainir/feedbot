@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,8 @@ function DashboardContent() {
   const [discovering, setDiscovering] = useState(false);
   const [discoveredFeeds, setDiscoveredFeeds] = useState<{ title: string; url: string; type: string }[]>([]);
   const [dragTabId, setDragTabId] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -158,6 +160,10 @@ function DashboardContent() {
     try {
       const read = localStorage.getItem("feedbot-read");
       if (read) setReadIds(new Set(JSON.parse(read)));
+    } catch {}
+    try {
+      const notes = localStorage.getItem("feedbot-notes");
+      if (notes) setItemNotes(JSON.parse(notes));
     } catch {}
   }, []);
 
@@ -355,6 +361,13 @@ function DashboardContent() {
         return;
       }
 
+      // f to toggle focus mode (only when not typing)
+      if (e.key === "f" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setFocusMode((v) => !v);
+        return;
+      }
+
       // j/k to navigate items, o to open, m to mark read
       if (e.key === "j" && !isInput && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
@@ -510,6 +523,16 @@ function DashboardContent() {
     }
     setDiscovering(false);
   }, [discoverUrl, toast]);
+
+  const saveNote = useCallback((itemId: string, note: string) => {
+    setItemNotes((prev) => {
+      const next = { ...prev };
+      if (note.trim()) next[itemId] = note.trim();
+      else delete next[itemId];
+      localStorage.setItem("feedbot-notes", JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
     try {
@@ -724,8 +747,23 @@ function DashboardContent() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className={`mx-auto px-4 py-6 sm:px-6 sm:py-8 ${focusMode ? "max-w-2xl" : "max-w-4xl"}`}>
+      {/* Focus Mode Bar */}
+      {focusMode && (
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-text">{activeTab.name}</h1>
+          <button
+            onClick={() => setFocusMode(false)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+          >
+            <EyeOff className="h-3.5 w-3.5" />
+            Exit Focus
+          </button>
+        </div>
+      )}
+
       {/* User Header */}
+      {!focusMode && (
       <div className="mb-6 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
@@ -778,7 +816,10 @@ function DashboardContent() {
           </button>
         </div>
       </div>
+      )}
 
+      {!focusMode && (
+      <>
       {/* Checkout Success Banner */}
       {showCheckoutSuccess && (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3">
@@ -1050,6 +1091,9 @@ function DashboardContent() {
         </div>
       )}
 
+      </>
+      )}
+
       {/* Discover from URL */}
       {showDiscover && (
         <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -1101,6 +1145,7 @@ function DashboardContent() {
       )}
 
       {/* Header */}
+      {!focusMode && (
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text">{activeTab.name}</h1>
@@ -1211,6 +1256,7 @@ function DashboardContent() {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Search */}
       {showSearch && (
@@ -1398,6 +1444,8 @@ function DashboardContent() {
                   isRead={readIds.has(item.id)}
                   isFocused={isFocused}
                   compact={compactView}
+                  note={itemNotes[item.id]}
+                  onSaveNote={(note) => saveNote(item.id, note)}
                 />
                 </div>
               </div>
@@ -1442,6 +1490,7 @@ function DashboardContent() {
                 { keys: "J / K", desc: "Navigate items down / up" },
                 { keys: "O", desc: "Open focused item" },
                 { keys: "M", desc: "Mark focused item as read" },
+                { keys: "F", desc: "Toggle focus/zen mode" },
                 { keys: "D", desc: "Toggle dark/light mode" },
                 { keys: "B", desc: "Go to Saved items" },
                 { keys: "Esc", desc: "Close modal / search" },

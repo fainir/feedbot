@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark } from "lucide-react";
+import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { timeAgo, readingTime } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ interface FeedCardProps {
   isRead?: boolean;
   isFocused?: boolean;
   compact?: boolean;
+  note?: string;
+  onSaveNote?: (note: string) => void;
 }
 
 export function FeedCard({
@@ -31,9 +33,13 @@ export function FeedCard({
   isRead,
   isFocused,
   compact,
+  note,
+  onSaveNote,
 }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showNote, setShowNote] = useState(false);
+  const [noteText, setNoteText] = useState(note || "");
 
   const shareText = `${title} — found via FeedBot`;
 
@@ -113,6 +119,19 @@ export function FeedCard({
             </button>
           )}
 
+          {/* Note button */}
+          {onSaveNote && (
+            <button
+              onClick={() => setShowNote((v) => !v)}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-all sm:opacity-0 sm:group-hover:opacity-100 ${
+                note ? "text-primary" : "text-text-muted hover:bg-bg-hover hover:text-text"
+              }`}
+              title={note ? "Edit note" : "Add note"}
+            >
+              <MessageSquare className={`h-3.5 w-3.5 ${note ? "fill-primary/20" : ""}`} />
+            </button>
+          )}
+
         {/* Share button */}
         <div className="relative">
           <button
@@ -154,6 +173,47 @@ export function FeedCard({
         </div>
         </div>
       </div>
+      {/* Note display */}
+      {note && !showNote && (
+        <div className="mt-3 rounded-lg bg-primary/5 px-3 py-2">
+          <p className="text-xs text-text-muted">{note}</p>
+        </div>
+      )}
+      {/* Note editor */}
+      {showNote && (
+        <div className="mt-3">
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="Add a note about this item..."
+            rows={2}
+            className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSaveNote?.(noteText);
+                setShowNote(false);
+              }
+              if (e.key === "Escape") setShowNote(false);
+            }}
+          />
+          <div className="mt-1 flex gap-1">
+            <button
+              onClick={() => { onSaveNote?.(noteText); setShowNote(false); }}
+              className="rounded-md bg-primary px-2 py-1 text-xs text-white hover:bg-primary-dark"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setShowNote(false)}
+              className="rounded-md px-2 py-1 text-xs text-text-muted hover:bg-bg-hover"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
