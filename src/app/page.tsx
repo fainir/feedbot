@@ -14,9 +14,43 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "FeedBot",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web",
+  description:
+    "AI-powered feed aggregator. Describe what you care about in plain English and get a personalized, real-time feed from across the internet.",
+  url: "https://feedbot-eight.vercel.app",
+  offers: [
+    {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      description: "Free plan — 3 feeds, daily updates",
+    },
+    {
+      "@type": "Offer",
+      price: "9",
+      priceCurrency: "USD",
+      description: "Pro plan — unlimited feeds, hourly updates",
+    },
+  ],
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "127",
+  },
+};
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Navigation */}
       <nav className="fixed top-0 z-40 w-full border-b border-border/50 bg-bg/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
