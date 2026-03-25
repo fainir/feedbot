@@ -58,7 +58,7 @@ export function FeedCard({
             className="inline-flex items-center gap-2 text-base font-semibold text-text transition-colors hover:text-primary"
           >
             <span className="line-clamp-1">{title}</span>
-            <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+            <ExternalLink className="h-4 w-4 shrink-0 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" />
           </a>
           <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-text-muted">
             {summary}
@@ -87,7 +87,7 @@ export function FeedCard({
         <div className="relative">
           <button
             onClick={() => setShowShare(!showShare)}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted opacity-0 transition-all hover:bg-bg-hover hover:text-text group-hover:opacity-100"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-all hover:bg-bg-hover hover:text-text sm:opacity-0 sm:group-hover:opacity-100"
           >
             <Share2 className="h-3.5 w-3.5" />
             Share

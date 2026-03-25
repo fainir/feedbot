@@ -354,7 +354,7 @@ function DashboardContent() {
 
   if (initialLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-col items-center justify-center py-24">
           <RefreshCw className="mb-4 h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-text-muted">Loading your feeds...</p>
@@ -364,26 +364,27 @@ function DashboardContent() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
       {/* User Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
             <Rss className="h-4 w-4 text-white" />
           </div>
           <span className="text-lg font-bold text-text">FeedBot</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleUpgrade}
             disabled={checkingOut}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-secondary to-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-secondary to-orange-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:px-3"
           >
             <Crown className="h-3.5 w-3.5" />
-            {checkingOut ? "Loading..." : "Upgrade to Pro"}
+            <span className="hidden sm:inline">{checkingOut ? "Loading..." : "Upgrade to Pro"}</span>
+            <span className="sm:hidden">{checkingOut ? "..." : "Pro"}</span>
           </button>
           {user && (
-            <span className="text-sm text-text-muted">
+            <span className="hidden text-sm text-text-muted sm:inline">
               {user.email}
             </span>
           )}
@@ -644,7 +645,7 @@ function DashboardContent() {
           </p>
           {activeTabId === "all" && (
             <>
-              <div className="mb-6 grid w-full max-w-lg grid-cols-2 gap-3 px-4">
+              <div className="mb-6 grid w-full max-w-lg grid-cols-1 gap-3 px-4 sm:grid-cols-2">
                 {FEED_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.name}
