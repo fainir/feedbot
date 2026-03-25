@@ -10,6 +10,7 @@ import { FeedCard } from "@/components/feed/feed-card";
 import { SkeletonFeed } from "@/components/feed/skeleton-card";
 import { useToast } from "@/components/ui/toast";
 import { CommandPalette } from "@/components/ui/command-palette";
+import { KeyboardShortcutsModal } from "@/components/ui/keyboard-shortcuts-modal";
 import { ReadingStreak } from "@/components/feed/reading-streak";
 import { ArticleReader } from "@/components/feed/article-reader";
 import { computeTrending, TrendingHeader } from "@/components/feed/trending-tab";
@@ -555,17 +556,26 @@ function DashboardContent() {
     [displayItems, keywordAlerts]
   );
 
-  const chipFilteredItems = applyFilter(displayItems, activeFilter, readIds);
-  const typeFilteredItems = contentTypeFilter
-    ? chipFilteredItems.filter((item) => getContentType(item.title, item.summary) === contentTypeFilter)
-    : chipFilteredItems;
-  const filteredItems = searchQuery
-    ? typeFilteredItems.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.summary.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : typeFilteredItems;
+  const chipFilteredItems = useMemo(
+    () => applyFilter(displayItems, activeFilter, readIds),
+    [displayItems, activeFilter, readIds]
+  );
+  const typeFilteredItems = useMemo(
+    () => contentTypeFilter
+      ? chipFilteredItems.filter((item) => getContentType(item.title, item.summary) === contentTypeFilter)
+      : chipFilteredItems,
+    [chipFilteredItems, contentTypeFilter]
+  );
+  const filteredItems = useMemo(
+    () => searchQuery
+      ? typeFilteredItems.filter(
+          (item) =>
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.summary.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : typeFilteredItems,
+    [typeFilteredItems, searchQuery]
+  );
 
   // Counts for filter chips
   const todayCount = useMemo(() => {
@@ -1994,48 +2004,7 @@ function DashboardContent() {
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowShortcuts(false)}
-        >
-          <div
-            className="mx-4 w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-text">Keyboard Shortcuts</h2>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                className="rounded-lg p-1 text-text-muted hover:bg-bg-hover hover:text-text"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {[
-                { keys: "?", desc: "Toggle this help" },
-                { keys: "/", desc: "Focus search" },
-                { keys: "J / K", desc: "Navigate items down / up" },
-                { keys: "O", desc: "Open focused item" },
-                { keys: "M", desc: "Mark focused item as read" },
-                { keys: "R", desc: "Open focused item in reader" },
-                { keys: "F", desc: "Toggle focus/zen mode" },
-                { keys: "D", desc: "Toggle dark/light mode" },
-                { keys: "B", desc: "Go to Saved items" },
-                { keys: "Esc", desc: "Close modal / search" },
-                { keys: "Ctrl+1–9", desc: "Switch to tab 1–9" },
-                { keys: "Ctrl+T", desc: "Create new tab" },
-              ].map(({ keys, desc }) => (
-                <div key={keys} className="flex items-center justify-between">
-                  <span className="text-sm text-text-muted">{desc}</span>
-                  <kbd className="rounded-md border border-border bg-bg px-2 py-1 text-xs font-mono text-text">
-                    {keys}
-                  </kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
       )}
 
       {/* Onboarding Tour */}
