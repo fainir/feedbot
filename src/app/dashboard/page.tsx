@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,7 @@ function DashboardContent() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [compactView, setCompactView] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -186,6 +187,7 @@ function DashboardContent() {
       return next;
     });
   }, []);
+
 
   const importOPML = useCallback(async (file: File) => {
     setImporting(true);
@@ -425,6 +427,16 @@ function DashboardContent() {
           item.summary.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : displayItems;
+
+  const markAllAsRead = useCallback(() => {
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      for (const item of displayItems) next.add(item.id);
+      localStorage.setItem("feedbot-read", JSON.stringify([...next]));
+      return next;
+    });
+    toast("All items marked as read", "success");
+  }, [displayItems, toast]);
 
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
     try {
@@ -995,6 +1007,25 @@ function DashboardContent() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={markAllAsRead}
+            className="text-text-muted"
+            title="Mark all as read"
+            disabled={displayItems.length === 0}
+          >
+            <CheckCheck className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCompactView((v) => !v)}
+            className="text-text-muted"
+            title={compactView ? "Comfortable view" : "Compact view"}
+          >
+            {compactView ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowSearch(!showSearch)}
             className="text-text-muted"
           >
@@ -1162,6 +1193,7 @@ function DashboardContent() {
                   onToggleBookmark={() => toggleBookmark(item)}
                   isRead={readIds.has(item.id)}
                   isFocused={isFocused}
+                  compact={compactView}
                 />
               </div>
             );
