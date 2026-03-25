@@ -8,6 +8,15 @@ function getResendClient(): Resend | null {
   return new Resend(apiKey);
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function buildEmailHtml(feedName: string, items: FeedItem[]): string {
   const itemsHtml = items
     .slice(0, 20)
@@ -15,11 +24,11 @@ function buildEmailHtml(feedName: string, items: FeedItem[]): string {
       (item) => `
       <tr>
         <td style="padding: 16px 0; border-bottom: 1px solid #eee;">
-          <a href="${item.url}" style="color: #111; text-decoration: none; font-weight: 600; font-size: 16px;">
-            ${item.title}
+          <a href="${escapeHtml(item.url)}" style="color: #111; text-decoration: none; font-weight: 600; font-size: 16px;">
+            ${escapeHtml(item.title)}
           </a>
           <p style="margin: 4px 0 0; color: #666; font-size: 14px; line-height: 1.4;">
-            ${item.summary}
+            ${escapeHtml(item.summary)}
           </p>
           <p style="margin: 4px 0 0; color: #999; font-size: 12px;">
             ${item.source} &middot; ${new Date(item.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
@@ -31,7 +40,7 @@ function buildEmailHtml(feedName: string, items: FeedItem[]): string {
 
   return `
     <div style="max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <h2 style="color: #111; margin-bottom: 4px;">New items in ${feedName}</h2>
+      <h2 style="color: #111; margin-bottom: 4px;">New items in ${escapeHtml(feedName)}</h2>
       <p style="color: #666; margin-top: 0;">${items.length} new item${items.length === 1 ? "" : "s"} found</p>
       <table style="width: 100%; border-collapse: collapse;">
         <tbody>${itemsHtml}</tbody>
