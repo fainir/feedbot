@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, getClientKey } from "@/lib/rate-limit";
 
 // Feed generation endpoint — takes a prompt, returns curated internet content
 // For MVP: uses web search simulation. Production: integrate real search API.
@@ -98,6 +99,15 @@ async function generateFeedItems(prompt: string): Promise<FeedItem[]> {
 }
 
 export async function POST(req: Request) {
+  // Rate limit: 20 requests per minute per IP
+  const rl = rateLimit(`generate:${getClientKey(req)}`, { limit: 20, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const { prompt } = await req.json();
     if (!prompt || typeof prompt !== "string") {
