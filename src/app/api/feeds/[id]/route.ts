@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
+import { getAllowedSchedules } from "@/lib/usage";
 
 export async function GET(
   request: NextRequest,
@@ -81,11 +82,19 @@ export async function PATCH(
   }
 
   if (updates.schedule) {
-    const validSchedules = ["daily", "hourly", "realtime"];
-    if (!validSchedules.includes(updates.schedule as string)) {
+    // Enforce plan-based schedule limits
+    const service = getServiceClient();
+    const { data: profile } = await service
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+    const userPlan = (profile?.plan as string) || "free";
+    const allowed = getAllowedSchedules(userPlan);
+    if (!allowed.includes(updates.schedule as "daily" | "hourly" | "realtime")) {
       return NextResponse.json(
-        { error: "schedule must be daily, hourly, or realtime" },
-        { status: 400 }
+        { error: `Schedule "${updates.schedule}" requires Pro plan` },
+        { status: 403 }
       );
     }
   }
