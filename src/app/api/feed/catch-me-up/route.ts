@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
+import { rateLimit, getClientKey } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rl = rateLimit(`catch-me-up:${getClientKey(req)}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const { items } = await req.json();
 

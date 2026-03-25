@@ -106,6 +106,12 @@ function generateSummary(title: string, source: string, content?: string): {
 }
 
 export async function POST(req: Request) {
+  const { rateLimit, getClientKey } = await import("@/lib/rate-limit");
+  const rl = rateLimit(`summarize:${getClientKey(req)}`, { limit: 15, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     const { url, title, content } = await req.json();
 
