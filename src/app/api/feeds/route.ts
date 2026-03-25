@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
-import { canCreateFeed } from "@/lib/usage";
+import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
 
 export async function GET() {
   const supabase = await createClient();
@@ -72,10 +72,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const validSchedules = ["daily", "hourly", "realtime"];
-  const feedSchedule = validSchedules.includes(schedule || "")
+  // Get user plan and enforce schedule limits
+  const serviceClient = getServiceClient();
+  const { data: profile } = await serviceClient
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+  const userPlan = (profile?.plan as string) || "free";
+  const allowedSchedules = getAllowedSchedules(userPlan);
+  const feedSchedule = allowedSchedules.includes(schedule as "daily" | "hourly" | "realtime")
     ? schedule
-    : "daily";
+    : allowedSchedules[0];
 
   const { data: feed, error } = await supabase
     .from("feeds")
