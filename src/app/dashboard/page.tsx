@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus, Rss, Search, X, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
+import { timeAgo } from "@/lib/utils";
 
 interface Tab {
   id: string;
@@ -72,6 +73,24 @@ export default function DashboardPage() {
   useEffect(() => {
     if (tabs !== DEFAULT_TABS) saveTabs(tabs);
   }, [tabs]);
+
+  // Keyboard shortcuts: Ctrl+1-9 to switch tabs, Ctrl+T for new tab
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.key >= "1" && e.key <= "9") {
+        e.preventDefault();
+        const idx = parseInt(e.key) - 1;
+        if (idx < tabs.length) setActiveTabId(tabs[idx].id);
+      }
+      if (e.key === "t" && !showNewTab) {
+        e.preventDefault();
+        setShowNewTab(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tabs, showNewTab]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -283,6 +302,11 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-text">{activeTab.name}</h1>
           <p className="mt-1 text-sm text-text-muted">
             {activeTab.prompt || `${allItems.length} items from all feeds`}
+            {activeTab.lastRefresh && (
+              <span className="ml-2 text-xs text-text-muted/60">
+                · Updated {timeAgo(activeTab.lastRefresh)}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
