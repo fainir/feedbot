@@ -13,6 +13,7 @@ import {
   Share2,
 } from "lucide-react";
 import Link from "next/link";
+import { EmailCapture } from "@/components/landing/email-capture";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -457,6 +458,15 @@ export default function LandingPage() {
             <p className="mt-4 text-sm text-text-muted">
               Free forever. Takes 30 seconds. No credit card.
             </p>
+
+            <div className="mt-12 border-t border-border pt-8">
+              <p className="mb-4 text-sm text-text-muted">
+                Not ready to sign up? Get notified about new features:
+              </p>
+              <div className="flex justify-center">
+                <EmailCapture />
+              </div>
+            </div>
           </div>
         </div>
       </section>
