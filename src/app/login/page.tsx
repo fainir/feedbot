@@ -118,6 +118,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              aria-label="Email address"
               className="w-full rounded-lg border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
             />
           </div>
@@ -129,17 +131,19 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+              aria-label="Password"
               className="w-full rounded-lg border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
               {error}
             </p>
           )}
           {message && (
-            <p className="rounded-lg bg-green-500/10 px-3 py-2 text-sm text-green-400">
+            <p role="status" className="rounded-lg bg-green-500/10 px-3 py-2 text-sm text-green-400">
               {message}
             </p>
           )}
