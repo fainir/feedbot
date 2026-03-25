@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { timeAgo } from "@/lib/utils";
@@ -246,6 +246,28 @@ export default function DashboardPage() {
           New Tab
         </button>
       </div>
+
+      {/* Pro Upgrade Banner — show when user has 3+ tabs */}
+      {tabs.filter((t) => t.id !== "all").length >= 3 && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 to-secondary/10 px-4 py-3">
+          <Sparkles className="h-5 w-5 shrink-0 text-primary" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-text">
+              You&apos;ve hit the free plan limit (3 feeds)
+            </p>
+            <p className="text-xs text-text-muted">
+              Upgrade to Pro for unlimited feeds, hourly updates, and WhatsApp notifications.
+            </p>
+          </div>
+          <a
+            href="/#pricing"
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+          >
+            Upgrade
+            <ArrowRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      )}
 
       {/* New Tab Form */}
       {showNewTab && (
