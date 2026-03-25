@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, Search, X, RefreshCw, Pencil } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 
@@ -156,6 +156,15 @@ export default function DashboardPage() {
     [tabs, fetchFeedItems]
   );
 
+  const refreshAllTabs = useCallback(() => {
+    const feedTabs = tabs.filter((t) => t.id !== "all" && t.prompt);
+    if (feedTabs.length === 0) return;
+    setTabs((prev) =>
+      prev.map((t) => (t.id !== "all" && t.prompt ? { ...t, loading: true } : t))
+    );
+    feedTabs.forEach((t) => fetchFeedItems(t.id, t.prompt));
+  }, [tabs, fetchFeedItems]);
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
       {/* Tabs Bar */}
@@ -174,13 +183,15 @@ export default function DashboardPage() {
             {tab.loading && (
               <RefreshCw className="h-3 w-3 animate-spin" />
             )}
-            {tab.id !== "all" && activeTabId === tab.id && (
+            {tab.id !== "all" && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   deleteTab(tab.id);
                 }}
-                className="ml-1 rounded p-0.5 hover:bg-white/20"
+                className={`ml-1 rounded p-0.5 hover:bg-white/20 ${
+                  activeTabId === tab.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                } transition-opacity`}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -255,19 +266,27 @@ export default function DashboardPage() {
           >
             <Search className="h-4 w-4" />
           </Button>
-          {activeTabId !== "all" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => refreshTab(activeTabId)}
-              className="text-text-muted"
-              disabled={activeTab.loading}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${activeTab.loading ? "animate-spin" : ""}`}
-              />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              activeTabId === "all" ? refreshAllTabs() : refreshTab(activeTabId)
+            }
+            className="text-text-muted"
+            disabled={
+              activeTabId === "all"
+                ? tabs.some((t) => t.loading)
+                : activeTab.loading
+            }
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${
+                (activeTabId === "all" ? tabs.some((t) => t.loading) : activeTab.loading)
+                  ? "animate-spin"
+                  : ""
+              }`}
+            />
+          </Button>
         </div>
       </div>
 
