@@ -1,39 +1,35 @@
 import type { MetadataRoute } from "next";
 
+const BASE = "https://feedbot-eight.vercel.app";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: "https://feedbot-eight.vercel.app",
+      url: BASE,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: "https://feedbot-eight.vercel.app/dashboard",
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: "https://feedbot-eight.vercel.app/login",
+      url: `${BASE}/login`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.5,
+      priority: 0.6,
     },
     {
-      url: "https://feedbot-eight.vercel.app/blog",
+      url: `${BASE}/blog`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.7,
     },
     {
-      url: "https://feedbot-eight.vercel.app/privacy",
+      url: `${BASE}/privacy`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.3,
     },
     {
-      url: "https://feedbot-eight.vercel.app/terms",
+      url: `${BASE}/terms`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.3,
