@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (name.length > 100 || query_text.length > 500) {
+    return NextResponse.json(
+      { error: "name must be under 100 chars, query under 500 chars" },
+      { status: 400 }
+    );
+  }
+
   const validSchedules = ["daily", "hourly", "realtime"];
   const feedSchedule = validSchedules.includes(schedule || "")
     ? schedule
