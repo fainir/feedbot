@@ -51,6 +51,9 @@ import { DigestScheduler } from "@/components/feed/digest-scheduler";
 import { TeamFeedsPanel, TeamFeedsBadge } from "@/components/feed/team-feeds";
 import { SentimentTracker, SentimentBadge } from "@/components/feed/sentiment-tracker";
 import { KeyboardPowerMode, PowerModeToggle } from "@/components/feed/keyboard-power-mode";
+import { FeedRulesPanel } from "@/components/feed/feed-rules";
+import { WeeklyReportButton } from "@/components/feed/weekly-report";
+import { ArticleComparison, CompareButton } from "@/components/feed/article-comparison";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -183,6 +186,8 @@ function DashboardContent() {
   const { addToQueue, removeFromQueue, isInQueue } = useReadLater();
   const { getTagsForItem, addTag, removeTag, allTags } = useBookmarkTags();
   const [readingModeItem, setReadingModeItem] = useState<FeedItem | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareItems, setCompareItems] = useState<FeedItem[]>([]);
   const [similarTarget, setSimilarTarget] = useState<FeedItem | null>(null);
   const [contentTypeFilter, setContentTypeFilter] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -1062,6 +1067,7 @@ function DashboardContent() {
           <FeedAnalyticsPanel />
           <TeamFeedsBadge />
           <PowerModeToggle />
+          <WeeklyReportButton />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1159,6 +1165,11 @@ function DashboardContent() {
 
       {/* Team Feeds */}
       {!initialLoading && <TeamFeedsPanel />}
+
+      {/* Feed Automation Rules */}
+      {allItems.length > 0 && !initialLoading && (
+        <FeedRulesPanel items={allItems} />
+      )}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
@@ -2060,6 +2071,14 @@ function DashboardContent() {
           source={readingModeItem.source}
           url={readingModeItem.url}
           onClose={() => setReadingModeItem(null)}
+        />
+      )}
+
+      {/* Article Comparison */}
+      {compareItems.length === 2 && (
+        <ArticleComparison
+          articles={compareItems as [FeedItem, FeedItem]}
+          onClose={() => { setCompareItems([]); setCompareMode(false); }}
         />
       )}
 
