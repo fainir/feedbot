@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
+import { canCreateFeed } from "@/lib/usage";
 
 interface ParsedFeed {
   title: string;
@@ -80,6 +81,13 @@ export async function POST(request: NextRequest) {
   const skipped: string[] = [];
 
   for (const feed of feedsToImport) {
+    // Check plan limits before creating
+    const allowed = await canCreateFeed(user.id);
+    if (!allowed) {
+      skipped.push(feed.title);
+      continue;
+    }
+
     // Check if feed with same name already exists
     const { data: existing } = await supabase
       .from("feeds")
