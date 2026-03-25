@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, Search, X, RefreshCw } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 
@@ -12,6 +12,7 @@ interface Tab {
   items: FeedItem[];
   loading: boolean;
   lastRefresh: string | null;
+  error?: string | null;
 }
 
 interface FeedItem {
@@ -131,6 +132,7 @@ export default function DashboardPage() {
                   ...t,
                   items: data.items || [],
                   loading: false,
+                  error: null,
                   lastRefresh: new Date().toISOString(),
                 }
               : t
@@ -138,7 +140,11 @@ export default function DashboardPage() {
         );
       } catch (e) {
         setTabs((prev) =>
-          prev.map((t) => (t.id === tabId ? { ...t, loading: false } : t))
+          prev.map((t) =>
+            t.id === tabId
+              ? { ...t, loading: false, error: "Failed to generate feed. Try again." }
+              : t
+          )
         );
       }
     },
@@ -309,6 +315,25 @@ export default function DashboardPage() {
             className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
             autoFocus
           />
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {activeTab.error && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+          <p className="flex-1 text-sm text-red-300">{activeTab.error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              activeTabId === "all" ? refreshAllTabs() : refreshTab(activeTabId)
+            }
+            className="shrink-0 text-red-300 hover:text-red-200"
+          >
+            <RefreshCw className="mr-1 h-3 w-3" />
+            Retry
+          </Button>
         </div>
       )}
 

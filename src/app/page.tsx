@@ -6,8 +6,6 @@ import {
   ScanSearch,
   ArrowRight,
   Check,
-  Github,
-  Twitter,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -264,32 +262,12 @@ export default function LandingPage() {
               >
                 Pricing
               </Link>
-              <Link href="#" className="transition-colors hover:text-text">
-                Docs
-              </Link>
-              <Link href="#" className="transition-colors hover:text-text">
-                Blog
-              </Link>
-              <Link href="#" className="transition-colors hover:text-text">
-                Privacy
-              </Link>
-              <Link href="#" className="transition-colors hover:text-text">
-                Terms
-              </Link>
-            </div>
-            <div className="flex items-center gap-3">
-              <a
-                href="#"
-                className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+              <Link
+                href="/dashboard"
+                className="transition-colors hover:text-text"
               >
-                <Github className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
+                Dashboard
+              </Link>
             </div>
           </div>
           <div className="mt-8 text-center text-sm text-text-muted">
