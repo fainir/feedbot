@@ -40,6 +40,7 @@ import { ActivityHeatmap } from "@/components/feed/activity-heatmap";
 import { usePinnedArticles, PinnedArticles, sortWithPinned } from "@/components/feed/pin-articles";
 import { SimilarArticles } from "@/components/feed/similar-articles";
 import { FeedAnalyticsPanel } from "@/components/feed/feed-analytics";
+import { SourceAnalytics } from "@/components/feed/source-analytics";
 import { ShareFeed } from "@/components/feed/share-feed";
 import { useBookmarkTags, BookmarkTagPicker, BookmarkTagFilter, BookmarkTagBadge } from "@/components/feed/bookmark-tags";
 import { FeedHealthScore, FeedHealthBadge } from "@/components/feed/feed-health-score";
@@ -61,7 +62,6 @@ import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
-}
 
 export default function DashboardPage() {
   return (
@@ -1148,43 +1148,9 @@ function DashboardContent() {
       )}
 
       {/* Source Analytics */}
-      {showAnalytics && allItems.length > 0 && (() => {
-        const sourceCounts: Record<string, number> = {};
-        for (const item of allItems) {
-          let domain = item.source;
-          try { domain = new URL(item.url).hostname.replace("www.", ""); } catch {}
-          sourceCounts[domain] = (sourceCounts[domain] || 0) + 1;
-        }
-        const sorted = Object.entries(sourceCounts)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 10);
-        const max = sorted[0]?.[1] || 1;
-
-        return (
-          <div className="mb-6 rounded-xl border border-border bg-bg-card p-4">
-            <h3 className="mb-3 text-sm font-semibold text-text">Top Sources</h3>
-            <div className="space-y-2">
-              {sorted.map(([source, count]) => (
-                <div key={source} className="flex items-center gap-3">
-                  <span className="w-32 shrink-0 truncate text-xs text-text-muted">{source}</span>
-                  <div className="flex-1">
-                    <div
-                      className="h-4 rounded-full bg-primary/20"
-                      style={{ width: "100%" }}
-                    >
-                      <div
-                        className="h-4 rounded-full bg-primary transition-all"
-                        style={{ width: `${(count / max) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className="w-8 shrink-0 text-right text-xs font-medium text-text-muted">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {showAnalytics && allItems.length > 0 && (
+        <SourceAnalytics items={allItems} />
+      )}
 
       {/* Tabs Bar */}
       <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
