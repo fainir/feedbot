@@ -26,6 +26,39 @@ interface FeedItem {
   sourceIcon?: string;
 }
 
+const FEED_TEMPLATES = [
+  {
+    emoji: "🤖",
+    name: "AI News",
+    prompt: "Latest AI and machine learning breakthroughs, new models, and research papers",
+  },
+  {
+    emoji: "🚀",
+    name: "Startups",
+    prompt: "Startup funding news, product launches, and founder stories",
+  },
+  {
+    emoji: "💻",
+    name: "Dev Tools",
+    prompt: "New developer tools, frameworks, programming languages, and open source projects",
+  },
+  {
+    emoji: "₿",
+    name: "Crypto",
+    prompt: "Cryptocurrency market news, DeFi updates, and blockchain technology",
+  },
+  {
+    emoji: "🎨",
+    name: "Design",
+    prompt: "UI/UX design trends, tools, and inspiration",
+  },
+  {
+    emoji: "📈",
+    name: "Markets",
+    prompt: "Stock market analysis, economic news, and investment trends",
+  },
+];
+
 const DEFAULT_TABS: Tab[] = [
   {
     id: "all",
@@ -406,25 +439,59 @@ export default function DashboardPage() {
           </p>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-24">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Rss className="h-8 w-8 text-primary" />
           </div>
           <h2 className="mb-2 text-lg font-semibold text-text">
             {activeTabId === "all"
-              ? "Create your first tab"
+              ? "Create your first feed"
               : "No items yet"}
           </h2>
           <p className="mb-6 max-w-sm text-center text-sm text-text-muted">
             {activeTabId === "all"
-              ? "Click '+ New Tab' to create a custom feed with any topic."
+              ? "Pick a template below or create a custom feed with any topic."
               : "Click the refresh button to generate content for this tab."}
           </p>
           {activeTabId === "all" && (
-            <Button onClick={() => setShowNewTab(true)}>
-              <Plus className="h-4 w-4" />
-              New Tab
-            </Button>
+            <>
+              <div className="mb-6 grid w-full max-w-lg grid-cols-2 gap-3 px-4">
+                {FEED_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.name}
+                    onClick={() => {
+                      const tab: Tab = {
+                        id: generateId(),
+                        name: tpl.name,
+                        prompt: tpl.prompt,
+                        items: [],
+                        loading: true,
+                        lastRefresh: null,
+                      };
+                      setTabs((prev) => [...prev, tab]);
+                      setActiveTabId(tab.id);
+                      fetchFeedItems(tab.id, tab.prompt);
+                    }}
+                    className="flex flex-col items-start rounded-xl border border-border bg-bg-card p-4 text-left transition-all hover:border-primary/40 hover:bg-bg-hover/50"
+                  >
+                    <span className="mb-1 text-lg">{tpl.emoji}</span>
+                    <span className="text-sm font-medium text-text">
+                      {tpl.name}
+                    </span>
+                    <span className="mt-0.5 text-xs text-text-muted line-clamp-1">
+                      {tpl.prompt}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowNewTab(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Custom Feed
+              </Button>
+            </>
           )}
           {activeTabId !== "all" && (
             <Button onClick={() => refreshTab(activeTabId)}>
