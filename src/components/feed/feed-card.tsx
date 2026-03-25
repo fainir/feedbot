@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen } from "lucide-react";
 import { TrendingBadge } from "@/components/feed/trending-tab";
 import { QuickShareMenu } from "@/components/feed/quick-share";
+import { SentimentBadge } from "@/components/feed/sentiment-badge";
 import { Card } from "@/components/ui/card";
 import { timeAgo, readingTime } from "@/lib/utils";
 
@@ -88,6 +89,7 @@ export function FeedCard({
           <span>{timeAgo(publishedAt)}</span>
           <span className="text-border">|</span>
           <span>{readingTime(summary)}</span>
+          <SentimentBadge text={`${title} ${summary}`} />
         </div>
 
         <div className="flex items-center gap-1">

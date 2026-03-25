@@ -35,6 +35,9 @@ import { FeedComparisonButton } from "@/components/feed/feed-comparison";
 import { ForYouRecommendations } from "@/components/feed/for-you-recommendations";
 import { GlobalSearch } from "@/components/feed/global-search";
 import { ReadingGoals } from "@/components/feed/reading-goals";
+import { OnboardingTour } from "@/components/feed/onboarding-tour";
+import { ActivityHeatmap } from "@/components/feed/activity-heatmap";
+import { SentimentBadge } from "@/components/feed/sentiment-badge";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -1114,6 +1117,7 @@ function DashboardContent() {
             bookmarkCount={bookmarkedIds.size}
           />
           <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
+          <ActivityHeatmap readDates={Array.from(readIds).map(() => new Date().toISOString())} />
         </>
       )}
 
@@ -1979,6 +1983,9 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }
