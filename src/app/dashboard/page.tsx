@@ -151,10 +151,45 @@ function DashboardContent() {
           })
         );
 
+        // Auto-refresh stale feeds (not refreshed in 6+ hours)
+        const STALE_MS = 6 * 60 * 60 * 1000;
+        const staleFeedIds = feedTabs
+          .filter((t) => {
+            if (!t.lastRefresh) return true;
+            return Date.now() - new Date(t.lastRefresh).getTime() > STALE_MS;
+          })
+          .map((t) => t.id);
+
         setTabs([
           { id: "all", name: "All", prompt: "", items: [], loading: false, lastRefresh: null },
-          ...feedTabs,
+          ...feedTabs.map((t) =>
+            staleFeedIds.includes(t.id) ? { ...t, loading: true } : t
+          ),
         ]);
+
+        // Background refresh stale feeds
+        for (const feedId of staleFeedIds) {
+          (async () => {
+            try {
+              await fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" });
+              const res = await fetch(`/api/feeds/${feedId}`);
+              if (!res.ok) return;
+              const data = await res.json();
+              const items = (data.items || []).map(mapDbItemToFeedItem);
+              setTabs((prev) =>
+                prev.map((t) =>
+                  t.id === feedId
+                    ? { ...t, items, loading: false, lastRefresh: new Date().toISOString() }
+                    : t
+                )
+              );
+            } catch {
+              setTabs((prev) =>
+                prev.map((t) => (t.id === feedId ? { ...t, loading: false } : t))
+              );
+            }
+          })();
+        }
       } catch (err) {
         console.error("Failed to load feeds:", err);
       } finally {
