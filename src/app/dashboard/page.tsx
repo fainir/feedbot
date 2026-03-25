@@ -65,6 +65,9 @@ import { SmartReminders } from "@/components/feed/smart-reminders";
 import { TTSButton, TTSMiniPlayer } from "@/components/feed/text-to-speech";
 import { SocialImport } from "@/components/feed/social-import";
 import { ReadingChallenges, ChallengesBadge } from "@/components/feed/reading-challenges";
+import { ArticleFlashcards } from "@/components/feed/article-flashcards";
+import { MoodPlaylists } from "@/components/feed/mood-playlists";
+import { AccessibilityToggle } from "@/components/feed/accessibility-panel";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1019,6 +1022,7 @@ function DashboardContent() {
           <TeamFeedsBadge />
           <PowerModeToggle />
           <WeeklyReportButton />
+          <AccessibilityToggle />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1147,6 +1151,14 @@ function DashboardContent() {
 
       {/* Reading Challenges */}
       {!initialLoading && <ReadingChallenges readIds={readIds} />}
+
+      {/* Article Flashcards */}
+      {!initialLoading && <ArticleFlashcards />}
+
+      {/* Mood Playlists */}
+      {allItems.length > 0 && !initialLoading && (
+        <MoodPlaylists items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source }))} />
+      )}
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
