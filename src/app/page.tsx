@@ -500,6 +500,12 @@ export default function LandingPage() {
               >
                 Dashboard
               </Link>
+              <Link
+                href="/blog"
+                className="transition-colors hover:text-text"
+              >
+                Blog
+              </Link>
             </div>
           </div>
           <div className="mt-8 text-center text-sm text-text-muted">
