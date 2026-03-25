@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown } from "lucide-react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { timeAgo } from "@/lib/utils";
@@ -91,6 +92,14 @@ function saveTabs(tabs: Tab[]) {
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [tabs, setTabs] = useState<Tab[]>(DEFAULT_TABS);
   const [activeTabId, setActiveTabId] = useState("all");
   const [showNewTab, setShowNewTab] = useState(false);
@@ -100,12 +109,22 @@ export default function DashboardPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const searchParams = useSearchParams();
 
   // Get user on mount
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
+
+  // Show checkout success banner
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      setShowCheckoutSuccess(true);
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, [searchParams]);
 
   // Load tabs from localStorage on mount
   useEffect(() => {
@@ -289,6 +308,24 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Checkout Success Banner */}
+      {showCheckoutSuccess && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-green-300">
+              Welcome to Pro! You now have unlimited feeds and hourly updates.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCheckoutSuccess(false)}
+            className="shrink-0 text-green-400 hover:text-green-300"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Tabs Bar */}
       <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
