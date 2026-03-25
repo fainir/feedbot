@@ -95,7 +95,7 @@ export default function DashboardPage() {
       name: newTabName.trim(),
       prompt: newTabPrompt.trim(),
       items: [],
-      loading: false,
+      loading: true,
       lastRefresh: null,
     };
     setTabs((prev) => [...prev, tab]);
@@ -103,8 +103,8 @@ export default function DashboardPage() {
     setShowNewTab(false);
     setNewTabName("");
     setNewTabPrompt("");
-    // Auto-refresh the new tab
-    refreshTab(tab.id, tab.prompt);
+    // Auto-generate feed for the new tab
+    fetchFeedItems(tab.id, tab.prompt);
   };
 
   const deleteTab = (id: string) => {
@@ -113,22 +113,13 @@ export default function DashboardPage() {
     if (activeTabId === id) setActiveTabId("all");
   };
 
-  const refreshTab = useCallback(
-    async (tabId: string, prompt?: string) => {
-      const tab = tabs.find((t) => t.id === tabId);
-      if (!tab && tabId !== "all") return;
-      const searchPrompt = prompt || tab?.prompt;
-      if (!searchPrompt) return;
-
-      setTabs((prev) =>
-        prev.map((t) => (t.id === tabId ? { ...t, loading: true } : t))
-      );
-
+  const fetchFeedItems = useCallback(
+    async (tabId: string, prompt: string) => {
       try {
         const res = await fetch("/api/feed/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: searchPrompt }),
+          body: JSON.stringify({ prompt }),
         });
         if (!res.ok) throw new Error("Failed to fetch feed");
         const data = await res.json();
@@ -150,7 +141,19 @@ export default function DashboardPage() {
         );
       }
     },
-    [tabs]
+    []
+  );
+
+  const refreshTab = useCallback(
+    (tabId: string) => {
+      const tab = tabs.find((t) => t.id === tabId);
+      if (!tab || !tab.prompt) return;
+      setTabs((prev) =>
+        prev.map((t) => (t.id === tabId ? { ...t, loading: true } : t))
+      );
+      fetchFeedItems(tabId, tab.prompt);
+    },
+    [tabs, fetchFeedItems]
   );
 
   return (
