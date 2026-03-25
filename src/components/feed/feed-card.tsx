@@ -1,6 +1,7 @@
 "use client";
 
-import { ExternalLink, Globe } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { timeAgo } from "@/lib/utils";
 
@@ -21,6 +22,31 @@ export function FeedCard({
   publishedAt,
   sourceIcon,
 }: FeedCardProps) {
+  const [copied, setCopied] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+
+  const shareText = `${title} — found via FeedBot`;
+
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareToTwitter = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
+
+  const shareToLinkedIn = () => {
+    window.open(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
+
   return (
     <Card className="group transition-colors hover:border-primary/40 hover:bg-bg-hover/50">
       <div className="flex items-start justify-between gap-4">
@@ -39,21 +65,63 @@ export function FeedCard({
           </p>
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-3 text-xs text-text-muted">
-        <div className="flex items-center gap-1.5">
-          {sourceIcon ? (
-            <img
-              src={sourceIcon}
-              alt={source}
-              className="h-4 w-4 rounded-sm"
-            />
-          ) : (
-            <Globe className="h-3.5 w-3.5" />
-          )}
-          <span>{source}</span>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-text-muted">
+          <div className="flex items-center gap-1.5">
+            {sourceIcon ? (
+              <img
+                src={sourceIcon}
+                alt={source}
+                className="h-4 w-4 rounded-sm"
+              />
+            ) : (
+              <Globe className="h-3.5 w-3.5" />
+            )}
+            <span>{source}</span>
+          </div>
+          <span className="text-border">|</span>
+          <span>{timeAgo(publishedAt)}</span>
         </div>
-        <span className="text-border">|</span>
-        <span>{timeAgo(publishedAt)}</span>
+
+        {/* Share button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowShare(!showShare)}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted opacity-0 transition-all hover:bg-bg-hover hover:text-text group-hover:opacity-100"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Share
+          </button>
+          {showShare && (
+            <div className="absolute bottom-full right-0 z-10 mb-1 flex items-center gap-1 rounded-lg border border-border bg-bg-card p-1.5 shadow-lg">
+              <button
+                onClick={copyLink}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+                title="Copy link"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-green-400" />
+                ) : (
+                  <LinkIcon className="h-3.5 w-3.5" />
+                )}
+              </button>
+              <button
+                onClick={shareToTwitter}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+                title="Share on X"
+              >
+                <Twitter className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={shareToLinkedIn}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+                title="Share on LinkedIn"
+              >
+                <span className="text-xs font-bold">in</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

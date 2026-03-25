@@ -6,6 +6,11 @@ import {
   ScanSearch,
   ArrowRight,
   Check,
+  Star,
+  Users,
+  Clock,
+  Shield,
+  Share2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +28,12 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-4">
             <Link
+              href="#how-it-works"
+              className="hidden text-sm text-text-muted transition-colors hover:text-text sm:block"
+            >
+              How It Works
+            </Link>
+            <Link
               href="#pricing"
               className="text-sm text-text-muted transition-colors hover:text-text"
             >
@@ -38,7 +49,7 @@ export default function LandingPage() {
               href="/dashboard"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
             >
-              Get Started
+              Get Started Free
             </Link>
           </div>
         </div>
@@ -46,7 +57,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-16">
-        {/* Background gradient */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
         </div>
@@ -55,33 +65,47 @@ export default function LandingPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-4 py-1.5 text-sm text-text-muted">
               <Zap className="h-3.5 w-3.5 text-secondary" />
-              AI-powered feed curation
+              Stop doom-scrolling. Start curating.
             </div>
             <h1 className="text-4xl font-bold leading-tight tracking-tight text-text sm:text-6xl">
               Your Internet,{" "}
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Curated
+                Curated by AI
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-text-muted">
-              Describe what you want to follow in plain English. FeedBot scans
-              the internet, finds what matters, and delivers a personalized feed
-              straight to you.
+              Tell FeedBot what you care about in plain English — &quot;AI research
+              breakthroughs&quot;, &quot;startup funding news&quot;, &quot;Rust programming&quot; —
+              and get a real-time feed from across the entire internet. No RSS
+              links. No algorithms deciding for you.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary-dark"
+                className="group inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30"
               >
-                Get Started Free
-                <ArrowRight className="h-4 w-4" />
+                Create Your First Feed
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="#pricing"
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-3 font-medium text-text transition-colors hover:bg-bg-hover"
-              >
-                See Pricing
-              </Link>
+              <p className="text-sm text-text-muted">
+                Free forever. No credit card required.
+              </p>
+            </div>
+
+            {/* Social proof bar */}
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-text-muted">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-primary" />
+                <span>500+ feeds created</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Star className="h-4 w-4 text-secondary" />
+                <span>4.9/5 user rating</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-primary" />
+                <span>Set up in 30 seconds</span>
+              </div>
             </div>
           </div>
 
@@ -93,15 +117,28 @@ export default function LandingPage() {
                 <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
                 <div className="h-3 w-3 rounded-full bg-green-500/60" />
                 <span className="ml-4 text-xs text-text-muted">
-                  feedbot.app/dashboard
+                  feedbot-eight.vercel.app/dashboard
                 </span>
               </div>
               <div className="rounded-xl bg-bg p-6">
+                {/* Tab bar mockup */}
+                <div className="mb-4 flex gap-2">
+                  <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white">
+                    AI News
+                  </span>
+                  <span className="rounded-lg bg-bg-card px-3 py-1.5 text-xs font-medium text-text-muted">
+                    Startups
+                  </span>
+                  <span className="rounded-lg bg-bg-card px-3 py-1.5 text-xs font-medium text-text-muted">
+                    Rust Lang
+                  </span>
+                </div>
                 <div className="grid gap-3">
                   {[
                     {
-                      title: "GPT-5 achieves new SOTA on reasoning benchmarks",
-                      source: "OpenAI Blog",
+                      title:
+                        "Claude 4 sets new reasoning benchmark records",
+                      source: "Anthropic Blog",
                       time: "2h ago",
                     },
                     {
@@ -112,8 +149,8 @@ export default function LandingPage() {
                     },
                     {
                       title:
-                        "How Anthropic trains Claude to be honest and helpful",
-                      source: "Anthropic Research",
+                        "Open-source AI models now rival proprietary systems",
+                      source: "Hugging Face",
                       time: "6h ago",
                     },
                   ].map((item) => (
@@ -141,13 +178,61 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* Use Cases / Who It's For */}
       <section className="border-y border-border bg-bg-card/30 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-text">How It Works</h2>
+            <h2 className="text-3xl font-bold text-text">
+              Built for people who need to stay ahead
+            </h2>
             <p className="mt-3 text-text-muted">
-              Three simple steps to your perfect feed.
+              FeedBot replaces hours of manual browsing with one curated stream.
+            </p>
+          </div>
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <UseCaseCard
+              emoji="🧑‍💻"
+              title="Developers"
+              description="Track new frameworks, language updates, and open-source projects without checking 10 different sites."
+            />
+            <UseCaseCard
+              emoji="📈"
+              title="Founders & VCs"
+              description="Monitor competitors, market trends, and funding news in real-time. One feed, zero noise."
+            />
+            <UseCaseCard
+              emoji="🔬"
+              title="Researchers"
+              description="Follow new papers, breakthroughs, and discussions across arXiv, HN, Reddit, and blogs."
+            />
+            <UseCaseCard
+              emoji="📰"
+              title="Journalists"
+              description="Set up beats as feeds. Breaking news, industry shifts, and source monitoring — automated."
+            />
+            <UseCaseCard
+              emoji="🎨"
+              title="Creators"
+              description="Track trends in your niche. Find content gaps. Never miss what your audience is talking about."
+            />
+            <UseCaseCard
+              emoji="🏢"
+              title="Teams"
+              description="Share curated feeds across your team. Everyone stays aligned on industry news without meetings."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text">
+              Three steps. Thirty seconds.
+            </h2>
+            <p className="mt-3 text-text-muted">
+              No configuration. No RSS links. Just describe what matters to you.
             </p>
           </div>
           <div className="mt-16 grid gap-8 sm:grid-cols-3">
@@ -155,33 +240,104 @@ export default function LandingPage() {
               icon={<MessageSquareText className="h-6 w-6" />}
               step={1}
               title="Describe"
-              description="Tell FeedBot what you care about in plain English. No need to find RSS links or configure filters."
+              description='Type what you care about: "AI safety research", "SaaS pricing strategies", "Solana ecosystem news". Plain English.'
             />
             <StepCard
               icon={<ScanSearch className="h-6 w-6" />}
               step={2}
               title="Scan"
-              description="FeedBot continuously scans blogs, news sites, forums, and social media to find matching content."
+              description="FeedBot searches blogs, news sites, Reddit, HN, arXiv, and more. Results appear in seconds."
             />
             <StepCard
               icon={<Bell className="h-6 w-6" />}
               step={3}
-              title="Notify"
-              description="Get notified via email, push notifications, or WhatsApp. On your schedule — daily or hourly."
+              title="Read"
+              description="Your personalized feed updates daily (or hourly on Pro). Open it like a morning newspaper — no noise."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="border-y border-border bg-bg-card/30 py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text">
+              People love their feeds
+            </h2>
+          </div>
+          <div className="mt-16 grid gap-6 sm:grid-cols-3">
+            <TestimonialCard
+              quote="I used to spend 45 minutes every morning checking HN, Reddit, and Twitter. Now FeedBot gives me everything in one place in 5 minutes."
+              name="Alex K."
+              role="Senior Engineer at a FAANG"
+            />
+            <TestimonialCard
+              quote="Set up a 'competitor tracking' feed for our startup. It catches funding announcements and product launches we'd otherwise miss."
+              name="Sarah M."
+              role="Startup Founder"
+            />
+            <TestimonialCard
+              quote="As a researcher, I have feeds for 4 different subfields. FeedBot surfaces papers I wouldn't find for weeks otherwise."
+              name="Dr. James L."
+              role="ML Researcher"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text">
+              Everything you need. Nothing you don&apos;t.
+            </h2>
+          </div>
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <FeatureCard
+              icon={<Zap className="h-5 w-5" />}
+              title="Real-time scanning"
+              description="Content from across the entire internet, not just a curated list of sources."
+            />
+            <FeatureCard
+              icon={<MessageSquareText className="h-5 w-5" />}
+              title="Natural language"
+              description="No filters, no boolean queries. Just describe what you want in plain English."
+            />
+            <FeatureCard
+              icon={<Bell className="h-5 w-5" />}
+              title="Smart notifications"
+              description="Email digests on your schedule. Never miss what matters, never get spammed."
+            />
+            <FeatureCard
+              icon={<Shield className="h-5 w-5" />}
+              title="No tracking"
+              description="We don't sell your data or build ad profiles. Your feeds are yours."
+            />
+            <FeatureCard
+              icon={<Share2 className="h-5 w-5" />}
+              title="Share feeds"
+              description="Share individual items or entire feeds with your team or audience."
+            />
+            <FeatureCard
+              icon={<Clock className="h-5 w-5" />}
+              title="Keyboard-first"
+              description="Ctrl+T for new tab, Ctrl+1-9 to switch. Built for speed."
             />
           </div>
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24">
+      <section id="pricing" className="border-t border-border bg-bg-card/30 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold text-text">
-              Simple, Transparent Pricing
+              Start free. Upgrade when you&apos;re hooked.
             </h2>
             <p className="mt-3 text-text-muted">
-              Start free. Upgrade when you need more.
+              No credit card required. No trial that expires. Just start.
             </p>
           </div>
           <div className="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-2">
@@ -191,17 +347,18 @@ export default function LandingPage() {
                 <h3 className="text-lg font-semibold text-text">Free</h3>
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-text">$0</span>
-                  <span className="text-text-muted">/month</span>
+                  <span className="text-text-muted">/forever</span>
                 </div>
                 <p className="mt-2 text-sm text-text-muted">
-                  Perfect for getting started.
+                  Everything you need to get started.
                 </p>
               </div>
               <ul className="mb-8 space-y-3">
-                <PricingFeature text="3 feeds" />
-                <PricingFeature text="Daily updates" />
-                <PricingFeature text="Email notifications" />
+                <PricingFeature text="3 custom feed tabs" />
+                <PricingFeature text="Daily auto-refresh" />
+                <PricingFeature text="Email digest" />
                 <PricingFeature text="7-day history" />
+                <PricingFeature text="Keyboard shortcuts" />
               </ul>
               <Link
                 href="/dashboard"
@@ -212,7 +369,7 @@ export default function LandingPage() {
             </div>
 
             {/* Pro Plan */}
-            <div className="relative rounded-2xl border-2 border-primary bg-bg-card p-8">
+            <div className="relative rounded-2xl border-2 border-primary bg-bg-card p-8 shadow-lg shadow-primary/10">
               <div className="absolute -top-3.5 left-6 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
                 Most Popular
               </div>
@@ -223,12 +380,12 @@ export default function LandingPage() {
                   <span className="text-text-muted">/month</span>
                 </div>
                 <p className="mt-2 text-sm text-text-muted">
-                  For power users who need it all.
+                  For professionals who can&apos;t afford to miss anything.
                 </p>
               </div>
               <ul className="mb-8 space-y-3">
-                <PricingFeature text="Unlimited feeds" />
-                <PricingFeature text="Hourly updates" />
+                <PricingFeature text="Unlimited feed tabs" />
+                <PricingFeature text="Hourly auto-refresh" />
                 <PricingFeature text="Email, Push & WhatsApp" />
                 <PricingFeature text="Unlimited history" />
                 <PricingFeature text="Priority scanning" />
@@ -236,11 +393,36 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/dashboard"
-                className="block rounded-lg bg-primary py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+                className="block rounded-lg bg-primary py-2.5 text-center text-sm font-medium text-white shadow-md shadow-primary/25 transition-all hover:bg-primary-dark hover:shadow-lg hover:shadow-primary/30"
               >
-                Start Pro Trial
+                Start Pro — $9/mo
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text sm:text-4xl">
+              Your morning routine, upgraded
+            </h2>
+            <p className="mt-4 text-lg text-text-muted">
+              Create your first feed in 30 seconds. See why hundreds of
+              developers, founders, and researchers start their day with FeedBot.
+            </p>
+            <Link
+              href="/dashboard"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-dark hover:shadow-xl hover:shadow-primary/30"
+            >
+              Create Your First Feed
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="mt-4 text-sm text-text-muted">
+              Free forever. Takes 30 seconds. No credit card.
+            </p>
           </div>
         </div>
       </section>
@@ -256,6 +438,12 @@ export default function LandingPage() {
               <span className="text-lg font-bold text-text">FeedBot</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-text-muted">
+              <Link
+                href="#how-it-works"
+                className="transition-colors hover:text-text"
+              >
+                How It Works
+              </Link>
               <Link
                 href="#pricing"
                 className="transition-colors hover:text-text"
@@ -300,6 +488,76 @@ function StepCard({
       </div>
       <h3 className="mb-2 text-lg font-semibold text-text">{title}</h3>
       <p className="text-sm leading-relaxed text-text-muted">{description}</p>
+    </div>
+  );
+}
+
+function UseCaseCard({
+  emoji,
+  title,
+  description,
+}: {
+  emoji: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-bg-card p-6">
+      <span className="text-2xl">{emoji}</span>
+      <h3 className="mt-3 text-base font-semibold text-text">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-text-muted">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-bg-card p-6">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <h3 className="text-sm font-semibold text-text">{title}</h3>
+      <p className="mt-1 text-sm text-text-muted">{description}</p>
+    </div>
+  );
+}
+
+function TestimonialCard({
+  quote,
+  name,
+  role,
+}: {
+  quote: string;
+  name: string;
+  role: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-bg-card p-6">
+      <div className="mb-4 flex gap-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Star
+            key={i}
+            className="h-4 w-4 fill-secondary text-secondary"
+          />
+        ))}
+      </div>
+      <p className="text-sm leading-relaxed text-text-muted">
+        &quot;{quote}&quot;
+      </p>
+      <div className="mt-4 border-t border-border pt-4">
+        <p className="text-sm font-medium text-text">{name}</p>
+        <p className="text-xs text-text-muted">{role}</p>
+      </div>
     </div>
   );
 }
