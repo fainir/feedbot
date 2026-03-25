@@ -29,6 +29,9 @@ import { QuickShareMenu } from "@/components/feed/quick-share";
 import { EmojiReactions, useReactions } from "@/components/feed/emoji-reactions";
 import { PushNotificationToggle, sendKeywordNotification } from "@/components/feed/push-notifications";
 import { ReadingProgressBar } from "@/components/feed/reading-progress";
+import { FeedTimeline } from "@/components/feed/feed-timeline";
+import { ContentHighlights } from "@/components/feed/content-highlights";
+import { FeedComparisonButton } from "@/components/feed/feed-comparison";
 import { ForYouRecommendations } from "@/components/feed/for-you-recommendations";
 import { GlobalSearch } from "@/components/feed/global-search";
 import { ReadingGoals } from "@/components/feed/reading-goals";
@@ -157,6 +160,7 @@ function DashboardContent() {
   const [mutedSources, setMutedSources] = useState<MutedSource[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const { reactions, toggleReaction } = useReactions();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -533,6 +537,16 @@ function DashboardContent() {
     }
     return map;
   }, [trendingItems]);
+
+  // Build tab-to-item-ids map for global search
+  const tabItemMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const tab of tabs) {
+      if (tab.id === "all") continue;
+      map.set(tab.id, new Set(tab.items.map((i) => i.id)));
+    }
+    return map;
+  }, [tabs]);
 
   // Apply folder filter if active
   const folderFilteredItems = useMemo(() => {
@@ -1000,6 +1014,14 @@ function DashboardContent() {
             </span>
           )}
           <NewItemsBell allItems={allItems} onOpenReader={(item) => setReaderItem(item)} />
+          <button
+            onClick={() => setShowGlobalSearch(true)}
+            className="hidden items-center gap-1 rounded-lg border border-border/50 px-2 py-1.5 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text sm:flex"
+            title="Search all feeds (Cmd+Shift+F)"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <kbd className="text-[10px]">⌘⇧F</kbd>
+          </button>
           <PushNotificationToggle
             enabled={notificationsEnabled}
             onToggle={toggleNotifications}
@@ -1085,6 +1107,22 @@ function DashboardContent() {
           />
           <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
         </>
+      )}
+
+      {/* Reading Goals */}
+      {allItems.length > 0 && !initialLoading && (
+        <ReadingGoals readIds={readIds} allItems={allItems} />
+      )}
+
+      {/* For You Recommendations */}
+      {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
+        <ForYouRecommendations
+          allItems={allItems}
+          readIds={readIds}
+          bookmarkedIds={bookmarkedIds}
+          onOpenReader={(item) => setReaderItem(item)}
+          onMarkRead={markAsRead}
+        />
       )}
 
       {/* Feed Folders */}
@@ -1624,8 +1662,24 @@ function DashboardContent() {
               mutedSources={mutedSources}
               onUpdateMuted={updateMutedSources}
             />
+            <FeedTimeline
+              items={displayItems}
+              onSelectItem={(item) => setReaderItem(item as FeedItem)}
+              readIds={readIds}
+            />
+            <FeedComparisonButton
+              tabs={tabs.filter((t) => t.id !== "all")}
+              readIds={readIds}
+            />
           </div>
         </div>
+      )}
+
+      {/* Content Highlights */}
+      {activeTabId === "all" && allItems.length > 8 && (
+        <ContentHighlights
+          items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source }))}
+        />
       )}
 
       {/* Feed Suggestions */}
@@ -1831,6 +1885,20 @@ function DashboardContent() {
             </p>
           )}
         </div>
+      )}
+
+      {/* Global Search */}
+      {showGlobalSearch && (
+        <GlobalSearch
+          allItems={allItems}
+          tabs={tabs.filter((t) => t.id !== "all").map((t) => ({ id: t.id, name: t.name }))}
+          tabItemMap={tabItemMap}
+          onOpenReader={(item) => { setReaderItem(item); setShowGlobalSearch(false); }}
+          onMarkRead={markAsRead}
+          readIds={readIds}
+          open={showGlobalSearch}
+          onClose={() => setShowGlobalSearch(false)}
+        />
       )}
 
       {/* Command Palette */}
