@@ -24,6 +24,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
+    // SSRF protection: block private/local addresses
+    const hostname = parsedUrl.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" ||
+        hostname.startsWith("10.") || hostname.startsWith("192.168.") || hostname.startsWith("172.") ||
+        hostname === "[::1]") {
+      return NextResponse.json({ error: "Private/local URLs not allowed" }, { status: 400 });
+    }
+
     // Fetch the article HTML
     const response = await fetch(parsedUrl.toString(), {
       headers: {

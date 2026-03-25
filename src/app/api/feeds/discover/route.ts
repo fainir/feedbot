@@ -36,6 +36,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
+  // SSRF protection: only allow http/https and block private IPs
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    return NextResponse.json({ error: "Only HTTP/HTTPS URLs allowed" }, { status: 400 });
+  }
+  const hostname = parsedUrl.hostname;
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" ||
+      hostname.startsWith("10.") || hostname.startsWith("192.168.") || hostname.startsWith("172.") ||
+      hostname === "[::1]") {
+    return NextResponse.json({ error: "Private/local URLs not allowed" }, { status: 400 });
+  }
+
   try {
     // Fetch the page
     const res = await fetch(parsedUrl.toString(), {

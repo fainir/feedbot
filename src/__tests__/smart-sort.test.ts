@@ -28,8 +28,8 @@ describe("smartSort", () => {
   ];
 
   const defaultPrefs = {
-    readSources: new Set<string>(),
-    bookmarkedSources: new Set<string>(),
+    bookmarkedIds: new Set<string>(),
+    readIds: new Set<string>(),
   };
 
   it("sorts by newest first", () => {
