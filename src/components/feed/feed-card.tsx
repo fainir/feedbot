@@ -14,6 +14,8 @@ interface FeedCardProps {
   sourceIcon?: string;
   bookmarked?: boolean;
   onToggleBookmark?: () => void;
+  isRead?: boolean;
+  isFocused?: boolean;
 }
 
 export function FeedCard({
@@ -25,6 +27,8 @@ export function FeedCard({
   sourceIcon,
   bookmarked,
   onToggleBookmark,
+  isRead,
+  isFocused,
 }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -52,7 +56,7 @@ export function FeedCard({
   };
 
   return (
-    <Card className="group transition-colors hover:border-primary/40 hover:bg-bg-hover/50">
+    <Card className={`group transition-colors hover:border-primary/40 hover:bg-bg-hover/50 ${isFocused ? "ring-2 ring-primary ring-offset-1 ring-offset-bg" : ""} ${isRead ? "opacity-60" : ""}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <a

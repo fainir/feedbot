@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3 } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,12 @@ function DashboardContent() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(15);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [showImport, setShowImport] = useState(false);
+  const [importing, setImporting] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -136,13 +141,22 @@ function DashboardContent() {
     return () => observer.disconnect();
   }, []);
 
-  // Load bookmarks from localStorage
+  // Load bookmarks and read state from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem("feedbot-bookmarks");
       if (saved) setBookmarkedIds(new Set(JSON.parse(saved)));
     } catch {}
+    try {
+      const read = localStorage.getItem("feedbot-read");
+      if (read) setReadIds(new Set(JSON.parse(read)));
+    } catch {}
   }, []);
+
+  // Reset focused index on tab change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [activeTabId]);
 
   const toggleBookmark = useCallback((item: FeedItem) => {
     setBookmarkedIds((prev) => {
@@ -162,6 +176,36 @@ function DashboardContent() {
       localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
       return next;
     });
+  }, [toast]);
+
+  const markAsRead = useCallback((itemId: string) => {
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      next.add(itemId);
+      localStorage.setItem("feedbot-read", JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  const importOPML = useCallback(async (file: File) => {
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/feeds/import", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Import failed", "error");
+      } else {
+        toast(`Imported ${data.imported} feeds (${data.skipped} skipped)`, "success");
+        // Reload feeds
+        window.location.reload();
+      }
+    } catch {
+      toast("Failed to import OPML", "error");
+    }
+    setImporting(false);
+    setShowImport(false);
   }, [toast]);
 
   // Get user on mount
@@ -302,6 +346,32 @@ function DashboardContent() {
         return;
       }
 
+      // j/k to navigate items, o to open, m to mark read
+      if (e.key === "j" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setFocusedIndex((prev) => prev + 1);
+        return;
+      }
+      if (e.key === "k" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(-1, prev - 1));
+        return;
+      }
+      if (e.key === "o" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        // Open focused item in new tab — will be handled by render
+        const focusedEl = document.querySelector("[data-focused-item] a");
+        if (focusedEl) (focusedEl as HTMLAnchorElement).click();
+        return;
+      }
+      if (e.key === "m" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const focusedEl = document.querySelector("[data-focused-item]");
+        const itemId = focusedEl?.getAttribute("data-item-id");
+        if (itemId) markAsRead(itemId);
+        return;
+      }
+
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.key >= "1" && e.key <= "9") {
         e.preventDefault();
@@ -315,7 +385,7 @@ function DashboardContent() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [tabs, showNewTab, theme, setTheme]);
+  }, [tabs, showNewTab, theme, setTheme, markAsRead]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -770,7 +840,34 @@ function DashboardContent() {
           <Plus className="h-4 w-4" />
           New Tab
         </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text"
+          title="Import feeds from OPML file"
+        >
+          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Import</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".opml,.xml"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) importOPML(file);
+            e.target.value = "";
+          }}
+        />
       </div>
+
+      {/* Import Progress */}
+      {importing && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+          <p className="text-sm text-text-muted">Importing feeds from OPML...</p>
+        </div>
+      )}
 
       {/* Pro Upgrade Banner — show when user has 3+ tabs */}
       {tabs.filter((t) => t.id !== "all").length >= 3 && (
@@ -1045,19 +1142,30 @@ function DashboardContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredItems.slice(0, visibleCount).map((item) => (
-            <FeedCard
-              key={item.id}
-              title={item.title}
-              summary={item.summary}
-              source={item.source}
-              url={item.url}
-              publishedAt={item.publishedAt}
-              sourceIcon={item.sourceIcon}
-              bookmarked={bookmarkedIds.has(item.id)}
-              onToggleBookmark={() => toggleBookmark(item)}
-            />
-          ))}
+          {filteredItems.slice(0, visibleCount).map((item, idx) => {
+            const isFocused = idx === focusedIndex;
+            return (
+              <div
+                key={item.id}
+                {...(isFocused ? { "data-focused-item": true, "data-item-id": item.id } : {})}
+                ref={isFocused ? (el) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" }) : undefined}
+                onClick={() => markAsRead(item.id)}
+              >
+                <FeedCard
+                  title={item.title}
+                  summary={item.summary}
+                  source={item.source}
+                  url={item.url}
+                  publishedAt={item.publishedAt}
+                  sourceIcon={item.sourceIcon}
+                  bookmarked={bookmarkedIds.has(item.id)}
+                  onToggleBookmark={() => toggleBookmark(item)}
+                  isRead={readIds.has(item.id)}
+                  isFocused={isFocused}
+                />
+              </div>
+            );
+          })}
           {filteredItems.length > visibleCount && (
             <div ref={loadMoreRef} className="flex justify-center py-4">
               <RefreshCw className="h-5 w-5 animate-spin text-text-muted" />
@@ -1094,6 +1202,9 @@ function DashboardContent() {
               {[
                 { keys: "?", desc: "Toggle this help" },
                 { keys: "/", desc: "Focus search" },
+                { keys: "J / K", desc: "Navigate items down / up" },
+                { keys: "O", desc: "Open focused item" },
+                { keys: "M", desc: "Mark focused item as read" },
                 { keys: "D", desc: "Toggle dark/light mode" },
                 { keys: "B", desc: "Go to Saved items" },
                 { keys: "Esc", desc: "Close modal / search" },
