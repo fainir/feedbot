@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/"],
+      disallow: ["/api/", "/dashboard/", "/auth/"],
     },
     sitemap: "https://feedbot-eight.vercel.app/sitemap.xml",
   };
