@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { SkeletonFeed } from "@/components/feed/skeleton-card";
+import { useToast } from "@/components/ui/toast";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -108,6 +109,7 @@ function DashboardContent() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
 
   // Load bookmarks from localStorage
   useEffect(() => {
@@ -122,9 +124,10 @@ function DashboardContent() {
       const next = new Set(prev);
       if (next.has(item.id)) {
         next.delete(item.id);
+        toast("Removed from saved", "info");
       } else {
         next.add(item.id);
-        // Also persist the item data for the Saved tab
+        toast("Saved for later", "success");
         try {
           const savedItems = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}");
           savedItems[item.id] = item;
@@ -134,7 +137,7 @@ function DashboardContent() {
       localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
       return next;
     });
-  }, []);
+  }, [toast]);
 
   // Get user on mount
   useEffect(() => {
@@ -388,11 +391,10 @@ function DashboardContent() {
 
     const feedId = await createFeed(name, prompt);
     if (feedId) {
-      // Replace temp tab with real one
       setTabs((prev) => prev.filter((t) => t.id !== tempId));
       setActiveTabId(feedId);
+      toast(`"${name}" feed created`, "success");
     } else {
-      // Remove temp tab on failure
       setTabs((prev) =>
         prev.map((t) =>
           t.id === tempId
@@ -400,6 +402,7 @@ function DashboardContent() {
             : t
         )
       );
+      toast("Failed to create feed", "error");
     }
   };
 
@@ -466,8 +469,15 @@ function DashboardContent() {
     const shareUrl = `${window.location.origin}/dashboard?share=${encodeURIComponent(params.toString())}`;
     await navigator.clipboard.writeText(shareUrl);
     setShareCopied(true);
+    toast("Share link copied to clipboard", "success");
     setTimeout(() => setShareCopied(false), 2000);
-  }, [activeTabId, tabs]);
+  }, [activeTabId, tabs, toast]);
+
+  const exportFeed = useCallback((format: "rss" | "json") => {
+    if (activeTabId === "all" || activeTabId === "saved") return;
+    window.open(`/api/feeds/${activeTabId}/export?format=${format}`, "_blank");
+    toast(`Exported as ${format.toUpperCase()}`, "success");
+  }, [activeTabId, toast]);
 
   // Auto-import shared feed from URL
   useEffect(() => {
@@ -757,16 +767,43 @@ function DashboardContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {activeTabId !== "all" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={shareFeed}
-              className="text-text-muted"
-              title="Share this feed"
-            >
-              {shareCopied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
-            </Button>
+          {activeTabId !== "all" && activeTabId !== "saved" && (
+            <>
+              <div className="relative group/export">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-text-muted"
+                  title="Export feed"
+                  onClick={() => exportFeed("rss")}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <div className="absolute right-0 top-full z-10 mt-1 hidden rounded-lg border border-border bg-bg-card p-1 shadow-lg group-hover/export:block">
+                  <button
+                    onClick={() => exportFeed("rss")}
+                    className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text"
+                  >
+                    RSS Feed
+                  </button>
+                  <button
+                    onClick={() => exportFeed("json")}
+                    className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text"
+                  >
+                    JSON
+                  </button>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={shareFeed}
+                className="text-text-muted"
+                title="Share this feed"
+              >
+                {shareCopied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
+              </Button>
+            </>
           )}
           <Button
             variant="ghost"
