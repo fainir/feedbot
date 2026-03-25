@@ -68,6 +68,9 @@ import { ReadingChallenges, ChallengesBadge } from "@/components/feed/reading-ch
 import { ArticleFlashcards } from "@/components/feed/article-flashcards";
 import { MoodPlaylists } from "@/components/feed/mood-playlists";
 import { AccessibilityToggle } from "@/components/feed/accessibility-panel";
+import { WordCloud } from "@/components/feed/word-cloud";
+import { FeedChangelog, ChangelogBadge } from "@/components/feed/feed-changelog";
+import { FloatingActionMenu } from "@/components/feed/quick-actions-bar";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1160,6 +1163,14 @@ function DashboardContent() {
         <MoodPlaylists items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source }))} />
       )}
 
+      {/* Word Cloud */}
+      {allItems.length > 5 && (
+        <WordCloud items={allItems.map((i) => ({ title: i.title, summary: i.summary, publishedAt: i.publishedAt, source: i.source }))} />
+      )}
+
+      {/* Feed Changelog */}
+      {!initialLoading && <FeedChangelog />}
+
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
         <ForYouRecommendations
@@ -2052,6 +2063,9 @@ function DashboardContent() {
         totalItems={allItems.length}
         feedName={activeTab.name}
       />
+
+      {/* Floating Action Menu (mobile) */}
+      <FloatingActionMenu />
     </div>
   );
 }
