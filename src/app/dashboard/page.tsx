@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { SkeletonFeed } from "@/components/feed/skeleton-card";
 import { useToast } from "@/components/ui/toast";
+import { CommandPalette } from "@/components/ui/command-palette";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -439,7 +440,24 @@ function DashboardContent() {
     return items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   })();
 
-  const displayItems = activeTabId === "all" ? allItems : activeTabId === "saved" ? bookmarkedItems : activeTab.items;
+  // Deduplicate items in "all" view — removes articles with very similar titles
+  const dedupedAllItems = (() => {
+    if (activeTabId !== "all") return allItems;
+    const seen: string[] = [];
+    return allItems.filter((item) => {
+      const words = new Set(item.title.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 2));
+      for (const prev of seen) {
+        const prevWords = new Set(prev.split(/\s+/));
+        const overlap = [...words].filter((w) => prevWords.has(w)).length;
+        const similarity = overlap / Math.max(words.size, prevWords.size);
+        if (similarity > 0.7) return false;
+      }
+      seen.push([...words].join(" "));
+      return true;
+    });
+  })();
+
+  const displayItems = activeTabId === "all" ? dedupedAllItems : activeTabId === "saved" ? bookmarkedItems : activeTab.items;
   const filteredItems = searchQuery
     ? displayItems.filter(
         (item) =>
@@ -1463,6 +1481,16 @@ function DashboardContent() {
           )}
         </div>
       )}
+
+      {/* Command Palette */}
+      <CommandPalette
+        feeds={tabs.filter((t) => t.id !== "all").map((t) => ({ id: t.id, name: t.name }))}
+        onSwitchTab={setActiveTabId}
+        onNewTab={() => setShowNewTab(true)}
+        onFocusMode={() => setFocusMode((v) => !v)}
+        onImport={() => fileInputRef.current?.click()}
+        onDiscover={() => setShowDiscover(true)}
+      />
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
