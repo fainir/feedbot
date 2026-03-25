@@ -44,3 +44,68 @@ body {
 .animate-in {
   animation: slide-in-from-right 0.2s ease-out;
 }
+
+/* Article reader styles */
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4 {
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: var(--color-text);
+}
+.article-content h1 { font-size: 1.5em; }
+.article-content h2 { font-size: 1.25em; }
+.article-content h3 { font-size: 1.1em; }
+.article-content p {
+  margin-bottom: 1em;
+  color: var(--color-text-muted);
+}
+.article-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+.article-content blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.article-content pre {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 0.875em;
+}
+.article-content code {
+  background: var(--color-bg-hover);
+  padding: 0.15em 0.3em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+.article-content pre code {
+  background: none;
+  padding: 0;
+}
+.article-content ul,
+.article-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+  color: var(--color-text-muted);
+}
+.article-content li {
+  margin-bottom: 0.25em;
+}
+.article-content ul { list-style-type: disc; }
+.article-content ol { list-style-type: decimal; }

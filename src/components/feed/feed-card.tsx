@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark, MessageSquare } from "lucide-react";
+import { ExternalLink, Globe, Share2, Check, Twitter, Link as LinkIcon, Bookmark, MessageSquare, BookOpen } from "lucide-react";
+import { TrendingBadge } from "@/components/feed/trending-tab";
 import { Card } from "@/components/ui/card";
 import { timeAgo, readingTime } from "@/lib/utils";
 
@@ -19,6 +20,8 @@ interface FeedCardProps {
   compact?: boolean;
   note?: string;
   onSaveNote?: (note: string) => void;
+  onOpenReader?: () => void;
+  trendingReasons?: string[];
 }
 
 export function FeedCard({
@@ -35,6 +38,8 @@ export function FeedCard({
   compact,
   note,
   onSaveNote,
+  onOpenReader,
+  trendingReasons,
 }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -81,6 +86,11 @@ export function FeedCard({
               {summary}
             </p>
           )}
+          {trendingReasons && trendingReasons.length > 0 && (
+            <div className="mt-1.5">
+              <TrendingBadge reasons={trendingReasons} />
+            </div>
+          )}
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between">
@@ -104,6 +114,17 @@ export function FeedCard({
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Reader button */}
+          {onOpenReader && (
+            <button
+              onClick={onOpenReader}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-all hover:bg-bg-hover hover:text-text sm:opacity-0 sm:group-hover:opacity-100"
+              title="Read inline"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+            </button>
+          )}
+
           {/* Bookmark button */}
           {onToggleBookmark && (
             <button

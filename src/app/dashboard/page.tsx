@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical, Eye, EyeOff } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical, Eye, EyeOff, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { FeedCard } from "@/components/feed/feed-card";
 import { SkeletonFeed } from "@/components/feed/skeleton-card";
 import { useToast } from "@/components/ui/toast";
 import { CommandPalette } from "@/components/ui/command-palette";
+import { ReadingStreak } from "@/components/feed/reading-streak";
+import { ArticleReader } from "@/components/feed/article-reader";
+import { computeTrending, TrendingHeader } from "@/components/feed/trending-tab";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -125,6 +128,7 @@ function DashboardContent() {
   const [dragTabId, setDragTabId] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
+  const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -394,6 +398,19 @@ function DashboardContent() {
         if (itemId) markAsRead(itemId);
         return;
       }
+      // r to open reader for focused item
+      if (e.key === "r" && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const focusedEl = document.querySelector("[data-focused-item]");
+        const itemId = focusedEl?.getAttribute("data-item-id");
+        if (itemId) {
+          // Find item from all tabs
+          const allTabItems = tabs.filter((t) => t.id !== "all").flatMap((t) => t.items);
+          const item = allTabItems.find((i) => i.id === itemId);
+          if (item) setReaderItem(item);
+        }
+        return;
+      }
 
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.key >= "1" && e.key <= "9") {
@@ -457,7 +474,17 @@ function DashboardContent() {
     });
   })();
 
-  const displayItems = activeTabId === "all" ? dedupedAllItems : activeTabId === "saved" ? bookmarkedItems : activeTab.items;
+  // Compute trending items
+  const trendingItems = useMemo(() => computeTrending(allItems, readIds, bookmarkedIds), [allItems, readIds, bookmarkedIds]);
+  const trendingMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const item of trendingItems) {
+      map.set(item.id, item.reasons);
+    }
+    return map;
+  }, [trendingItems]);
+
+  const displayItems = activeTabId === "all" ? dedupedAllItems : activeTabId === "saved" ? bookmarkedItems : activeTabId === "trending" ? trendingItems : activeTab.items;
   const filteredItems = searchQuery
     ? displayItems.filter(
         (item) =>
@@ -875,6 +902,11 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* Reading Streak */}
+      {allItems.length > 0 && !initialLoading && (
+        <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
+      )}
+
       {/* Source Analytics */}
       {showAnalytics && allItems.length > 0 && (() => {
         const sourceCounts: Record<string, number> = {};
@@ -994,6 +1026,19 @@ function DashboardContent() {
             </span>
           )}
         </button>
+        {allItems.length > 5 && (
+          <button
+            onClick={() => setActiveTabId("trending")}
+            className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              activeTabId === "trending"
+                ? "bg-gradient-to-r from-primary to-orange-500 text-white"
+                : "text-text-muted hover:bg-surface hover:text-text"
+            }`}
+          >
+            <TrendingUp className="h-3.5 w-3.5" />
+            Trending
+          </button>
+        )}
         <button
           onClick={() => setShowNewTab(true)}
           className="flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text"
@@ -1342,6 +1387,11 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* Trending Header */}
+      {activeTabId === "trending" && trendingItems.length > 0 && (
+        <TrendingHeader count={trendingItems.length} />
+      )}
+
       {/* Feed */}
       {activeTab.loading ? (
         <SkeletonFeed count={5} />
@@ -1464,6 +1514,8 @@ function DashboardContent() {
                   compact={compactView}
                   note={itemNotes[item.id]}
                   onSaveNote={(note) => saveNote(item.id, note)}
+                  onOpenReader={() => setReaderItem(item)}
+                  trendingReasons={trendingMap.get(item.id)}
                 />
                 </div>
               </div>
@@ -1492,6 +1544,21 @@ function DashboardContent() {
         onDiscover={() => setShowDiscover(true)}
       />
 
+      {/* Article Reader Overlay */}
+      {readerItem && (
+        <ArticleReader
+          url={readerItem.url}
+          title={readerItem.title}
+          summary={readerItem.summary}
+          source={readerItem.source}
+          sourceIcon={readerItem.sourceIcon}
+          publishedAt={readerItem.publishedAt}
+          bookmarked={bookmarkedIds.has(readerItem.id)}
+          onToggleBookmark={() => toggleBookmark(readerItem)}
+          onClose={() => setReaderItem(null)}
+        />
+      )}
+
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
         <div
@@ -1518,6 +1585,7 @@ function DashboardContent() {
                 { keys: "J / K", desc: "Navigate items down / up" },
                 { keys: "O", desc: "Open focused item" },
                 { keys: "M", desc: "Mark focused item as read" },
+                { keys: "R", desc: "Open focused item in reader" },
                 { keys: "F", desc: "Toggle focus/zen mode" },
                 { keys: "D", desc: "Toggle dark/light mode" },
                 { keys: "B", desc: "Go to Saved items" },
