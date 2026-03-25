@@ -41,6 +41,12 @@ import { usePinnedArticles, PinnedArticles, sortWithPinned } from "@/components/
 import { SimilarArticles } from "@/components/feed/similar-articles";
 import { FeedAnalyticsPanel } from "@/components/feed/feed-analytics";
 import { ShareFeed } from "@/components/feed/share-feed";
+import { useBookmarkTags, BookmarkTagPicker, BookmarkTagFilter, BookmarkTagBadge } from "@/components/feed/bookmark-tags";
+import { FeedHealthScore, FeedHealthBadge } from "@/components/feed/feed-health-score";
+import { ReadingMode } from "@/components/feed/reading-mode";
+import { useReadLater, ReadLaterButton, ReadLaterQueue } from "@/components/feed/read-later-queue";
+import { FeedBackup } from "@/components/feed/feed-backup";
+import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -170,7 +176,11 @@ function DashboardContent() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const { reactions, toggleReaction } = useReactions();
   const { pinnedIds, togglePin, isPinned } = usePinnedArticles();
+  const { addToQueue, removeFromQueue, isInQueue } = useReadLater();
+  const { getTagsForItem, addTag, removeTag, allTags } = useBookmarkTags();
+  const [readingModeItem, setReadingModeItem] = useState<FeedItem | null>(null);
   const [similarTarget, setSimilarTarget] = useState<FeedItem | null>(null);
+  const [contentTypeFilter, setContentTypeFilter] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -602,13 +612,16 @@ function DashboardContent() {
   );
 
   const chipFilteredItems = applyFilter(displayItems, activeFilter, readIds);
+  const typeFilteredItems = contentTypeFilter
+    ? chipFilteredItems.filter((item) => getContentType(item.title, item.summary) === contentTypeFilter)
+    : chipFilteredItems;
   const filteredItems = searchQuery
-    ? chipFilteredItems.filter(
+    ? typeFilteredItems.filter(
         (item) =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.summary.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : chipFilteredItems;
+    : typeFilteredItems;
 
   // Counts for filter chips
   const todayCount = useMemo(() => {
@@ -1111,6 +1124,7 @@ function DashboardContent() {
             <BarChart3 className="h-3.5 w-3.5" />
             {showAnalytics ? "Hide" : "Show"} Analytics
           </button>
+          <FeedBackup onRestore={() => window.location.reload()} />
         </div>
       )}
 
@@ -1696,7 +1710,26 @@ function DashboardContent() {
                 items={activeTab.items}
               />
             )}
+            {activeTab.id !== "all" && (
+              <FeedHealthScore
+                items={activeTab.items}
+                lastRefresh={activeTab.lastRefresh || ""}
+                name={activeTab.name}
+                readIds={readIds}
+              />
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Content Type Filter */}
+      {displayItems.length > 3 && !activeTab.loading && (
+        <div className="mb-3">
+          <ContentTypeFilter
+            active={contentTypeFilter as "news" | "tutorial" | "opinion" | "analysis" | null}
+            onChange={setContentTypeFilter as (t: "news" | "tutorial" | "opinion" | "analysis" | null) => void}
+            items={displayItems}
+          />
         </div>
       )}
 
@@ -1731,6 +1764,9 @@ function DashboardContent() {
           bookmarkCount={bookmarkedIds.size}
         />
       )}
+
+      {/* Read Later Queue */}
+      <ReadLaterQueue onOpenReader={(item) => setReaderItem(item)} />
 
       {/* Pinned Articles */}
       {pinnedIds.size > 0 && (
@@ -1898,6 +1934,14 @@ function DashboardContent() {
                   pinned={isPinned(item.id)}
                   onTogglePin={() => togglePin(item.id)}
                   onFindSimilar={() => setSimilarTarget(item)}
+                  readLaterSlot={
+                    <ReadLaterButton
+                      inQueue={isInQueue(item.id)}
+                      onAdd={(minutes) => addToQueue(item, minutes)}
+                      onRemove={() => removeFromQueue(item.id)}
+                    />
+                  }
+                  tagBadges={getTagsForItem(item.id)}
                 />
                 {!compactView && (
                   <div className="mt-1 pl-1">
@@ -1961,16 +2005,40 @@ function DashboardContent() {
 
       {/* Article Reader Overlay */}
       {readerItem && (
-        <ArticleReader
-          url={readerItem.url}
-          title={readerItem.title}
-          summary={readerItem.summary}
-          source={readerItem.source}
-          sourceIcon={readerItem.sourceIcon}
-          publishedAt={readerItem.publishedAt}
-          bookmarked={bookmarkedIds.has(readerItem.id)}
-          onToggleBookmark={() => toggleBookmark(readerItem)}
-          onClose={() => setReaderItem(null)}
+        <>
+          <ArticleReader
+            url={readerItem.url}
+            title={readerItem.title}
+            summary={readerItem.summary}
+            source={readerItem.source}
+            sourceIcon={readerItem.sourceIcon}
+            publishedAt={readerItem.publishedAt}
+            bookmarked={bookmarkedIds.has(readerItem.id)}
+            onToggleBookmark={() => toggleBookmark(readerItem)}
+            onClose={() => setReaderItem(null)}
+            onOpenReadingMode={() => setReadingModeItem(readerItem)}
+            tagSlot={
+              <BookmarkTagPicker
+                itemId={readerItem.id}
+                tags={getTagsForItem(readerItem.id)}
+                allTags={allTags}
+                onAddTag={addTag}
+                onRemoveTag={removeTag}
+              />
+            }
+          />
+        </>
+      )}
+
+      {/* Reading Mode */}
+      {readingModeItem && (
+        <ReadingMode
+          title={readingModeItem.title}
+          summary={readingModeItem.summary}
+          content={readingModeItem.summary}
+          source={readingModeItem.source}
+          url={readingModeItem.url}
+          onClose={() => setReadingModeItem(null)}
         />
       )}
 

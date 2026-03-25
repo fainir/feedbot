@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen, Pin, Layers } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen, Pin, Layers, Tag } from "lucide-react";
 import { TrendingBadge } from "@/components/feed/trending-tab";
 import { QuickShareMenu } from "@/components/feed/quick-share";
 import { SentimentBadge } from "@/components/feed/sentiment-badge";
+import { ContentTypeTag } from "@/components/feed/content-type-tag";
 import { Card } from "@/components/ui/card";
 import { timeAgo, readingTime } from "@/lib/utils";
 
@@ -27,6 +28,8 @@ interface FeedCardProps {
   pinned?: boolean;
   onTogglePin?: () => void;
   onFindSimilar?: () => void;
+  readLaterSlot?: ReactNode;
+  tagBadges?: string[];
 }
 
 export function FeedCard({
@@ -48,6 +51,8 @@ export function FeedCard({
   pinned,
   onTogglePin,
   onFindSimilar,
+  readLaterSlot,
+  tagBadges,
 }: FeedCardProps) {
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(note || "");
@@ -96,6 +101,7 @@ export function FeedCard({
           <span className="text-border">|</span>
           <span>{readingTime(summary)}</span>
           <SentimentBadge title={title} summary={summary} />
+          <ContentTypeTag title={title} summary={summary} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -164,10 +170,27 @@ export function FeedCard({
             </button>
           )}
 
+          {/* Read Later */}
+          {readLaterSlot}
+
         {/* Share menu */}
         <QuickShareMenu title={title} url={url} summary={summary} />
         </div>
       </div>
+      {/* Tag badges */}
+      {tagBadges && tagBadges.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {tagBadges.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+            >
+              <Tag className="h-2.5 w-2.5" />
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
       {/* Note display */}
       {note && !showNote && (
         <div className="mt-3 rounded-lg bg-primary/5 px-3 py-2">

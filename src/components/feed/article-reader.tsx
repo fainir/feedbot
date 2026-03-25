@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check } from "lucide-react";
+import { useState, useEffect, type ReactNode } from "react";
+import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check, BookOpenText } from "lucide-react";
 import { ArticleSummarizer } from "./article-summarizer";
 
 interface ArticleReaderProps {
@@ -14,6 +14,8 @@ interface ArticleReaderProps {
   bookmarked?: boolean;
   onToggleBookmark?: () => void;
   onClose: () => void;
+  onOpenReadingMode?: () => void;
+  tagSlot?: ReactNode;
 }
 
 interface ArticleContent {
@@ -35,6 +37,8 @@ export function ArticleReader({
   bookmarked,
   onToggleBookmark,
   onClose,
+  onOpenReadingMode,
+  tagSlot,
 }: ArticleReaderProps) {
   const [article, setArticle] = useState<ArticleContent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,12 +165,22 @@ export function ArticleReader({
                 <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-secondary" : ""}`} />
               </button>
             )}
+            {tagSlot}
             <button
               onClick={copyLink}
               className="rounded-lg p-2 text-text-muted transition-colors hover:text-text"
             >
               {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
             </button>
+            {onOpenReadingMode && (
+              <button
+                onClick={onOpenReadingMode}
+                className="rounded-lg p-2 text-text-muted transition-colors hover:text-text"
+                title="Reading Mode"
+              >
+                <BookOpenText className="h-4 w-4" />
+              </button>
+            )}
             <a
               href={url}
               target="_blank"
