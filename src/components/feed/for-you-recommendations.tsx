@@ -2,16 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Sparkles, ChevronRight, X, ThumbsUp, ThumbsDown } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface ForYouRecommendationsProps {
   allItems: FeedItem[];

@@ -2,16 +2,7 @@
 
 import { useMemo } from "react";
 import { TrendingUp, Clock, Flame, BarChart2 } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface TrendingTabProps {
   allItems: FeedItem[];

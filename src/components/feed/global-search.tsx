@@ -2,16 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Search, X, Calendar, Globe, Filter, ChevronDown } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface GlobalSearchProps {
   allItems: FeedItem[];

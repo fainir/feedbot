@@ -2,13 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Activity, ChevronDown, ChevronUp, Lightbulb, Clock, Layers, Users, BookOpen } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  publishedAt: string;
-  source: string;
-  read?: boolean;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface FeedHealthScoreProps {
   items: FeedItem[];
@@ -51,7 +45,7 @@ function computeEngagement(items: FeedItem[], readIds?: Set<string>): number {
   if (items.length === 0) return 0;
   const readCount = readIds
     ? items.filter((i) => readIds.has(i.id)).length
-    : items.filter((i) => i.read).length;
+    : 0;
   const ratio = readCount / items.length;
   if (ratio >= 0.5) return 100;
   return Math.round((ratio / 0.5) * 100);

@@ -13,15 +13,9 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-// --- Types ---
+import type { FeedItem } from "@/lib/feed-types";
 
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  publishedAt: string;
-}
+// --- Types ---
 
 interface SentimentTrackerProps {
   items: FeedItem[];

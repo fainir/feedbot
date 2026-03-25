@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Bell, X, Clock, ExternalLink } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface NewItemsBellProps {
   allItems: FeedItem[];

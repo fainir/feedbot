@@ -18,6 +18,7 @@ import {
   FlaskConical,
   Copy,
 } from "lucide-react";
+import type { FeedItem } from "@/lib/feed-types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,16 +64,6 @@ export interface RuleActionResult {
   ruleId: string;
   ruleName: string;
   action: RuleAction;
-}
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
 }
 
 // ---------------------------------------------------------------------------

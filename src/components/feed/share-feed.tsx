@@ -4,16 +4,7 @@ import { useState, useMemo } from "react";
 import { Share2, Link2, Check, X, Twitter, Linkedin, Mail, Copy, ToggleLeft, ToggleRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface ShareFeedProps {
   feedName: string;

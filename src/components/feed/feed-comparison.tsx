@@ -2,15 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Columns2, X, ArrowLeftRight } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface Tab {
   id: string;

@@ -2,16 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Newspaper, ChevronDown, ChevronUp, ExternalLink, Clock, Sparkles } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface StoryCluster {
   topic: string;

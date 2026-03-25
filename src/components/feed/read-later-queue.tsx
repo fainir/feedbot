@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Clock, X, Bell, ChevronDown, ChevronUp, Trash2, ExternalLink } from "lucide-react";
-
-interface FeedItem {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  sourceIcon?: string;
-}
+import type { FeedItem } from "@/lib/feed-types";
 
 interface QueueItem {
   item: FeedItem;

@@ -1695,7 +1695,7 @@ function DashboardContent() {
       {/* Sentiment Tracker */}
       {allItems.length > 3 && (
         <SentimentTracker
-          items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source, publishedAt: i.publishedAt }))}
+          items={allItems}
         />
       )}
 
