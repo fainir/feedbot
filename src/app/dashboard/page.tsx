@@ -21,6 +21,7 @@ interface FeedItem {
   source: string;
   url: string;
   publishedAt: string;
+  sourceIcon?: string;
 }
 
 const DEFAULT_TABS: Tab[] = [
@@ -219,6 +220,7 @@ export default function DashboardPage() {
               placeholder="Tab name (e.g., AI News, Startup Ideas)"
               value={newTabName}
               onChange={(e) => setNewTabName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && newTabName.trim() && newTabPrompt.trim() && addTab()}
               className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
               autoFocus
             />
@@ -226,6 +228,12 @@ export default function DashboardPage() {
               placeholder="What should this feed show? (e.g., Latest AI research papers and breakthroughs)"
               value={newTabPrompt}
               onChange={(e) => setNewTabPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && newTabName.trim() && newTabPrompt.trim()) {
+                  e.preventDefault();
+                  addTab();
+                }
+              }}
               rows={2}
               className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
             />
@@ -350,6 +358,7 @@ export default function DashboardPage() {
               source={item.source}
               url={item.url}
               publishedAt={item.publishedAt}
+              sourceIcon={item.sourceIcon}
             />
           ))}
         </div>

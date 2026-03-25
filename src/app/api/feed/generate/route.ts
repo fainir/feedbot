@@ -10,6 +10,7 @@ interface FeedItem {
   source: string;
   url: string;
   publishedAt: string;
+  sourceIcon?: string;
 }
 
 // Generate feed items based on a prompt
@@ -33,14 +34,18 @@ async function generateFeedItems(prompt: string): Promise<FeedItem[]> {
       );
       if (res.ok) {
         const data = await res.json();
-        return (data.web?.results || []).map((r: { title: string; description: string; url: string; age?: string }, i: number) => ({
-          id: `brave-${i}-${Date.now()}`,
-          title: r.title,
-          summary: r.description,
-          source: new URL(r.url).hostname.replace("www.", ""),
-          url: r.url,
-          publishedAt: new Date(now - i * 3600000).toISOString(),
-        }));
+        return (data.web?.results || []).map((r: { title: string; description: string; url: string; age?: string; profile?: { img?: string } }, i: number) => {
+          const hostname = new URL(r.url).hostname.replace("www.", "");
+          return {
+            id: `brave-${i}-${Date.now()}`,
+            title: r.title,
+            summary: r.description,
+            source: hostname,
+            url: r.url,
+            publishedAt: new Date(now - i * 3600000).toISOString(),
+            sourceIcon: r.profile?.img || `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
+          };
+        });
       }
     } catch {}
   }
