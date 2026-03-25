@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Dashboard — FeedBot",
   description: "Your personalized feeds, all in one place.",
+  robots: { index: false, follow: false },
 };
 
 export default function DashboardLayout({
