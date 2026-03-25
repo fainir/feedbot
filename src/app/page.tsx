@@ -74,7 +74,7 @@ export default function LandingPage() {
               Pricing
             </Link>
             <Link
-              href="/dashboard"
+              href="/login"
               className="text-sm text-text-muted transition-colors hover:text-text"
             >
               Log In

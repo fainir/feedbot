@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedCard } from "@/components/feed/feed-card";
 import { timeAgo } from "@/lib/utils";
+import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
 
 interface Tab {
   id: string;
@@ -96,6 +98,14 @@ export default function DashboardPage() {
   const [newTabPrompt, setNewTabPrompt] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  // Get user on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
 
   // Load tabs from localStorage on mount
   useEffect(() => {
@@ -224,8 +234,62 @@ export default function DashboardPage() {
     feedTabs.forEach((t) => fetchFeedItems(t.id, t.prompt));
   }, [tabs, fetchFeedItems]);
 
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
+
+  async function handleUpgrade() {
+    setCheckingOut(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to start checkout");
+      }
+    } catch {
+      alert("Failed to start checkout");
+    }
+    setCheckingOut(false);
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
+      {/* User Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <Rss className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-lg font-bold text-text">FeedBot</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleUpgrade}
+            disabled={checkingOut}
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-secondary to-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Crown className="h-3.5 w-3.5" />
+            {checkingOut ? "Loading..." : "Upgrade to Pro"}
+          </button>
+          {user && (
+            <span className="text-sm text-text-muted">
+              {user.email}
+            </span>
+          )}
+          <button
+            onClick={handleLogout}
+            className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+            title="Log out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
       {/* Tabs Bar */}
       <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
         {tabs.map((tab) => (
