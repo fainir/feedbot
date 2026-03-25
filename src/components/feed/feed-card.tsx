@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen } from "lucide-react";
+import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen, Pin, Layers } from "lucide-react";
 import { TrendingBadge } from "@/components/feed/trending-tab";
 import { QuickShareMenu } from "@/components/feed/quick-share";
 import { SentimentBadge } from "@/components/feed/sentiment-badge";
@@ -24,6 +24,9 @@ interface FeedCardProps {
   onSaveNote?: (note: string) => void;
   onOpenReader?: () => void;
   trendingReasons?: string[];
+  pinned?: boolean;
+  onTogglePin?: () => void;
+  onFindSimilar?: () => void;
 }
 
 export function FeedCard({
@@ -42,6 +45,9 @@ export function FeedCard({
   onSaveNote,
   onOpenReader,
   trendingReasons,
+  pinned,
+  onTogglePin,
+  onFindSimilar,
 }: FeedCardProps) {
   const [showNote, setShowNote] = useState(false);
   const [noteText, setNoteText] = useState(note || "");
@@ -89,7 +95,7 @@ export function FeedCard({
           <span>{timeAgo(publishedAt)}</span>
           <span className="text-border">|</span>
           <span>{readingTime(summary)}</span>
-          <SentimentBadge text={`${title} ${summary}`} />
+          <SentimentBadge title={title} summary={summary} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -116,6 +122,32 @@ export function FeedCard({
               title={bookmarked ? "Remove bookmark" : "Bookmark"}
             >
               <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? "fill-secondary" : ""}`} />
+            </button>
+          )}
+
+          {/* Pin button */}
+          {onTogglePin && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-all sm:opacity-0 sm:group-hover:opacity-100 ${
+                pinned
+                  ? "text-orange-400"
+                  : "text-text-muted hover:bg-bg-hover hover:text-text"
+              }`}
+              title={pinned ? "Unpin" : "Pin to top"}
+            >
+              <Pin className={`h-3.5 w-3.5 ${pinned ? "fill-orange-400/30" : ""}`} />
+            </button>
+          )}
+
+          {/* Similar articles button */}
+          {onFindSimilar && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onFindSimilar(); }}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-all hover:bg-bg-hover hover:text-text sm:opacity-0 sm:group-hover:opacity-100"
+              title="Find similar articles"
+            >
+              <Layers className="h-3.5 w-3.5" />
             </button>
           )}
 

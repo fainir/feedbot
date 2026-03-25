@@ -37,7 +37,10 @@ import { GlobalSearch } from "@/components/feed/global-search";
 import { ReadingGoals } from "@/components/feed/reading-goals";
 import { OnboardingTour } from "@/components/feed/onboarding-tour";
 import { ActivityHeatmap } from "@/components/feed/activity-heatmap";
-import { SentimentBadge } from "@/components/feed/sentiment-badge";
+import { usePinnedArticles, PinnedArticles, sortWithPinned } from "@/components/feed/pin-articles";
+import { SimilarArticles } from "@/components/feed/similar-articles";
+import { FeedAnalyticsPanel } from "@/components/feed/feed-analytics";
+import { ShareFeed } from "@/components/feed/share-feed";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -166,6 +169,8 @@ function DashboardContent() {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const { reactions, toggleReaction } = useReactions();
+  const { pinnedIds, togglePin, isPinned } = usePinnedArticles();
+  const [similarTarget, setSimilarTarget] = useState<FeedItem | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -588,7 +593,7 @@ function DashboardContent() {
     [unmutedItems, sortMode, bookmarkedIds, readIds]
   );
 
-  const displayItems = sortedItems;
+  const displayItems = useMemo(() => sortWithPinned(sortedItems, pinnedIds), [sortedItems, pinnedIds]);
 
   // Compute keyword alert matches
   const keywordMatchedIds = useMemo(
@@ -1037,6 +1042,7 @@ function DashboardContent() {
             enabled={notificationsEnabled}
             onToggle={toggleNotifications}
           />
+          <FeedAnalyticsPanel />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1719,6 +1725,16 @@ function DashboardContent() {
         />
       )}
 
+      {/* Pinned Articles */}
+      {pinnedIds.size > 0 && (
+        <PinnedArticles
+          pinnedIds={pinnedIds}
+          allItems={allItems}
+          onUnpin={togglePin}
+          onOpenReader={(item) => setReaderItem(item)}
+        />
+      )}
+
       {/* Reading History */}
       {activeTabId === "all" && allItems.length > 0 && readIds.size > 0 && (
         <ReadingHistory
@@ -1872,6 +1888,9 @@ function DashboardContent() {
                   onSaveNote={(note) => saveNote(item.id, note)}
                   onOpenReader={() => setReaderItem(item)}
                   trendingReasons={trendingMap.get(item.id)}
+                  pinned={isPinned(item.id)}
+                  onTogglePin={() => togglePin(item.id)}
+                  onFindSimilar={() => setSimilarTarget(item)}
                 />
                 {!compactView && (
                   <div className="mt-1 pl-1">
@@ -1897,6 +1916,16 @@ function DashboardContent() {
             </p>
           )}
         </div>
+      )}
+
+      {/* Similar Articles Modal */}
+      {similarTarget && (
+        <SimilarArticles
+          targetItem={similarTarget}
+          allItems={allItems}
+          onOpenReader={(item) => { setReaderItem(item); setSimilarTarget(null); }}
+          onClose={() => setSimilarTarget(null)}
+        />
       )}
 
       {/* Global Search */}
