@@ -49,7 +49,8 @@ import { FeedBackup } from "@/components/feed/feed-backup";
 import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
 import { DigestScheduler } from "@/components/feed/digest-scheduler";
 import { TeamFeedsPanel, TeamFeedsBadge } from "@/components/feed/team-feeds";
-import { AllAnnotations } from "@/components/feed/article-annotations";
+import { SentimentTracker, SentimentBadge } from "@/components/feed/sentiment-tracker";
+import { KeyboardPowerMode, PowerModeToggle } from "@/components/feed/keyboard-power-mode";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -1060,6 +1061,7 @@ function DashboardContent() {
           />
           <FeedAnalyticsPanel />
           <TeamFeedsBadge />
+          <PowerModeToggle />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1745,6 +1747,13 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* Sentiment Tracker */}
+      {allItems.length > 3 && (
+        <SentimentTracker
+          items={allItems.map((i) => ({ id: i.id, title: i.title, summary: i.summary, source: i.source, publishedAt: i.publishedAt }))}
+        />
+      )}
+
       {/* Content Highlights */}
       {activeTabId === "all" && allItems.length > 8 && (
         <ContentHighlights
@@ -2102,6 +2111,12 @@ function DashboardContent() {
 
       {/* Onboarding Tour */}
       <OnboardingTour />
+
+      {/* Keyboard Power Mode */}
+      <KeyboardPowerMode
+        totalItems={allItems.length}
+        feedName={activeTab.name}
+      />
     </div>
   );
 }
