@@ -13,6 +13,11 @@ import { CommandPalette } from "@/components/ui/command-palette";
 import { ReadingStreak } from "@/components/feed/reading-streak";
 import { ArticleReader } from "@/components/feed/article-reader";
 import { computeTrending, TrendingHeader } from "@/components/feed/trending-tab";
+import { DailyBrief } from "@/components/feed/daily-brief";
+import { NewItemsBell } from "@/components/feed/new-items-bell";
+import { FilterChips, applyFilter, type FilterChipType } from "@/components/feed/filter-chips";
+import { FeedFolders, type FeedFolder } from "@/components/feed/feed-folders";
+import { KeywordAlerts, type KeywordAlert, computeKeywordMatches, HighlightKeywords } from "@/components/feed/keyword-alerts";
 import { timeAgo } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -129,6 +134,10 @@ function DashboardContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [readerItem, setReaderItem] = useState<FeedItem | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterChipType>("all");
+  const [folders, setFolders] = useState<FeedFolder[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [keywordAlerts, setKeywordAlerts] = useState<KeywordAlert[]>([]);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -169,6 +178,14 @@ function DashboardContent() {
     try {
       const notes = localStorage.getItem("feedbot-notes");
       if (notes) setItemNotes(JSON.parse(notes));
+    } catch {}
+    try {
+      const foldersData = localStorage.getItem("feedbot-folders");
+      if (foldersData) setFolders(JSON.parse(foldersData));
+    } catch {}
+    try {
+      const alertsData = localStorage.getItem("feedbot-alerts");
+      if (alertsData) setKeywordAlerts(JSON.parse(alertsData));
     } catch {}
   }, []);
 
@@ -484,14 +501,46 @@ function DashboardContent() {
     return map;
   }, [trendingItems]);
 
-  const displayItems = activeTabId === "all" ? dedupedAllItems : activeTabId === "saved" ? bookmarkedItems : activeTabId === "trending" ? trendingItems : activeTab.items;
+  // Apply folder filter if active
+  const folderFilteredItems = useMemo(() => {
+    const base = activeTabId === "all" ? dedupedAllItems : activeTabId === "saved" ? bookmarkedItems : activeTabId === "trending" ? trendingItems : activeTab.items;
+    if (!activeFolderId) return base;
+    const folder = folders.find((f) => f.id === activeFolderId);
+    if (!folder) return base;
+    // When folder is active and viewing "all", only show items from feeds in that folder
+    if (activeTabId === "all") {
+      const folderFeedIds = new Set(folder.feedIds);
+      return allItems.filter((item) => {
+        const feedTab = tabs.find((t) => t.items.some((i) => i.id === item.id) && folderFeedIds.has(t.id));
+        return !!feedTab;
+      });
+    }
+    return base;
+  }, [activeTabId, dedupedAllItems, bookmarkedItems, trendingItems, activeTab.items, activeFolderId, folders, allItems, tabs]);
+
+  const displayItems = folderFilteredItems;
+
+  // Compute keyword alert matches
+  const keywordMatchedIds = useMemo(
+    () => computeKeywordMatches(displayItems, keywordAlerts),
+    [displayItems, keywordAlerts]
+  );
+
+  const chipFilteredItems = applyFilter(displayItems, activeFilter, readIds);
   const filteredItems = searchQuery
-    ? displayItems.filter(
+    ? chipFilteredItems.filter(
         (item) =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.summary.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : displayItems;
+    : chipFilteredItems;
+
+  // Counts for filter chips
+  const todayCount = useMemo(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return displayItems.filter((i) => new Date(i.publishedAt).getTime() > cutoff).length;
+  }, [displayItems]);
+  const unreadCount = useMemo(() => displayItems.filter((i) => !readIds.has(i.id)).length, [displayItems, readIds]);
 
   const markAllAsRead = useCallback(() => {
     setReadIds((prev) => {
@@ -577,6 +626,16 @@ function DashboardContent() {
       localStorage.setItem("feedbot-notes", JSON.stringify(next));
       return next;
     });
+  }, []);
+
+  const updateFolders = useCallback((newFolders: FeedFolder[]) => {
+    setFolders(newFolders);
+    localStorage.setItem("feedbot-folders", JSON.stringify(newFolders));
+  }, []);
+
+  const updateAlerts = useCallback((newAlerts: KeywordAlert[]) => {
+    setKeywordAlerts(newAlerts);
+    localStorage.setItem("feedbot-alerts", JSON.stringify(newAlerts));
   }, []);
 
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
@@ -831,6 +890,7 @@ function DashboardContent() {
               {user.email}
             </span>
           )}
+          <NewItemsBell allItems={allItems} onOpenReader={(item) => setReaderItem(item)} />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -905,6 +965,27 @@ function DashboardContent() {
       {/* Reading Streak */}
       {allItems.length > 0 && !initialLoading && (
         <ReadingStreak readCount={readIds.size} bookmarkCount={bookmarkedIds.size} />
+      )}
+
+      {/* Feed Folders */}
+      <FeedFolders
+        folders={folders}
+        feeds={tabs.filter((t) => t.id !== "all").map((t) => ({ id: t.id, name: t.name }))}
+        activeFolderId={activeFolderId}
+        onSelectFolder={setActiveFolderId}
+        onUpdateFolders={updateFolders}
+      />
+
+      {/* Keyword Alerts */}
+      <KeywordAlerts
+        alerts={keywordAlerts}
+        onUpdateAlerts={updateAlerts}
+        matchedItemIds={keywordMatchedIds}
+      />
+
+      {/* Daily Brief */}
+      {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
+        <DailyBrief allItems={allItems} onOpenReader={(item) => setReaderItem(item)} />
       )}
 
       {/* Source Analytics */}
@@ -1390,6 +1471,16 @@ function DashboardContent() {
       {/* Trending Header */}
       {activeTabId === "trending" && trendingItems.length > 0 && (
         <TrendingHeader count={trendingItems.length} />
+      )}
+
+      {/* Filter Chips */}
+      {displayItems.length > 0 && !activeTab.loading && (
+        <FilterChips
+          active={activeFilter}
+          onChange={setActiveFilter}
+          unreadCount={unreadCount}
+          todayCount={todayCount}
+        />
       )}
 
       {/* Feed */}
