@@ -1689,6 +1689,13 @@ function DashboardContent() {
               tabs={tabs.filter((t) => t.id !== "all")}
               readIds={readIds}
             />
+            {activeTab.id !== "all" && (
+              <ShareFeed
+                feedName={activeTab.name}
+                feedPrompt={activeTab.prompt}
+                items={activeTab.items}
+              />
+            )}
           </div>
         </div>
       )}

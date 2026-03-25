@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check } from "lucide-react";
+import { ArticleSummarizer } from "./article-summarizer";
 
 interface ArticleReaderProps {
   url: string;
@@ -41,6 +42,7 @@ export function ArticleReader({
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [showSummarizer, setShowSummarizer] = useState(false);
 
   useEffect(() => {
     async function fetchArticle() {
@@ -226,6 +228,16 @@ export function ArticleReader({
                   {publishedAt && ` · ${new Date(publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`}
                 </p>
               )}
+
+              {/* AI Summarizer */}
+              <div className="mb-6">
+                <ArticleSummarizer
+                  url={url}
+                  title={article.title || title}
+                  content={article.content}
+                />
+              </div>
+
               <div
                 className={`article-content prose prose-neutral dark:prose-invert max-w-none ${fontSizeClass}`}
                 dangerouslySetInnerHTML={{ __html: article.content }}
