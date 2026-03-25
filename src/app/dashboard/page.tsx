@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3, Upload, CheckCheck, LayoutList, LayoutGrid, CheckSquare, Square, Link2, GripVertical } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -115,6 +115,13 @@ function DashboardContent() {
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [compactView, setCompactView] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
+  const [discoverUrl, setDiscoverUrl] = useState("");
+  const [discovering, setDiscovering] = useState(false);
+  const [discoveredFeeds, setDiscoveredFeeds] = useState<{ title: string; url: string; type: string }[]>([]);
+  const [dragTabId, setDragTabId] = useState<string | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
@@ -437,6 +444,72 @@ function DashboardContent() {
     });
     toast("All items marked as read", "success");
   }, [displayItems, toast]);
+
+  const toggleSelect = useCallback((itemId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }, []);
+
+  const bulkMarkRead = useCallback(() => {
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      for (const id of selectedIds) next.add(id);
+      localStorage.setItem("feedbot-read", JSON.stringify([...next]));
+      return next;
+    });
+    toast(`${selectedIds.size} items marked as read`, "success");
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [selectedIds, toast]);
+
+  const bulkBookmark = useCallback(() => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of selectedIds) next.add(id);
+      // Also save item data
+      try {
+        const savedItems = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}");
+        for (const item of displayItems) {
+          if (selectedIds.has(item.id)) savedItems[item.id] = item;
+        }
+        localStorage.setItem("feedbot-bookmark-items", JSON.stringify(savedItems));
+      } catch {}
+      localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
+      return next;
+    });
+    toast(`${selectedIds.size} items bookmarked`, "success");
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [selectedIds, displayItems, toast]);
+
+  const discoverFeedsFromUrl = useCallback(async () => {
+    if (!discoverUrl.trim()) return;
+    setDiscovering(true);
+    setDiscoveredFeeds([]);
+    try {
+      const res = await fetch("/api/feeds/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: discoverUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Discovery failed", "error");
+      } else if (data.feeds.length === 0) {
+        toast("No RSS feeds found at this URL", "info");
+      } else {
+        setDiscoveredFeeds(data.feeds);
+        toast(`Found ${data.feeds.length} feed(s)`, "success");
+      }
+    } catch {
+      toast("Failed to discover feeds", "error");
+    }
+    setDiscovering(false);
+  }, [discoverUrl, toast]);
 
   const createFeed = useCallback(async (name: string, prompt: string): Promise<string | null> => {
     try {
@@ -788,11 +861,28 @@ function DashboardContent() {
           <button
             key={tab.id}
             onClick={() => setActiveTabId(tab.id)}
+            draggable={tab.id !== "all"}
+            onDragStart={() => setDragTabId(tab.id)}
+            onDragOver={(e) => { e.preventDefault(); }}
+            onDrop={() => {
+              if (!dragTabId || dragTabId === tab.id) return;
+              setTabs((prev) => {
+                const fromIdx = prev.findIndex((t) => t.id === dragTabId);
+                const toIdx = prev.findIndex((t) => t.id === tab.id);
+                if (fromIdx < 0 || toIdx < 0 || fromIdx === 0 || toIdx === 0) return prev;
+                const next = [...prev];
+                const [moved] = next.splice(fromIdx, 1);
+                next.splice(toIdx, 0, moved);
+                return next;
+              });
+              setDragTabId(null);
+            }}
+            onDragEnd={() => setDragTabId(null)}
             className={`group relative flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTabId === tab.id
                 ? "bg-primary text-white"
                 : "text-text-muted hover:bg-surface hover:text-text"
-            }`}
+            } ${dragTabId === tab.id ? "opacity-50" : ""}`}
           >
             {tab.name}
             {!tab.loading && tab.items.length > 0 && tab.id !== "all" && (
@@ -851,6 +941,14 @@ function DashboardContent() {
         >
           <Plus className="h-4 w-4" />
           New Tab
+        </button>
+        <button
+          onClick={() => setShowDiscover(true)}
+          className="flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface hover:text-text"
+          title="Discover RSS feeds from any URL"
+        >
+          <Link2 className="h-4 w-4" />
+          <span className="hidden sm:inline">Discover</span>
         </button>
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -952,6 +1050,56 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* Discover from URL */}
+      {showDiscover && (
+        <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-text">Discover Feeds from URL</h3>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              placeholder="Paste any website URL (e.g., https://techcrunch.com)"
+              value={discoverUrl}
+              onChange={(e) => setDiscoverUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && discoverFeedsFromUrl()}
+              className="flex-1 rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+              autoFocus
+            />
+            <Button onClick={discoverFeedsFromUrl} disabled={discovering || !discoverUrl.trim()}>
+              {discovering ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {discovering ? "Scanning..." : "Discover"}
+            </Button>
+            <Button variant="ghost" onClick={() => { setShowDiscover(false); setDiscoveredFeeds([]); setDiscoverUrl(""); }}>
+              Cancel
+            </Button>
+          </div>
+          {discoveredFeeds.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {discoveredFeeds.map((feed) => (
+                <div key={feed.url} className="flex items-center justify-between rounded-lg border border-border bg-bg p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-text">{feed.title}</p>
+                    <p className="truncate text-xs text-text-muted">{feed.url}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const feedId = await createFeed(feed.title, feed.title);
+                      if (feedId) {
+                        toast(`Added "${feed.title}"`, "success");
+                        setActiveTabId(feedId);
+                      }
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -1004,6 +1152,15 @@ function DashboardContent() {
               </Button>
             </>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectMode((v) => !v)}
+            className={selectMode ? "text-primary" : "text-text-muted"}
+            title="Multi-select mode"
+          >
+            <CheckSquare className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -1066,6 +1223,39 @@ function DashboardContent() {
             className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
             autoFocus
           />
+        </div>
+      )}
+
+      {/* Multi-Select Toolbar */}
+      {selectMode && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
+          <span className="text-sm text-text-muted">
+            {selectedIds.size} selected
+          </span>
+          <div className="flex-1" />
+          <Button size="sm" variant="ghost" onClick={bulkMarkRead} disabled={selectedIds.size === 0}>
+            <CheckCheck className="h-3.5 w-3.5" />
+            Mark Read
+          </Button>
+          <Button size="sm" variant="ghost" onClick={bulkBookmark} disabled={selectedIds.size === 0}>
+            <Bookmark className="h-3.5 w-3.5" />
+            Bookmark
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const all = new Set(filteredItems.slice(0, visibleCount).map((i) => i.id));
+              setSelectedIds((prev) => (prev.size === all.size ? new Set() : all));
+            }}
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            {selectedIds.size === filteredItems.slice(0, visibleCount).length ? "Deselect All" : "Select All"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}>
+            <X className="h-3.5 w-3.5" />
+            Cancel
+          </Button>
         </div>
       )}
 
@@ -1181,7 +1371,21 @@ function DashboardContent() {
                 {...(isFocused ? { "data-focused-item": true, "data-item-id": item.id } : {})}
                 ref={isFocused ? (el) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" }) : undefined}
                 onClick={() => markAsRead(item.id)}
+                className={selectMode ? "flex items-start gap-2" : ""}
               >
+                {selectMode && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                    className="mt-4 shrink-0 text-text-muted hover:text-primary sm:mt-5"
+                  >
+                    {selectedIds.has(item.id) ? (
+                      <CheckSquare className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Square className="h-5 w-5" />
+                    )}
+                  </button>
+                )}
+                <div className={selectMode ? "flex-1 min-w-0" : ""}>
                 <FeedCard
                   title={item.title}
                   summary={item.summary}
@@ -1195,6 +1399,7 @@ function DashboardContent() {
                   isFocused={isFocused}
                   compact={compactView}
                 />
+                </div>
               </div>
             );
           })}
