@@ -391,11 +391,19 @@ function DashboardContent() {
         return;
       }
 
+      // Cmd+Shift+F for global search
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "f") {
+        e.preventDefault();
+        setShowGlobalSearch(true);
+        return;
+      }
+
       // Escape to close modals
       if (e.key === "Escape") {
         setShowShortcuts(false);
         setShowSearch(false);
         setShowNewTab(false);
+        setShowGlobalSearch(false);
         return;
       }
 
