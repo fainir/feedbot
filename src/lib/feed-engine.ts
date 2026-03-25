@@ -113,23 +113,68 @@ export function summarizeItem(title: string, content: string): string {
   return (lastSpace > 150 ? truncated.slice(0, lastSpace) : truncated) + "...";
 }
 
+async function fetchBraveResults(query: string): Promise<DiscoveredItem[]> {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const res = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query + " latest news")}&count=15&freshness=pw`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip",
+          "X-Subscription-Token": apiKey,
+        },
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const now = Date.now();
+    return (data.web?.results || []).map(
+      (r: { title: string; description: string; url: string; age?: string; profile?: { img?: string } }, i: number) => {
+        const hostname = new URL(r.url).hostname.replace("www.", "");
+        return {
+          title: r.title,
+          url: r.url,
+          summary: r.description,
+          source: hostname,
+          image_url: r.profile?.img || null,
+          published_at: new Date(now - i * 3600000).toISOString(),
+        };
+      }
+    );
+  } catch {
+    return [];
+  }
+}
+
 export async function discoverFeeds(
   query: string
 ): Promise<DiscoveredItem[]> {
   const terms = queryToSearchTerms(query);
-  const googleNewsUrl = buildGoogleNewsUrl(terms.join(" "));
-  const commonUrls = buildCommonRssUrls(terms);
 
-  const allUrls = [googleNewsUrl, ...commonUrls];
-
-  const results = await Promise.allSettled(
-    allUrls.map((url) => fetchRssItems(url))
-  );
+  // Try Brave Search first (real web results), RSS as fallback
+  const [braveItems, ...rssResults] = await Promise.allSettled([
+    fetchBraveResults(query),
+    fetchRssItems(buildGoogleNewsUrl(terms.join(" "))),
+    ...buildCommonRssUrls(terms).map((url) => fetchRssItems(url)),
+  ]);
 
   const items: DiscoveredItem[] = [];
   const seenUrls = new Set<string>();
 
-  for (const result of results) {
+  // Brave results first (higher quality)
+  if (braveItems.status === "fulfilled") {
+    for (const item of braveItems.value) {
+      if (seenUrls.has(item.url)) continue;
+      seenUrls.add(item.url);
+      items.push(item);
+    }
+  }
+
+  // Then RSS results
+  for (const result of rssResults) {
     if (result.status !== "fulfilled") continue;
     for (const item of result.value) {
       if (seenUrls.has(item.url)) continue;
@@ -150,19 +195,26 @@ export async function refreshFeed(
   feed: Feed
 ): Promise<DiscoveredItem[]> {
   const terms = queryToSearchTerms(feed.query_text);
-  const googleNewsUrl = buildGoogleNewsUrl(terms.join(" "));
-  const commonUrls = buildCommonRssUrls(terms);
 
-  const allUrls = [googleNewsUrl, ...commonUrls];
-
-  const results = await Promise.allSettled(
-    allUrls.map((url) => fetchRssItems(url))
-  );
+  // Try Brave Search first, RSS as fallback
+  const [braveItems, ...rssResults] = await Promise.allSettled([
+    fetchBraveResults(feed.query_text),
+    fetchRssItems(buildGoogleNewsUrl(terms.join(" "))),
+    ...buildCommonRssUrls(terms).map((url) => fetchRssItems(url)),
+  ]);
 
   const items: DiscoveredItem[] = [];
   const seenUrls = new Set<string>();
 
-  for (const result of results) {
+  if (braveItems.status === "fulfilled") {
+    for (const item of braveItems.value) {
+      if (seenUrls.has(item.url)) continue;
+      seenUrls.add(item.url);
+      items.push(item);
+    }
+  }
+
+  for (const result of rssResults) {
     if (result.status !== "fulfilled") continue;
     for (const item of result.value) {
       if (seenUrls.has(item.url)) continue;
