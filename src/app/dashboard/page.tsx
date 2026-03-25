@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings } from "lucide-react";
+import { Plus, Rss, Search, X, RefreshCw, AlertCircle, Sparkles, ArrowRight, LogOut, Crown, CheckCircle2, Sun, Moon, Keyboard, Share2, Bookmark, Download, Settings, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,7 @@ function DashboardContent() {
   const [shareCopied, setShareCopied] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(15);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
@@ -640,6 +641,64 @@ function DashboardContent() {
           </button>
         </div>
       )}
+
+      {/* Stats Bar */}
+      {allItems.length > 0 && !initialLoading && (
+        <div className="mb-4 flex items-center gap-4 text-xs text-text-muted">
+          <span>{tabs.filter((t) => t.id !== "all").length} feeds</span>
+          <span className="text-border">|</span>
+          <span>{allItems.length} items</span>
+          <span className="text-border">|</span>
+          <span>{bookmarkedIds.size} saved</span>
+          <div className="flex-1" />
+          <button
+            onClick={() => setShowAnalytics((v) => !v)}
+            className="flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-hover hover:text-text"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            {showAnalytics ? "Hide" : "Show"} Analytics
+          </button>
+        </div>
+      )}
+
+      {/* Source Analytics */}
+      {showAnalytics && allItems.length > 0 && (() => {
+        const sourceCounts: Record<string, number> = {};
+        for (const item of allItems) {
+          let domain = item.source;
+          try { domain = new URL(item.url).hostname.replace("www.", ""); } catch {}
+          sourceCounts[domain] = (sourceCounts[domain] || 0) + 1;
+        }
+        const sorted = Object.entries(sourceCounts)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 10);
+        const max = sorted[0]?.[1] || 1;
+
+        return (
+          <div className="mb-6 rounded-xl border border-border bg-bg-card p-4">
+            <h3 className="mb-3 text-sm font-semibold text-text">Top Sources</h3>
+            <div className="space-y-2">
+              {sorted.map(([source, count]) => (
+                <div key={source} className="flex items-center gap-3">
+                  <span className="w-32 shrink-0 truncate text-xs text-text-muted">{source}</span>
+                  <div className="flex-1">
+                    <div
+                      className="h-4 rounded-full bg-primary/20"
+                      style={{ width: "100%" }}
+                    >
+                      <div
+                        className="h-4 rounded-full bg-primary transition-all"
+                        style={{ width: `${(count / max) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="w-8 shrink-0 text-right text-xs font-medium text-text-muted">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tabs Bar */}
       <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
