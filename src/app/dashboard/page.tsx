@@ -71,6 +71,9 @@ import { AccessibilityToggle } from "@/components/feed/accessibility-panel";
 import { WordCloud } from "@/components/feed/word-cloud";
 import { FeedChangelog, ChangelogBadge } from "@/components/feed/feed-changelog";
 import { FloatingActionMenu } from "@/components/feed/quick-actions-bar";
+import { ContentCalendar } from "@/components/feed/content-calendar";
+import { SourceCredibility, SourceTrustBadge } from "@/components/feed/source-credibility";
+import { MilestoneCheck, MilestonesButton } from "@/components/feed/reading-milestones";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -1026,6 +1029,7 @@ function DashboardContent() {
           <PowerModeToggle />
           <WeeklyReportButton />
           <AccessibilityToggle />
+          <MilestonesButton onClick={() => {}} />
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
@@ -1170,6 +1174,27 @@ function DashboardContent() {
 
       {/* Feed Changelog */}
       {!initialLoading && <FeedChangelog />}
+
+      {/* Content Calendar */}
+      {allItems.length > 0 && (
+        <ContentCalendar
+          items={allItems.map((i) => ({ id: i.id, title: i.title, source: i.source, publishedAt: i.publishedAt, url: i.url }))}
+          onSelectItem={(item) => setReaderItem(item as FeedItem)}
+          readIds={readIds}
+          bookmarkedIds={bookmarkedIds}
+        />
+      )}
+
+      {/* Source Credibility */}
+      {allItems.length > 0 && (
+        <SourceCredibility items={allItems.map((i) => ({ id: i.id, title: i.title, source: i.source, url: i.url }))} />
+      )}
+
+      {/* Milestone Celebrations */}
+      <MilestoneCheck
+        readIds={readIds}
+        stats={{ articlesRead: readIds.size, currentStreak: 0, uniqueSources: new Set(allItems.map((i) => i.source)).size, bookmarksCount: bookmarkedIds.size, readingHours: Math.round(readIds.size * 3 / 60) }}
+      />
 
       {/* For You Recommendations */}
       {allItems.length > 0 && !initialLoading && activeTabId === "all" && (
