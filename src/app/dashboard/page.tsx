@@ -48,6 +48,7 @@ import { FeedHealthScore } from "@/components/feed/feed-health-score";
 const ReadingMode = lazy(() => import("@/components/feed/reading-mode").then(m => ({ default: m.ReadingMode })));
 import { useReadLater, ReadLaterButton, ReadLaterQueue } from "@/components/feed/read-later-queue";
 import { FeedBackup } from "@/components/feed/feed-backup";
+import { WhatsNew } from "@/components/feed/whats-new";
 import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
 import { DigestScheduler } from "@/components/feed/digest-scheduler";
 import { TeamFeedsPanel, TeamFeedsBadge } from "@/components/feed/team-feeds";
@@ -1043,6 +1044,7 @@ function DashboardContent() {
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          <WhatsNew />
           <Link
             href="/dashboard/settings"
             className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"

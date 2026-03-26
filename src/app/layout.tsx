@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
@@ -65,6 +66,7 @@ export default function RootLayout({
           </ToastProvider>
         </ThemeProvider>
         <Analytics />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
