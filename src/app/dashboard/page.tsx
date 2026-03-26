@@ -33,6 +33,7 @@ import { ContentTypeFilter, getContentType } from "@/components/feed/content-typ
 import { SentimentTracker } from "@/components/feed/sentiment-tracker";
 import { FeedCard } from "@/components/feed/feed-card";
 import { DashboardHeader, DashboardTabBar, DashboardWidgets, DashboardModals, FeedItemList } from "@/components/dashboard";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
@@ -523,6 +524,7 @@ function DashboardContent() {
       {/* Header + Widgets + Tabs (hidden in focus mode) */}
       {!focusMode && (
         <>
+          <ErrorBoundary name="Header">
           <DashboardHeader
             user={user}
             checkingOut={checkingOut}
@@ -535,7 +537,9 @@ function DashboardContent() {
             onShowShortcuts={() => setShowShortcuts(true)}
             onLogout={handleLogout}
           />
+          </ErrorBoundary>
 
+          <ErrorBoundary name="Widgets">
           <DashboardWidgets
             tabs={tabs}
             activeTabId={activeTabId}
@@ -557,6 +561,7 @@ function DashboardContent() {
             onOpenReader={setReaderItem}
             onMarkAsRead={markAsRead}
           />
+          </ErrorBoundary>
 
           {/* New Tab Form */}
           {showNewTab && (
@@ -606,6 +611,7 @@ function DashboardContent() {
       )}
 
       {/* Tab Bar */}
+      <ErrorBoundary name="Tabs">
       <DashboardTabBar
         tabs={tabs}
         activeTabId={activeTabId}
@@ -634,6 +640,7 @@ function DashboardContent() {
           setDragTabId(null);
         }}
       />
+      </ErrorBoundary>
 
       {/* Feed Header + Toolbar */}
       {!focusMode && (
@@ -757,6 +764,7 @@ function DashboardContent() {
       )}
 
       {/* Feed Items */}
+      <ErrorBoundary name="Feed">
       <FeedItemList
         activeTab={activeTab}
         activeTabId={activeTabId}
@@ -792,8 +800,10 @@ function DashboardContent() {
         isPinned={isPinned}
         getTagsForItem={getTagsForItem}
       />
+      </ErrorBoundary>
 
       {/* Modals */}
+      <ErrorBoundary name="Modals">
       <DashboardModals
         tabs={tabs}
         activeTab={activeTab}
@@ -823,6 +833,7 @@ function DashboardContent() {
         onDiscover={() => setShowDiscover(true)}
         fileInputRef={fileInputRef}
       />
+      </ErrorBoundary>
     </div>
   );
 }
