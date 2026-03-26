@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { EmailCapture } from "@/components/landing/email-capture";
+import { LiveStats } from "@/components/landing/live-stats";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -212,6 +213,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Live Stats */}
+      <LiveStats />
 
       {/* Use Cases / Who It's For */}
       <section className="border-y border-border bg-bg-card/30 py-24">
