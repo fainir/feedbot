@@ -585,6 +585,18 @@ export default function LandingPage() {
               >
                 Blog
               </Link>
+              <Link
+                href="/changelog"
+                className="transition-colors hover:text-text"
+              >
+                Changelog
+              </Link>
+              <Link
+                href="/faq"
+                className="transition-colors hover:text-text"
+              >
+                FAQ
+              </Link>
             </div>
           </div>
           <div className="mt-8 flex flex-col items-center gap-2 text-center text-sm text-text-muted">
