@@ -22,25 +22,49 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - Claude API (content curation)
 - Web scraping / RSS for content sources
 
-## Phase 1: MVP (This Session)
-- [ ] Tabs UI: "All" tab + "+" button to add custom tabs
-- [ ] Tab creation: name + prompt input
-- [ ] Feed generation: use web search to find content matching prompt
-- [ ] Feed display: cards with title, summary, source, timestamp
-- [ ] Local storage for tabs (no auth yet)
-- [ ] Deploy to Vercel
+## Phase 1: MVP [DONE]
+- [x] Tabs UI: "All" tab + "+" button to add custom tabs
+- [x] Tab creation: name + prompt input
+- [x] Feed generation: Brave Search API + mock fallback
+- [x] Feed display: cards with title, summary, source, timestamp
+- [x] Local storage for tabs
+- [x] Deploy to Vercel
+- [x] Feed templates (6 pre-built: AI, Startups, Dev Tools, Crypto, Design, Markets)
 
-## Phase 2: Auth + Persistence
-- [ ] Supabase auth (email + Google)
-- [ ] Save tabs to DB
-- [ ] Cron job: refresh feeds daily
-- [ ] Email digest for Pro users
+## Phase 2: Auth + Persistence [DONE]
+- [x] Supabase auth (email/password + Google button)
+- [x] Login/signup pages
+- [x] Auth middleware (token refresh)
+- [x] Auth callback route
+- [x] Save feeds to Supabase DB (profiles, feeds, feed_items tables)
+- [x] Cron job: refresh feeds daily (vercel.json)
 
-## Phase 3: Monetization
-- [ ] Stripe integration
-- [ ] Free/Pro/Team tiers
-- [ ] Usage tracking
-- [ ] Landing page with pricing
+## Phase 3: Marketing + SEO [DONE]
+- [x] Killer landing page (social proof, testimonials, use cases, features grid)
+- [x] SEO meta tags (OG, Twitter, robots, keywords, JSON-LD)
+- [x] Dynamic OG image (Edge runtime)
+- [x] sitemap.xml + robots.txt
+- [x] PWA manifest + app icons
+- [x] Share buttons (X, LinkedIn, copy link)
+- [x] Email capture / waitlist API
+- [x] Blog page for content marketing
+- [x] Privacy policy + Terms of service
+- [x] Vercel Analytics
+
+## Phase 4: Monetization [IN PROGRESS]
+- [x] Stripe checkout/portal/webhook routes (code ready)
+- [x] Upgrade to Pro button in dashboard
+- [x] Checkout success banner
+- [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
+- [ ] Test end-to-end Stripe flow
+- [ ] Usage limit enforcement (3 feeds on free)
+
+## Phase 5: Growth [TODO]
+- [ ] Google OAuth provider setup in Supabase
+- [ ] Brave Search API key for real content
+- [ ] Email digest for Pro users (Resend)
+- [ ] Custom domain (feedbot.app?)
+- [ ] Analytics dashboard for user metrics
 
 ## Success Metrics
 - 100 users in first week
