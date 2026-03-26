@@ -437,6 +437,85 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Comparison Table */}
+      <section className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text">
+              How FeedBot compares
+            </h2>
+            <p className="mt-3 text-text-muted">
+              We built what we wished existed.
+            </p>
+          </div>
+          <div className="mx-auto mt-12 max-w-3xl overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-4 pr-4 text-left font-medium text-text-muted">Feature</th>
+                  <th className="pb-4 px-4 text-center font-semibold text-primary">FeedBot</th>
+                  <th className="pb-4 px-4 text-center font-medium text-text-muted">Google Alerts</th>
+                  <th className="pb-4 px-4 text-center font-medium text-text-muted">Feedly</th>
+                  <th className="pb-4 pl-4 text-center font-medium text-text-muted">Twitter Lists</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {[
+                  { feature: "Natural language queries", feedbot: true, google: false, feedly: false, twitter: false },
+                  { feature: "No RSS links needed", feedbot: true, google: true, feedly: false, twitter: true },
+                  { feature: "Real-time from entire web", feedbot: true, google: false, feedly: false, twitter: false },
+                  { feature: "AI summaries", feedbot: true, google: false, feedly: true, twitter: false },
+                  { feature: "Keyboard-first UX", feedbot: true, google: false, feedly: true, twitter: false },
+                  { feature: "Reading goals & streaks", feedbot: true, google: false, feedly: false, twitter: false },
+                  { feature: "Pin, bookmark, read later", feedbot: true, google: false, feedly: true, twitter: true },
+                  { feature: "Free plan", feedbot: true, google: true, feedly: true, twitter: true },
+                  { feature: "No ads", feedbot: true, google: false, feedly: false, twitter: false },
+                ].map((row) => (
+                  <tr key={row.feature}>
+                    <td className="py-3 pr-4 text-text">{row.feature}</td>
+                    <td className="py-3 px-4 text-center">{row.feedbot ? <Check className="mx-auto h-4 w-4 text-green-400" /> : <span className="text-text-muted/40">—</span>}</td>
+                    <td className="py-3 px-4 text-center">{row.google ? <Check className="mx-auto h-4 w-4 text-text-muted/40" /> : <span className="text-text-muted/40">—</span>}</td>
+                    <td className="py-3 px-4 text-center">{row.feedly ? <Check className="mx-auto h-4 w-4 text-text-muted/40" /> : <span className="text-text-muted/40">—</span>}</td>
+                    <td className="py-3 pl-4 text-center">{row.twitter ? <Check className="mx-auto h-4 w-4 text-text-muted/40" /> : <span className="text-text-muted/40">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Power Features Showcase */}
+      <section className="border-y border-border bg-bg-card/30 py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-text">
+              Power features that delight
+            </h2>
+            <p className="mt-3 text-text-muted">
+              Every detail crafted to make reading faster and more enjoyable.
+            </p>
+          </div>
+          <div className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2">
+            {[
+              { title: "Cmd+K Command Palette", desc: "Navigate, create, and manage feeds without touching the mouse." },
+              { title: "AI \"For You\" Picks", desc: "Personalized recommendations that learn from your reading patterns." },
+              { title: "Topic Clusters", desc: "Articles auto-grouped by topic so you see the full picture." },
+              { title: "Sentiment Badges", desc: "Instantly see if news is positive, negative, or neutral." },
+              { title: "Cross-Feed Search", desc: "Find anything across all your feeds with Cmd+Shift+F." },
+              { title: "Reading Streaks", desc: "Track your daily goals and maintain your reading streak." },
+              { title: "Pin & Read Later", desc: "Pin important articles to the top or queue them for later." },
+              { title: "Daily Brief", desc: "AI-generated morning summary of your most important items." },
+            ].map((f) => (
+              <div key={f.title} className="rounded-xl border border-border/50 bg-bg-card/50 p-4">
+                <h3 className="text-sm font-semibold text-text">{f.title}</h3>
+                <p className="mt-1 text-xs text-text-muted">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-24">
         <div className="mx-auto max-w-6xl px-6">
