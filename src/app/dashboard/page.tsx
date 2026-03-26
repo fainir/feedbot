@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from "react";
 import { useSearchParams } from "next/navigation";
 import { EyeOff, Plus, Search, RefreshCw, Download, Share2, CheckCircle2, CheckCheck, LayoutList, LayoutGrid, CheckSquare, X, Bookmark, AlertCircle } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -11,26 +11,16 @@ import { computeTrending, TrendingHeader } from "@/components/feed/trending-tab"
 import { FilterChips, applyFilter, type FilterChipType } from "@/components/feed/filter-chips";
 import { type FeedFolder } from "@/components/feed/feed-folders";
 import { type KeywordAlert, computeKeywordMatches } from "@/components/feed/keyword-alerts";
-import { CatchMeUp } from "@/components/feed/catch-me-up";
 import { SmartSortButton, smartSort, type SortMode } from "@/components/feed/smart-sort";
-import { TopicClusterView } from "@/components/feed/topic-clusters";
-import { FeedSuggestions } from "@/components/feed/feed-suggestions";
-import { ReadingHistory } from "@/components/feed/reading-history";
-import { SavedCollections, type SavedCollection } from "@/components/feed/saved-collections";
+import { type SavedCollection } from "@/components/feed/saved-collections";
 import { filterMutedSources, type MutedSource } from "@/components/feed/source-mute";
-import { SourceMuteManager } from "@/components/feed/source-mute";
 import { useReactions } from "@/components/feed/emoji-reactions";
 import { sendKeywordNotification } from "@/components/feed/push-notifications";
-import { FeedTimeline } from "@/components/feed/feed-timeline";
-import { ContentHighlights } from "@/components/feed/content-highlights";
 import { FeedComparisonButton } from "@/components/feed/feed-comparison";
 import { usePinnedArticles, PinnedArticles, sortWithPinned } from "@/components/feed/pin-articles";
-import { ShareFeed } from "@/components/feed/share-feed";
 import { useBookmarkTags } from "@/components/feed/bookmark-tags";
-import { FeedHealthScore } from "@/components/feed/feed-health-score";
 import { useReadLater, ReadLaterQueue } from "@/components/feed/read-later-queue";
 import { ContentTypeFilter, getContentType } from "@/components/feed/content-type-tag";
-import { SentimentTracker } from "@/components/feed/sentiment-tracker";
 import { FeedCard } from "@/components/feed/feed-card";
 import { DashboardHeader, DashboardTabBar, DashboardWidgets, DashboardModals, FeedItemList } from "@/components/dashboard";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -38,6 +28,19 @@ import { timeAgo } from "@/lib/utils";
 import { type Tab, type FeedItem, FEED_TEMPLATES, mapDbItemToFeedItem } from "@/lib/feed-types";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
+
+// Lazy-load heavy, conditionally-rendered components for better initial load
+const CatchMeUp = lazy(() => import("@/components/feed/catch-me-up").then(m => ({ default: m.CatchMeUp })));
+const TopicClusterView = lazy(() => import("@/components/feed/topic-clusters").then(m => ({ default: m.TopicClusterView })));
+const FeedSuggestions = lazy(() => import("@/components/feed/feed-suggestions").then(m => ({ default: m.FeedSuggestions })));
+const ReadingHistory = lazy(() => import("@/components/feed/reading-history").then(m => ({ default: m.ReadingHistory })));
+const SavedCollections = lazy(() => import("@/components/feed/saved-collections").then(m => ({ default: m.SavedCollections })));
+const SourceMuteManager = lazy(() => import("@/components/feed/source-mute").then(m => ({ default: m.SourceMuteManager })));
+const FeedTimeline = lazy(() => import("@/components/feed/feed-timeline").then(m => ({ default: m.FeedTimeline })));
+const ContentHighlights = lazy(() => import("@/components/feed/content-highlights").then(m => ({ default: m.ContentHighlights })));
+const ShareFeed = lazy(() => import("@/components/feed/share-feed").then(m => ({ default: m.ShareFeed })));
+const FeedHealthScore = lazy(() => import("@/components/feed/feed-health-score").then(m => ({ default: m.FeedHealthScore })));
+const SentimentTracker = lazy(() => import("@/components/feed/sentiment-tracker").then(m => ({ default: m.SentimentTracker })));
 
 export default function DashboardPage() {
   return (

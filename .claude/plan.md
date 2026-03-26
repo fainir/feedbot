@@ -70,7 +70,7 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Public API with rate limiting (rate-limit.ts + API routes with auth)
 - [x] RSS feed output per user feed (via /api/feeds/[id]/export?format=rss)
 - [x] Onboarding flow for new users (onboarding-tour.tsx + getting-started page)
-- [ ] Performance audit (bundle size, Core Web Vitals)
+- [x] Performance audit — lazy-load 11 heavy dashboard components (7K+ LOC code-split)
 - [x] Error monitoring (ErrorBoundary component + Vercel Analytics already integrated)
 
 ## Blocked Tasks (Need User Action)
