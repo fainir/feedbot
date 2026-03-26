@@ -57,14 +57,29 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Checkout success banner
 - [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
 - [ ] Test end-to-end Stripe flow
-- [ ] Usage limit enforcement (3 feeds on free)
+- [x] Usage limit enforcement (3 feeds on free)
 
-## Phase 5: Growth [TODO]
-- [ ] Google OAuth provider setup in Supabase
-- [ ] Brave Search API key for real content
-- [ ] Email digest for Pro users (Resend)
-- [ ] Custom domain (feedbot.app?)
-- [ ] Analytics dashboard for user metrics
+## Phase 5: Growth [IN PROGRESS]
+- [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
+- [!] Brave Search API key for real content — BLOCKED: needs API key
+- [x] Email digest for Pro users (Resend) — code complete, needs RESEND_API_KEY env var
+- [!] Custom domain (feedbot.app?) — BLOCKED: needs domain purchase
+- [x] Analytics dashboard for user metrics
+
+## Phase 6: Polish + Quality [IN PROGRESS]
+- [x] Public API with rate limiting (rate-limit.ts + API routes with auth)
+- [x] RSS feed output per user feed (via /api/feeds/[id]/export?format=rss)
+- [x] Onboarding flow for new users (onboarding-tour.tsx + getting-started page)
+- [ ] Performance audit (bundle size, Core Web Vitals)
+- [x] Error monitoring (ErrorBoundary component + Vercel Analytics already integrated)
+
+## Blocked Tasks (Need User Action)
+- Set Stripe env vars on Vercel (Phase 4)
+- Test end-to-end Stripe flow (Phase 4)
+- Google OAuth setup in Supabase dashboard (Phase 5)
+- Brave Search API key (Phase 5)
+- Custom domain purchase (Phase 5)
+- Set RESEND_API_KEY on Vercel (Phase 5)
 
 ## Success Metrics
 - 100 users in first week

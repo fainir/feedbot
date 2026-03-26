@@ -3,7 +3,7 @@
 import { Suspense, lazy } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Rss, Crown, Search, Sun, Moon, Settings, Keyboard, LogOut } from "lucide-react";
+import { Rss, Crown, Search, Sun, Moon, Settings, Keyboard, LogOut, BarChart3 } from "lucide-react";
 import { NewItemsBell } from "@/components/feed/new-items-bell";
 import { PushNotificationToggle } from "@/components/feed/push-notifications";
 import { TeamFeedsBadge } from "@/components/feed/team-feeds";
@@ -98,6 +98,13 @@ export function DashboardHeader({
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
         <WhatsNew />
+        <Link
+          href="/dashboard/analytics"
+          className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+          title="Analytics"
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Link>
         <Link
           href="/dashboard/settings"
           className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"

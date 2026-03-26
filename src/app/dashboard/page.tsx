@@ -298,6 +298,10 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, query_text: prompt, description: prompt }),
       });
+      if (res.status === 403) {
+        toast("You\u2019ve reached the free plan limit (3 feeds). Upgrade to Pro for unlimited feeds!", "error");
+        return null;
+      }
       if (!res.ok) return null;
       const { feed, initial_items_count } = await res.json();
       let items: FeedItem[] = [];
@@ -411,7 +415,7 @@ function DashboardContent() {
     setActiveTabId(tempId); setShowNewTab(false); setNewTabName(""); setNewTabPrompt("");
     const feedId = await createFeed(name, prompt);
     if (feedId) { setTabs((prev) => prev.filter((t) => t.id !== tempId)); setActiveTabId(feedId); toast(`"${name}" feed created`, "success"); }
-    else { setTabs((prev) => prev.map((t) => t.id === tempId ? { ...t, loading: false, error: "Failed to create feed. Try again." } : t)); toast("Failed to create feed", "error"); }
+    else { setTabs((prev) => prev.filter((t) => t.id !== tempId)); }
   };
 
   const deleteTab = async (id: string) => {
@@ -566,7 +570,10 @@ function DashboardContent() {
           {/* New Tab Form */}
           {showNewTab && (
             <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4">
-              <h3 className="mb-3 text-sm font-semibold text-text">Create New Tab</h3>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-text">Create New Tab</h3>
+                <span className="text-xs text-text-muted">{tabs.filter((t) => t.id !== "all").length} / 3 feeds (free plan)</span>
+              </div>
               <div className="space-y-3">
                 <input type="text" placeholder="Tab name (e.g., AI News, Startup Ideas)" value={newTabName} onChange={(e) => setNewTabName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && newTabName.trim() && newTabPrompt.trim() && addTab()} className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none" autoFocus />
                 <textarea placeholder="What should this feed show? (e.g., Latest AI research papers and breakthroughs)" value={newTabPrompt} onChange={(e) => setNewTabPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && newTabName.trim() && newTabPrompt.trim()) { e.preventDefault(); addTab(); } }} rows={2} className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none" />
