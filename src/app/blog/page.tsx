@@ -59,6 +59,42 @@ const posts = [
     readTime: "4 min read",
     category: "Guide",
   },
+  {
+    slug: "keyboard-first-reading",
+    title: "Keyboard-First Reading: How Power Users Consume 3x More Content",
+    excerpt:
+      "J/K navigation, Cmd+K command palette, and global search with Cmd+Shift+F. Here's how FeedBot's keyboard shortcuts turn casual readers into power users.",
+    date: "2026-03-25",
+    readTime: "3 min read",
+    category: "Productivity",
+  },
+  {
+    slug: "sentiment-analysis-news",
+    title: "Reading the News by Mood: How Sentiment Analysis Changes Your Feed",
+    excerpt:
+      "FeedBot now tags every article as positive, negative, or neutral. Learn how to use sentiment badges to prioritize what you read and manage information anxiety.",
+    date: "2026-03-24",
+    readTime: "4 min read",
+    category: "Feature",
+  },
+  {
+    slug: "reading-goals-streaks",
+    title: "Build a Reading Habit with Goals and Streaks",
+    excerpt:
+      "Set daily reading targets, track your progress with visual rings, and maintain streaks. The science behind gamification and how it helps you stay informed.",
+    date: "2026-03-23",
+    readTime: "5 min read",
+    category: "Productivity",
+  },
+  {
+    slug: "feedbot-vs-feedly-2026",
+    title: "FeedBot vs Feedly in 2026: A Comprehensive Comparison",
+    excerpt:
+      "Feedly requires RSS links. FeedBot just asks what you care about. We compare features, pricing, and user experience across both platforms.",
+    date: "2026-03-22",
+    readTime: "6 min read",
+    category: "Comparison",
+  },
 ];
 
 export default function BlogPage() {

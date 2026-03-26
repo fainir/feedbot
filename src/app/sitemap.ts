@@ -23,6 +23,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${BASE}/shared/feed`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.5,
+    },
+    {
       url: `${BASE}/privacy`,
       lastModified: new Date(),
       changeFrequency: "monthly",
