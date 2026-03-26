@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { rateLimit, getClientKey } from "@/lib/rate-limit";
 
 interface DiscoveredFeed {
   title: string;
@@ -8,6 +9,12 @@ interface DiscoveredFeed {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 discover requests per minute (fetches external URLs)
+  const rl = rateLimit(`discover:${getClientKey(request)}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
