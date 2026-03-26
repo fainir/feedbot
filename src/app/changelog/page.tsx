@@ -16,6 +16,21 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.9",
+    date: "2026-03-26",
+    title: "Dashboard Refactor, System Status & Focus Mode",
+    changes: [
+      { type: "feat", text: "System status page with live service health checks and uptime chart" },
+      { type: "feat", text: "Focus reading timer page with Pomodoro-style sessions and stats" },
+      { type: "feat", text: "Dedicated import/export page with OPML and JSON support" },
+      { type: "feat", text: "Search API endpoint and reading reports/analytics page" },
+      { type: "feat", text: "Detailed use cases page with 6 role-specific examples" },
+      { type: "feat", text: "About page with mission, values, tech stack, and stats" },
+      { type: "feat", text: "Feed duplicate and user stats API endpoints" },
+      { type: "perf", text: "Dashboard refactored from 2,124 lines into 5 focused components" },
+    ],
+  },
+  {
     version: "1.8",
     date: "2026-03-26",
     title: "Templates, Feedback & Notifications",
