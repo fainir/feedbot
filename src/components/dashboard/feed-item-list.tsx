@@ -131,9 +131,9 @@ export function FeedItemList({
           </>
         )}
         {activeTabId !== "all" && (
-          <Button onClick={() => onRefreshTab(activeTabId)}>
-            <RefreshCw className="h-4 w-4" />
-            Generate Feed
+          <Button onClick={() => onRefreshTab(activeTabId)} disabled={activeTab.loading} aria-label="Generate feed content">
+            <RefreshCw className={`h-4 w-4 ${activeTab.loading ? "animate-spin" : ""}`} />
+            {activeTab.loading ? "Generating..." : "Generate Feed"}
           </Button>
         )}
       </div>
