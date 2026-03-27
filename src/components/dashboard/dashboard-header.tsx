@@ -60,6 +60,7 @@ export function DashboardHeader({
           onClick={onUpgrade}
           disabled={checkingOut}
           className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-secondary to-orange-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:px-3"
+          aria-label={checkingOut ? "Loading checkout" : "Upgrade to Pro plan"}
         >
           <Crown className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">{checkingOut ? "Loading..." : "Upgrade to Pro"}</span>
@@ -75,6 +76,7 @@ export function DashboardHeader({
           onClick={onOpenGlobalSearch}
           className="hidden items-center gap-1 rounded-lg border border-border/50 px-2 py-1.5 text-xs text-text-muted transition-colors hover:bg-bg-hover hover:text-text sm:flex"
           title="Search all feeds (Cmd+Shift+F)"
+          aria-label="Search all feeds"
         >
           <Search className="h-3.5 w-3.5" />
           <kbd className="text-[10px]">⌘⇧F</kbd>
@@ -94,6 +96,7 @@ export function DashboardHeader({
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode (D)`}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
@@ -102,6 +105,7 @@ export function DashboardHeader({
           href="/dashboard/analytics"
           className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
           title="Analytics"
+          aria-label="View analytics"
         >
           <BarChart3 className="h-4 w-4" />
         </Link>
@@ -109,6 +113,7 @@ export function DashboardHeader({
           href="/dashboard/settings"
           className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
           title="Settings"
+          aria-label="Open settings"
         >
           <Settings className="h-4 w-4" />
         </Link>
@@ -116,6 +121,7 @@ export function DashboardHeader({
           onClick={onShowShortcuts}
           className="hidden rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text sm:flex"
           title="Keyboard shortcuts (?)"
+          aria-label="Show keyboard shortcuts"
         >
           <Keyboard className="h-4 w-4" />
         </button>
@@ -123,6 +129,7 @@ export function DashboardHeader({
           onClick={onLogout}
           className="rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
           title="Log out"
+          aria-label="Log out"
         >
           <LogOut className="h-4 w-4" />
         </button>

@@ -666,22 +666,22 @@ function DashboardContent() {
             {activeTabId !== "all" && activeTabId !== "saved" && (
               <>
                 <div className="relative group/export">
-                  <Button variant="ghost" size="icon" className="text-text-muted" title="Export feed" onClick={() => exportFeed("rss")}><Download className="h-4 w-4" /></Button>
-                  <div className="absolute right-0 top-full z-10 mt-1 hidden rounded-lg border border-border bg-bg-card p-1 shadow-lg group-hover/export:block">
-                    <button onClick={() => exportFeed("rss")} className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text">RSS Feed</button>
-                    <button onClick={() => exportFeed("json")} className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text">JSON</button>
+                  <Button variant="ghost" size="icon" className="text-text-muted" title="Export feed" aria-label="Export feed" aria-haspopup="true"><Download className="h-4 w-4" /></Button>
+                  <div className="absolute right-0 top-full z-10 mt-1 hidden rounded-lg border border-border bg-bg-card p-1 shadow-lg group-hover/export:block" role="menu" aria-label="Export format options">
+                    <button onClick={() => exportFeed("rss")} className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text" role="menuitem">RSS Feed</button>
+                    <button onClick={() => exportFeed("json")} className="block w-full rounded-md px-3 py-1.5 text-left text-xs text-text-muted hover:bg-bg-hover hover:text-text" role="menuitem">JSON</button>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={shareFeed} className="text-text-muted" title="Share this feed">
+                <Button variant="ghost" size="icon" onClick={shareFeed} className="text-text-muted" title="Share this feed" aria-label="Share this feed">
                   {shareCopied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Share2 className="h-4 w-4" />}
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="icon" onClick={() => setSelectMode((v) => !v)} className={selectMode ? "text-primary" : "text-text-muted"} title="Multi-select mode"><CheckSquare className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={markAllAsRead} className="text-text-muted" title="Mark all as read" disabled={displayItems.length === 0}><CheckCheck className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => setCompactView((v) => !v)} className="text-text-muted" title={compactView ? "Comfortable view" : "Compact view"}>{compactView ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}</Button>
-            <Button variant="ghost" size="icon" onClick={() => setShowSearch(!showSearch)} className="text-text-muted"><Search className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => activeTabId === "all" ? refreshAllTabs() : refreshTab(activeTabId)} className="text-text-muted" disabled={activeTabId === "all" ? tabs.some((t) => t.loading) : activeTab.loading}>
+            <Button variant="ghost" size="icon" onClick={() => setSelectMode((v) => !v)} className={selectMode ? "text-primary" : "text-text-muted"} title="Multi-select mode" aria-label="Multi-select mode" aria-pressed={selectMode}><CheckSquare className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={markAllAsRead} className="text-text-muted" title="Mark all as read" aria-label="Mark all as read" disabled={displayItems.length === 0}><CheckCheck className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => setCompactView((v) => !v)} className="text-text-muted" title={compactView ? "Comfortable view" : "Compact view"} aria-label={compactView ? "Switch to comfortable view" : "Switch to compact view"} aria-pressed={compactView}>{compactView ? <LayoutGrid className="h-4 w-4" /> : <LayoutList className="h-4 w-4" />}</Button>
+            <Button variant="ghost" size="icon" onClick={() => setShowSearch(!showSearch)} className="text-text-muted" aria-label={showSearch ? "Close search" : "Search feed items"} aria-expanded={showSearch}><Search className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => activeTabId === "all" ? refreshAllTabs() : refreshTab(activeTabId)} className="text-text-muted" disabled={activeTabId === "all" ? tabs.some((t) => t.loading) : activeTab.loading} aria-label={activeTabId === "all" ? "Refresh all feeds" : `Refresh ${activeTab.name} feed`}>
               <RefreshCw className={`h-4 w-4 ${(activeTabId === "all" ? tabs.some((t) => t.loading) : activeTab.loading) ? "animate-spin" : ""}`} />
             </Button>
           </div>
@@ -691,7 +691,7 @@ function DashboardContent() {
       {/* Search */}
       {showSearch && (
         <div className="mb-4">
-          <input type="text" placeholder="Search feed items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none" autoFocus />
+          <input type="text" placeholder="Search feed items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-lg border border-border bg-bg px-4 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none" autoFocus aria-label="Search feed items" />
         </div>
       )}
 

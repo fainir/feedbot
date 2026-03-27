@@ -58,7 +58,7 @@ export function FeedCard({
   const [noteText, setNoteText] = useState(note || "");
 
   return (
-    <Card className={`group transition-colors hover:border-primary/40 hover:bg-bg-hover/50 ${isFocused ? "ring-2 ring-primary ring-offset-1 ring-offset-bg" : ""} ${isRead ? "opacity-60" : ""} ${compact ? "!p-3" : ""}`}>
+    <Card className={`group transition-colors hover:border-primary/40 hover:bg-bg-hover/50 ${isFocused ? "ring-2 ring-primary ring-offset-1 ring-offset-bg" : ""} ${isRead ? "opacity-60" : ""} ${compact ? "!p-3" : ""}`} role="article" aria-label={title}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <a
@@ -111,6 +111,7 @@ export function FeedCard({
               onClick={onOpenReader}
               className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-all hover:bg-bg-hover hover:text-text sm:opacity-0 sm:group-hover:opacity-100"
               title="Read inline"
+              aria-label={`Read "${title}" inline`}
             >
               <BookOpen className="h-3.5 w-3.5" />
             </button>
@@ -126,6 +127,8 @@ export function FeedCard({
                   : "text-text-muted hover:bg-bg-hover hover:text-text"
               }`}
               title={bookmarked ? "Remove bookmark" : "Bookmark"}
+              aria-label={bookmarked ? `Remove bookmark from "${title}"` : `Bookmark "${title}"`}
+              aria-pressed={bookmarked}
             >
               <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? "fill-secondary" : ""}`} />
             </button>
@@ -141,6 +144,8 @@ export function FeedCard({
                   : "text-text-muted hover:bg-bg-hover hover:text-text"
               }`}
               title={pinned ? "Unpin" : "Pin to top"}
+              aria-label={pinned ? `Unpin "${title}"` : `Pin "${title}" to top`}
+              aria-pressed={pinned}
             >
               <Pin className={`h-3.5 w-3.5 ${pinned ? "fill-orange-400/30" : ""}`} />
             </button>
@@ -152,6 +157,7 @@ export function FeedCard({
               onClick={(e) => { e.stopPropagation(); onFindSimilar(); }}
               className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-text-muted transition-all hover:bg-bg-hover hover:text-text sm:opacity-0 sm:group-hover:opacity-100"
               title="Find similar articles"
+              aria-label={`Find articles similar to "${title}"`}
             >
               <Layers className="h-3.5 w-3.5" />
             </button>
@@ -165,6 +171,8 @@ export function FeedCard({
                 note ? "text-primary" : "text-text-muted hover:bg-bg-hover hover:text-text"
               }`}
               title={note ? "Edit note" : "Add note"}
+              aria-label={note ? `Edit note on "${title}"` : `Add note to "${title}"`}
+              aria-expanded={showNote}
             >
               <MessageSquare className={`h-3.5 w-3.5 ${note ? "fill-primary/20" : ""}`} />
             </button>
@@ -206,6 +214,7 @@ export function FeedCard({
             placeholder="Add a note about this item..."
             rows={2}
             className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+            aria-label={`Note for "${title}"`}
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -220,12 +229,14 @@ export function FeedCard({
             <button
               onClick={() => { onSaveNote?.(noteText); setShowNote(false); }}
               className="rounded-md bg-primary px-2 py-1 text-xs text-white hover:bg-primary-dark"
+              aria-label="Save note"
             >
               Save
             </button>
             <button
               onClick={() => setShowNote(false)}
               className="rounded-md px-2 py-1 text-xs text-text-muted hover:bg-bg-hover"
+              aria-label="Cancel note editing"
             >
               Cancel
             </button>
