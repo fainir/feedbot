@@ -41,7 +41,7 @@ export function DashboardTabBar({
 
   return (
     <>
-      <div className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2">
+      <nav className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2" aria-label="Feed tabs">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -51,6 +51,7 @@ export function DashboardTabBar({
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => onDrop(tab.id)}
             onDragEnd={onDragEnd}
+            aria-current={activeTabId === tab.id ? "page" : undefined}
             className={`group relative flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTabId === tab.id
                 ? "bg-primary text-white"
@@ -85,7 +86,8 @@ export function DashboardTabBar({
                   activeTabId === tab.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 } transition-opacity`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
+                <span className="sr-only">Delete {tab.name} tab</span>
               </button>
             )}
           </button>
@@ -155,7 +157,7 @@ export function DashboardTabBar({
             e.target.value = "";
           }}
         />
-      </div>
+      </nav>
 
       {/* Import Progress */}
       {importing && (

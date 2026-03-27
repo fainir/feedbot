@@ -48,7 +48,7 @@ export function DashboardHeader({
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="mb-6 flex items-center justify-between gap-2">
+    <header className="mb-6 flex items-center justify-between gap-2" aria-label="Dashboard header">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
           <Rss className="h-4 w-4 text-white" />
@@ -134,6 +134,6 @@ export function DashboardHeader({
           <LogOut className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </header>
   );
 }

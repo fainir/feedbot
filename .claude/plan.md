@@ -74,11 +74,13 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Error monitoring (ErrorBoundary component + Vercel Analytics already integrated)
 
 ## Phase 7: Accessibility + Polish [IN PROGRESS]
-- [ ] Add aria-labels to all interactive feed card buttons (bookmark, pin, reader, share, etc.)
-- [ ] Add aria-labels to dashboard action buttons (search, notifications, settings)
-- [ ] Add aria-live regions for dynamic content updates (feed refresh, notifications)
-- [ ] Fix test reliability — ensure all date-dependent tests use fake timers correctly
-- [ ] Add tests for accessibility attributes on key components
+- [x] Add aria-labels to all interactive feed card buttons (bookmark, pin, reader, share, etc.)
+- [x] Add aria-labels to dashboard action buttons (search, notifications, settings)
+- [x] Add aria-live regions for dynamic content updates (feed refresh, notifications)
+- [x] Fix test reliability — ensure all date-dependent tests use fake timers correctly
+- [x] Add tests for accessibility attributes on key components
+- [x] Add skip-to-content link for keyboard navigation
+- [ ] Add proper heading hierarchy to dashboard pages
 
 ## Blocked Tasks (Need User Action)
 - Set Stripe env vars on Vercel (Phase 4)
