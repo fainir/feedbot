@@ -48,7 +48,7 @@ const jsonLd = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div id="main-content" className="min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
