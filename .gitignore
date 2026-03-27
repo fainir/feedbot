@@ -9,3 +9,4 @@ next-env.d.ts
 coverage/
 .claude/plans/
 supabase/.temp/
+tailwindcss-40586.log

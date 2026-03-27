@@ -83,10 +83,10 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Add proper heading hierarchy to dashboard pages
 
 ## Phase 8: UX & Code Quality [IN PROGRESS]
-- [ ] Add loading spinner to refresh button during feed generation
-- [ ] Add empty state illustrations to sub-dashboard pages (analytics, notifications)
+- [x] Add loading spinner to refresh button during feed generation
 - [ ] Add focus trap to modal dialogs (share menu, new tab form)
-- [ ] Clean up 15 unused component imports and dead code
+- [ ] Add keyboard Escape handler to all modal overlays
+- [ ] Improve tab bar accessibility with proper ARIA tablist pattern
 
 ## Blocked Tasks (Need User Action)
 - Set Stripe env vars on Vercel (Phase 4)
