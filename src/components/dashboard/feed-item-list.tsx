@@ -141,7 +141,7 @@ export function FeedItemList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-live="polite" aria-label="Feed items">
       {filteredItems.slice(0, visibleCount).map((item, idx) => {
         const isFocused = idx === focusedIndex;
         return (
@@ -156,6 +156,8 @@ export function FeedItemList({
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleSelect(item.id); }}
                 className="mt-4 shrink-0 text-text-muted hover:text-primary sm:mt-5"
+                aria-label={selectedIds.has(item.id) ? `Deselect "${item.title}"` : `Select "${item.title}"`}
+                aria-pressed={selectedIds.has(item.id)}
               >
                 {selectedIds.has(item.id) ? (
                   <CheckSquare className="h-5 w-5 text-primary" />

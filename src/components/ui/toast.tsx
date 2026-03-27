@@ -34,7 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2" aria-live="polite" role="status">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onRemove={removeToast} />
         ))}
@@ -62,7 +62,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="text-sm font-medium">{toast.message}</span>
-      <button onClick={() => onRemove(toast.id)} className="ml-2 shrink-0 opacity-60 hover:opacity-100">
+      <button onClick={() => onRemove(toast.id)} className="ml-2 shrink-0 opacity-60 hover:opacity-100" aria-label="Dismiss notification">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>

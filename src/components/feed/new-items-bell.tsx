@@ -65,10 +65,13 @@ export function NewItemsBell({ allItems, onOpenReader }: NewItemsBellProps) {
         }}
         className="relative rounded-lg p-2 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
         title={`${newItems.length} new items`}
+        aria-label={`${newItems.length} new items`}
+        aria-expanded={showDropdown}
+        aria-haspopup="true"
       >
         <Bell className="h-4 w-4" />
         {newItems.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white" aria-hidden="true">
             {newItems.length > 99 ? "99+" : newItems.length}
           </span>
         )}
@@ -89,6 +92,7 @@ export function NewItemsBell({ allItems, onOpenReader }: NewItemsBellProps) {
                 <button
                   onClick={markAllSeen}
                   className="rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                  aria-label="Mark all items as seen"
                 >
                   Mark all seen
                 </button>
@@ -96,6 +100,7 @@ export function NewItemsBell({ allItems, onOpenReader }: NewItemsBellProps) {
               <button
                 onClick={() => setShowDropdown(false)}
                 className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+                aria-label="Close notifications"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -148,6 +153,7 @@ export function NewItemsBell({ allItems, onOpenReader }: NewItemsBellProps) {
                         setShowDropdown(false);
                       }}
                       className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+                      aria-label={`Open "${item.title}"`}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </button>

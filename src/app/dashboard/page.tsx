@@ -709,8 +709,8 @@ function DashboardContent() {
 
       {/* Error Banner */}
       {activeTab.error && (
-        <div className="mb-4 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
-          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3" role="alert" aria-live="assertive">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
           <p className="flex-1 text-sm text-red-300">{activeTab.error}</p>
           <Button variant="ghost" size="sm" onClick={() => activeTabId === "all" ? refreshAllTabs() : refreshTab(activeTabId)} className="shrink-0 text-red-300 hover:text-red-200"><RefreshCw className="mr-1 h-3 w-3" />Retry</Button>
         </div>
