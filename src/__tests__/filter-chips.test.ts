@@ -8,23 +8,24 @@ const makeItem = (id: string, summary: string, hoursAgo: number) => ({
 });
 
 describe("applyFilter", () => {
+  let items: ReturnType<typeof makeItem>[];
+  const readIds = new Set(["1", "3"]);
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-25T12:00:00Z"));
+    items = [
+      makeItem("1", "Short summary", 2),         // today, quick read
+      makeItem("2", Array(50).fill("word").join(" "), 2),  // today, long read
+      makeItem("3", "Old article", 48),           // 2 days ago
+      makeItem("4", "Week old article", 150),     // ~6 days ago
+      makeItem("5", "Very old article", 200),     // ~8 days ago
+    ];
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
-
-  const items = [
-    makeItem("1", "Short summary", 2),         // today, quick read
-    makeItem("2", Array(50).fill("word").join(" "), 2),  // today, long read
-    makeItem("3", "Old article", 48),           // 2 days ago
-    makeItem("4", "Week old article", 150),     // ~6 days ago
-    makeItem("5", "Very old article", 200),     // ~8 days ago
-  ];
-  const readIds = new Set(["1", "3"]);
 
   it("returns all items for 'all' filter", () => {
     expect(applyFilter(items, "all", readIds)).toHaveLength(5);

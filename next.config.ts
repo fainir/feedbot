@@ -9,13 +9,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["dompurify"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
     ],
-  },
-  turbopack: {
-    root: __dirname,
   },
   async headers() {
     return [

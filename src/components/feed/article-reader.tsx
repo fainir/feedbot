@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check, BookOpenText } from "lucide-react";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { ArticleSummarizer } from "./article-summarizer";
 
 interface ArticleReaderProps {
