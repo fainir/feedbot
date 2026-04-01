@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { Plus, X, RefreshCw, Bookmark, TrendingUp, Link2, Upload } from "lucide-react";
 import type { Tab, FeedItem } from "@/lib/feed-types";
 
@@ -38,20 +38,59 @@ export function DashboardTabBar({
   onDrop,
 }: DashboardTabBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tabListRef = useRef<HTMLDivElement>(null);
+
+  // Build all tab IDs for arrow key navigation
+  const allTabIds = [
+    ...tabs.map((t) => t.id),
+    "saved",
+    ...(allItems.length > 5 ? ["trending"] : []),
+  ];
+
+  const handleTabKeyDown = useCallback((e: React.KeyboardEvent, tabId: string) => {
+    const currentIndex = allTabIds.indexOf(tabId);
+    if (currentIndex === -1) return;
+
+    let nextIndex = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % allTabIds.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + allTabIds.length) % allTabIds.length;
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      nextIndex = allTabIds.length - 1;
+    }
+
+    if (nextIndex >= 0) {
+      const nextId = allTabIds[nextIndex];
+      onSetActiveTab(nextId);
+      const nextButton = tabListRef.current?.querySelector<HTMLElement>(`[data-tab-id="${nextId}"]`);
+      nextButton?.focus();
+    }
+  }, [allTabIds, onSetActiveTab]);
 
   return (
     <>
-      <nav className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2" aria-label="Feed tabs">
+      <div ref={tabListRef} role="tablist" className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2" aria-label="Feed tabs">
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            data-tab-id={tab.id}
+            tabIndex={activeTabId === tab.id ? 0 : -1}
+            aria-selected={activeTabId === tab.id}
             onClick={() => onSetActiveTab(tab.id)}
+            onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
             draggable={tab.id !== "all"}
             onDragStart={() => onDragStart(tab.id)}
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => onDrop(tab.id)}
             onDragEnd={onDragEnd}
-            aria-current={activeTabId === tab.id ? "page" : undefined}
             className={`group relative flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTabId === tab.id
                 ? "bg-primary text-white"
@@ -93,7 +132,12 @@ export function DashboardTabBar({
           </button>
         ))}
         <button
+          role="tab"
+          data-tab-id="saved"
+          tabIndex={activeTabId === "saved" ? 0 : -1}
+          aria-selected={activeTabId === "saved"}
           onClick={() => onSetActiveTab("saved")}
+          onKeyDown={(e) => handleTabKeyDown(e, "saved")}
           className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeTabId === "saved"
               ? "bg-secondary text-black"
@@ -112,7 +156,12 @@ export function DashboardTabBar({
         </button>
         {allItems.length > 5 && (
           <button
+            role="tab"
+            data-tab-id="trending"
+            tabIndex={activeTabId === "trending" ? 0 : -1}
+            aria-selected={activeTabId === "trending"}
             onClick={() => onSetActiveTab("trending")}
+            onKeyDown={(e) => handleTabKeyDown(e, "trending")}
             className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTabId === "trending"
                 ? "bg-gradient-to-r from-primary to-orange-500 text-white"
@@ -157,7 +206,7 @@ export function DashboardTabBar({
             e.target.value = "";
           }}
         />
-      </nav>
+      </div>
 
       {/* Import Progress */}
       {importing && (

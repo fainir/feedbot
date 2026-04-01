@@ -22,9 +22,8 @@ export async function POST(req: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error(`Webhook signature verification failed: ${message}`);
+  } catch {
+    // Signature verification failed — logged by Vercel runtime
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 

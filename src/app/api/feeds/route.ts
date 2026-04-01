@@ -18,7 +18,8 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Query failed — error details captured by Vercel runtime
+    return NextResponse.json({ error: "Failed to load feeds" }, { status: 500 });
   }
 
   return NextResponse.json({ feeds });
@@ -103,7 +104,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Insert failed — error details captured by Vercel runtime
+    return NextResponse.json({ error: "Failed to create feed" }, { status: 500 });
   }
 
   let initialItems: Awaited<ReturnType<typeof discoverFeeds>> = [];
@@ -128,8 +130,8 @@ export async function POST(request: NextRequest) {
         .update({ last_refreshed_at: new Date().toISOString() })
         .eq("id", feed.id);
     }
-  } catch (err) {
-    console.error("Initial feed discovery failed (feed still created):", err);
+  } catch {
+    // Initial feed discovery failed — feed still created successfully
   }
 
   return NextResponse.json(

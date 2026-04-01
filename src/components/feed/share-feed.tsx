@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Share2, Link2, Check, X, Twitter, Linkedin, Mail, Copy, ToggleLeft, ToggleRight } from "lucide-react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import type { FeedItem } from "@/lib/feed-types";
@@ -155,105 +156,143 @@ export function ShareFeed({ feedName, feedPrompt, items }: ShareFeedProps) {
       </Button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-
-          {/* Modal */}
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-2xl">
-            {/* Header */}
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-text">Share Feed</h3>
-                <p className="mt-0.5 text-sm text-text-muted">
-                  Share &ldquo;{feedName}&rdquo; with others
-                </p>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* QR Code */}
-            <div className="mb-5 flex justify-center">
-              <div className="rounded-xl bg-white p-3 shadow-inner">
-                <QRPattern seed={feedName + feedPrompt} />
-              </div>
-            </div>
-
-            {/* Include items toggle */}
-            <button
-              onClick={() => setIncludeItems((v) => !v)}
-              className="mb-4 flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 transition-colors hover:bg-bg-hover"
-            >
-              <div className="text-left">
-                <p className="text-sm font-medium text-text">Include current items</p>
-                <p className="text-xs text-text-muted">
-                  {includeItems
-                    ? `Share config + ${Math.min(items.length, 20)} items`
-                    : "Share feed config only"}
-                </p>
-              </div>
-              {includeItems ? (
-                <ToggleRight className="h-6 w-6 text-primary" />
-              ) : (
-                <ToggleLeft className="h-6 w-6 text-text-muted" />
-              )}
-            </button>
-
-            {/* Share link with copy */}
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-bg px-3 py-2.5">
-              <Link2 className="h-4 w-4 shrink-0 text-text-muted" />
-              <span className="flex-1 truncate text-sm text-text-muted">
-                {shareUrl}
-              </span>
-              <button
-                onClick={copyLink}
-                className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
-              >
-                {copied ? (
-                  <span className="flex items-center gap-1">
-                    <Check className="h-3.5 w-3.5" />
-                    Copied
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <Copy className="h-3.5 w-3.5" />
-                    Copy
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Social sharing */}
-            <div>
-              <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-text-muted">
-                Share to
-              </p>
-              <div className="flex gap-2">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm text-text-muted transition-all ${link.color}`}
-                  >
-                    {link.icon}
-                    <span className="text-xs font-medium">{link.name}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ShareFeedModal
+          feedName={feedName}
+          shareUrl={shareUrl}
+          includeItems={includeItems}
+          items={items}
+          copied={copied}
+          socialLinks={socialLinks}
+          onClose={() => setOpen(false)}
+          onToggleItems={() => setIncludeItems((v) => !v)}
+          onCopyLink={copyLink}
+        />
       )}
     </>
+  );
+}
+
+function ShareFeedModal({
+  feedName,
+  shareUrl,
+  includeItems,
+  items,
+  copied,
+  socialLinks,
+  onClose,
+  onToggleItems,
+  onCopyLink,
+}: {
+  feedName: string;
+  shareUrl: string;
+  includeItems: boolean;
+  items: FeedItem[];
+  copied: boolean;
+  socialLinks: { name: string; icon: React.ReactNode; href: string; color: string }[];
+  onClose: () => void;
+  onToggleItems: () => void;
+  onCopyLink: () => void;
+}) {
+  const trapRef = useFocusTrap<HTMLDivElement>(true, { onEscape: onClose });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Share Feed">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div ref={trapRef} className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-2xl">
+        {/* Header */}
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-text">Share Feed</h3>
+            <p className="mt-0.5 text-sm text-text-muted">
+              Share &ldquo;{feedName}&rdquo; with others
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* QR Code */}
+        <div className="mb-5 flex justify-center">
+          <div className="rounded-xl bg-white p-3 shadow-inner">
+            <QRPattern seed={feedName} />
+          </div>
+        </div>
+
+        {/* Include items toggle */}
+        <button
+          onClick={onToggleItems}
+          className="mb-4 flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 transition-colors hover:bg-bg-hover"
+        >
+          <div className="text-left">
+            <p className="text-sm font-medium text-text">Include current items</p>
+            <p className="text-xs text-text-muted">
+              {includeItems
+                ? `Share config + ${Math.min(items.length, 20)} items`
+                : "Share feed config only"}
+            </p>
+          </div>
+          {includeItems ? (
+            <ToggleRight className="h-6 w-6 text-primary" />
+          ) : (
+            <ToggleLeft className="h-6 w-6 text-text-muted" />
+          )}
+        </button>
+
+        {/* Share link with copy */}
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-bg px-3 py-2.5">
+          <Link2 className="h-4 w-4 shrink-0 text-text-muted" />
+          <span className="flex-1 truncate text-sm text-text-muted">
+            {shareUrl}
+          </span>
+          <button
+            onClick={onCopyLink}
+            className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-dark"
+          >
+            {copied ? (
+              <span className="flex items-center gap-1">
+                <Check className="h-3.5 w-3.5" />
+                Copied
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <Copy className="h-3.5 w-3.5" />
+                Copy
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Social sharing */}
+        <div>
+          <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-text-muted">
+            Share to
+          </p>
+          <div className="flex gap-2">
+            {socialLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm text-text-muted transition-all ${link.color}`}
+              >
+                {link.icon}
+                <span className="text-xs font-medium">{link.name}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

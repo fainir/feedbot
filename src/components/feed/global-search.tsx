@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Search, X, Calendar, Globe, Filter, ChevronDown } from "lucide-react";
 import type { FeedItem } from "@/lib/feed-types";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface GlobalSearchProps {
   allItems: FeedItem[];
@@ -49,20 +50,7 @@ export function GlobalSearch({
   const [showFilters, setShowFilters] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Open with Cmd+Shift+F
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "f") {
-        e.preventDefault();
-        // handled externally
-      }
-      if (e.key === "Escape" && open) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open]);
+  const trapRef = useFocusTrap<HTMLDivElement>(open, { onEscape: onClose });
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
@@ -144,8 +132,12 @@ export function GlobalSearch({
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[10vh] backdrop-blur-sm"
       onClick={() => onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search all feeds"
     >
       <div
+        ref={trapRef}
         className="mx-4 flex max-h-[70vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

@@ -82,7 +82,7 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error("Feed stats error:", err);
+    // Error logged server-side only via Vercel runtime logs
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }

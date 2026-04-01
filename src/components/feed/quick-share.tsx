@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Share2, Twitter, Linkedin, Link as LinkIcon, Check, Mail, MessageCircle } from "lucide-react";
 
 interface QuickShareProps {
@@ -49,6 +49,19 @@ export function QuickShareMenu({ title, url, summary }: QuickShareProps) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [open]);
 
   return (
     <div className="relative">

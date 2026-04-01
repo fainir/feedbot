@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, memo, type ReactNode } from "react";
 import { ExternalLink, Globe, Bookmark, MessageSquare, BookOpen, Pin, Layers, Tag } from "lucide-react";
 import { TrendingBadge } from "@/components/feed/trending-tab";
 import { QuickShareMenu } from "@/components/feed/quick-share";
 import { SentimentBadge } from "@/components/feed/sentiment-badge";
 import { ContentTypeTag } from "@/components/feed/content-type-tag";
 import { Card } from "@/components/ui/card";
-import { timeAgo, readingTime } from "@/lib/utils";
+import { cn, timeAgo, readingTime } from "@/lib/utils";
 
 interface FeedCardProps {
   title: string;
@@ -32,7 +32,26 @@ interface FeedCardProps {
   tagBadges?: string[];
 }
 
-export function FeedCard({
+function arePropsEqual(prev: FeedCardProps, next: FeedCardProps): boolean {
+  return (
+    prev.title === next.title &&
+    prev.summary === next.summary &&
+    prev.source === next.source &&
+    prev.url === next.url &&
+    prev.publishedAt === next.publishedAt &&
+    prev.sourceIcon === next.sourceIcon &&
+    prev.bookmarked === next.bookmarked &&
+    prev.isRead === next.isRead &&
+    prev.isFocused === next.isFocused &&
+    prev.compact === next.compact &&
+    prev.note === next.note &&
+    prev.pinned === next.pinned &&
+    prev.trendingReasons === next.trendingReasons &&
+    prev.tagBadges === next.tagBadges
+  );
+}
+
+export const FeedCard = memo(function FeedCard({
   title,
   summary,
   source,
@@ -58,7 +77,12 @@ export function FeedCard({
   const [noteText, setNoteText] = useState(note || "");
 
   return (
-    <Card className={`group transition-colors hover:border-primary/40 hover:bg-bg-hover/50 ${isFocused ? "ring-2 ring-primary ring-offset-1 ring-offset-bg" : ""} ${isRead ? "opacity-60" : ""} ${compact ? "!p-3" : ""}`} role="article" aria-label={title}>
+    <Card className={cn(
+      "group transition-colors hover:border-primary/40 hover:bg-bg-hover/50",
+      isFocused && "ring-2 ring-primary ring-offset-1 ring-offset-bg",
+      isRead && "opacity-60",
+      compact && "!p-3",
+    )} role="article" aria-label={title}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <a
@@ -245,4 +269,4 @@ export function FeedCard({
       )}
     </Card>
   );
-}
+}, arePropsEqual);

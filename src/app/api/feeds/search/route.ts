@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { rateLimit, getClientKey } from "@/lib/rate-limit";
+
+/** Sanitize user input for safe use in PostgREST filter expressions.
+ * Escapes characters that have special meaning in PostgREST syntax. */
+function sanitizeFilterValue(value: string): string {
+  return value.replace(/[,%.()"\\]/g, "");
+}
 
 // Search across all user's feed items
 export async function GET(request: Request) {
+  const rl = rateLimit(`search:${getClientKey(request)}`, { limit: 30, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+  }
+
   const url = new URL(request.url);
   const q = url.searchParams.get("q")?.trim();
   const source = url.searchParams.get("source");
   const since = url.searchParams.get("since"); // ISO date
-  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 1), 100);
 
   if (!q && !source && !since) {
     return NextResponse.json({ error: "Provide at least one filter: q, source, or since" }, { status: 400 });
@@ -40,10 +52,12 @@ export async function GET(request: Request) {
       .limit(limit);
 
     if (q) {
-      query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%`);
+      const safeQ = sanitizeFilterValue(q);
+      query = query.or(`title.ilike.%${safeQ}%,summary.ilike.%${safeQ}%`);
     }
     if (source) {
-      query = query.ilike("source", `%${source}%`);
+      const safeSource = sanitizeFilterValue(source);
+      query = query.ilike("source", `%${safeSource}%`);
     }
     if (since) {
       query = query.gte("published_at", since);
@@ -63,8 +77,7 @@ export async function GET(request: Request) {
       })),
       total: count || 0,
     });
-  } catch (err) {
-    console.error("Search error:", err);
+  } catch {
     return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }

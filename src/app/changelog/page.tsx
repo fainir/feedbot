@@ -16,6 +16,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.0",
+    date: "2026-03-29",
+    title: "Security Hardening & Full Test Coverage",
+    changes: [
+      { type: "feat", text: "413 automated tests covering all critical API routes" },
+      { type: "fix", text: "SSRF protection on reader and discover endpoints (blocks private IPs, cloud metadata, IPv6)" },
+      { type: "fix", text: "PostgREST filter injection prevention in search API" },
+      { type: "fix", text: "Open redirect prevention in auth callback" },
+      { type: "fix", text: "Timing-safe secret comparison for cron authentication" },
+      { type: "perf", text: "FeedCard memo optimization prevents unnecessary re-renders from inline callbacks" },
+      { type: "feat", text: "CSP, HSTS, and security headers on all responses" },
+      { type: "feat", text: "Rate limiting on feed refresh, reader, discover, summarize, and search endpoints" },
+      { type: "fix", text: "Removed unsafe-eval from CSP and added upgrade-insecure-requests" },
+      { type: "fix", text: "Trending endpoint no longer exposes private feed summaries" },
+      { type: "perf", text: "Removed unused @stripe/stripe-js client-side dependency" },
+      { type: "fix", text: "Hardcoded URLs replaced with NEXT_PUBLIC_APP_URL env var" },
+    ],
+  },
+  {
     version: "1.9",
     date: "2026-03-26",
     title: "Dashboard Refactor, System Status & Focus Mode",

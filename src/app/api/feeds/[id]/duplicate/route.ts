@@ -45,7 +45,7 @@ export async function POST(
 
     return NextResponse.json({ feed: newFeed });
   } catch (err) {
-    console.error("Duplicate error:", err);
+    // Error logged server-side only via Vercel runtime logs
     return NextResponse.json({ error: "Failed to duplicate feed" }, { status: 500 });
   }
 }

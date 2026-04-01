@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { refreshFeed } from "@/lib/feed-engine";
+import { rateLimit, getClientKey } from "@/lib/rate-limit";
 import type { Feed } from "@/types/database";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limit: 10 refreshes per minute per IP (each triggers outbound HTTP)
+  const rl = rateLimit(`refresh:${getClientKey(request)}`, { limit: 10, windowSeconds: 60 });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many refresh requests" }, { status: 429 });
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -30,8 +37,7 @@ export async function POST(
   let newItems: Awaited<ReturnType<typeof refreshFeed>>;
   try {
     newItems = await refreshFeed(feed as Feed);
-  } catch (err) {
-    console.error("Feed refresh failed:", err);
+  } catch {
     return NextResponse.json(
       { error: "Failed to refresh feed" },
       { status: 502 }
@@ -72,7 +78,7 @@ export async function POST(
         .insert(rows);
 
       if (insertError) {
-        console.error("Failed to insert feed items:", insertError);
+        // Insert failed — error details captured by Vercel runtime
         return NextResponse.json(
           { error: "Failed to store new items" },
           { status: 500 }

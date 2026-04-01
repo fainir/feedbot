@@ -23,8 +23,7 @@ interface FeedItemListProps {
   itemNotes: Record<string, string>;
   trendingMap: Map<string, string[]>;
   pinnedIds: Set<string>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  reactions: any;
+  reactions: Record<string, string[]>;
   feedTemplates: typeof FeedTemplatesType;
   loadMoreRef: RefObject<HTMLDivElement | null>;
   onMarkAsRead: (id: string) => void;

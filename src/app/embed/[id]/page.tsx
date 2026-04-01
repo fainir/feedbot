@@ -44,7 +44,7 @@ export default async function EmbedPage({
               Embed this feed on your website with:
             </p>
             <pre className="mt-2 overflow-x-auto rounded-md bg-bg p-2 text-[10px] text-text-muted">
-              {`<iframe src="https://feedbot-eight.vercel.app/embed/${id}" width="100%" height="500" frameborder="0"></iframe>`}
+              {`<iframe src="${process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-eight.vercel.app"}/embed/${id}" width="100%" height="500" frameborder="0"></iframe>`}
             </pre>
           </div>
         </div>

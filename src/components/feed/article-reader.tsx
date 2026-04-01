@@ -4,6 +4,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { X, ExternalLink, BookOpen, Loader2, Globe, Bookmark, Share2, Copy, Check, BookOpenText } from "lucide-react";
 import DOMPurify from "dompurify";
 import { ArticleSummarizer } from "./article-summarizer";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ArticleReaderProps {
   url: string;
@@ -85,14 +86,7 @@ export function ArticleReader({
     return () => container.removeEventListener("scroll", handleScroll);
   }, [article]);
 
-  // Escape to close
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  const trapRef = useFocusTrap<HTMLDivElement>(true, { onEscape: onClose });
 
   // Prevent body scroll
   useEffect(() => {
@@ -113,12 +107,12 @@ export function ArticleReader({
   const fontSizeClass = fontSize === "sm" ? "text-sm leading-relaxed" : fontSize === "lg" ? "text-lg leading-loose" : "text-base leading-relaxed";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-stretch bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Read: ${title}`}>
       {/* Overlay click to close */}
       <div className="hidden w-16 shrink-0 lg:block" onClick={onClose} />
 
       {/* Reader panel */}
-      <div className="flex flex-1 flex-col overflow-hidden rounded-t-2xl bg-bg sm:mx-auto sm:my-4 sm:max-w-3xl sm:rounded-2xl">
+      <div ref={trapRef} className="flex flex-1 flex-col overflow-hidden rounded-t-2xl bg-bg sm:mx-auto sm:my-4 sm:max-w-3xl sm:rounded-2xl">
         {/* Progress bar */}
         <div className="h-0.5 w-full bg-bg-hover">
           <div

@@ -7,14 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --dir src",
+    "test:watch": "vitest --dir src",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@stripe/stripe-js": "^8.8.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
-    "@types/dompurify": "^3.0.5",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +32,8 @@
     "@tailwindcss/postcss": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^25.3.2",
     "@types/react": "^19.2.14",
     "jsdom": "^29.0.1",

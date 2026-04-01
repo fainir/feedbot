@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://feedbot-eight.vercel.app";
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-eight.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -39,6 +39,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,
+    },
+    {
+      url: `${BASE}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/status`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.4,
     },
     {
       url: `${BASE}/shared/feed`,

@@ -15,6 +15,7 @@ import {
   Monitor,
   Smartphone,
 } from "lucide-react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 const STORAGE_KEY = "feedbot-reading-mode-prefs";
 
@@ -147,15 +148,12 @@ export function ReadingMode({ title, summary, source, url, content, onClose }: R
     setPrefs((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // Escape to close
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    setTimeout(onClose, 250);
+  }, [onClose]);
+
+  const trapRef = useFocusTrap<HTMLDivElement>(true, { onEscape: handleClose });
 
   // Prevent body scroll
   useEffect(() => {
@@ -231,11 +229,6 @@ export function ReadingMode({ title, summary, source, url, content, onClose }: R
     };
   }, [autoScrolling, prefs.autoScrollSpeed]);
 
-  const handleClose = useCallback(() => {
-    setVisible(false);
-    setTimeout(onClose, 250);
-  }, [onClose]);
-
   const scrollToTop = () => {
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -244,6 +237,10 @@ export function ReadingMode({ title, summary, source, url, content, onClose }: R
 
   return (
     <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Reading: ${title}`}
       className="fixed inset-0 z-[60] transition-opacity duration-250"
       style={{
         opacity: visible ? 1 : 0,

@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 
-// Public endpoint — returns trending items across all public feeds
+// Public endpoint — returns trending items (title + source only, no user-specific data)
 // Used for the landing page social proof and discover features
 export async function GET() {
   try {
     const supabase = await createClient();
 
-    // Get recent items from feeds (last 24 hours)
+    // Get recent items from feeds (last 24 hours) — only public metadata
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: items } = await supabase
       .from("feed_items")
-      .select("id, title, summary, url, source, published_at")
+      .select("id, title, url, source, published_at")
       .gte("published_at", cutoff)
       .order("published_at", { ascending: false })
       .limit(20);
@@ -34,7 +34,6 @@ export async function GET() {
       items: unique.slice(0, 10).map((item) => ({
         id: item.id,
         title: item.title,
-        summary: item.summary?.slice(0, 200),
         url: item.url,
         source: item.source,
         publishedAt: item.published_at,
@@ -45,8 +44,7 @@ export async function GET() {
         "Cache-Control": "public, max-age=600", // 10 min cache
       },
     });
-  } catch (err) {
-    console.error("Trending error:", err);
+  } catch {
     return NextResponse.json({ items: [], count: 0 });
   }
 }

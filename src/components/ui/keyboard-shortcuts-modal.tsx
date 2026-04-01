@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 const SHORTCUTS = [
   { keys: "?", desc: "Toggle this help" },
@@ -23,12 +23,18 @@ interface KeyboardShortcutsModalProps {
 }
 
 export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps) {
+  const trapRef = useFocusTrap<HTMLDivElement>(true, { onEscape: onClose });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard Shortcuts"
     >
       <div
+        ref={trapRef}
         className="mx-4 w-full max-w-md rounded-2xl border border-border bg-bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >

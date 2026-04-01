@@ -53,8 +53,7 @@ export async function GET(
     response.headers.set("Cache-Control", "public, max-age=300"); // 5 min cache
 
     return response;
-  } catch (err) {
-    console.error("Embed error:", err);
+  } catch {
     return NextResponse.json({ error: "Failed to load embed" }, { status: 500 });
   }
 }

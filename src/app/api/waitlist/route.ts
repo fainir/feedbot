@@ -27,7 +27,6 @@ export async function POST(req: Request) {
       );
     } catch {
       // Supabase not configured yet — just accept the submission
-      console.log(`Waitlist signup: ${email}`);
     }
 
     return NextResponse.json({ success: true });

@@ -170,6 +170,19 @@ export function BookmarkTagPicker({
     setInput("");
   }, [input, itemId, onAddTag]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [open]);
+
   return (
     <div className="relative">
       <button

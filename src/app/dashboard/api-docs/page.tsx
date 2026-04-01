@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Code, Copy, Check, ArrowLeft, Key, Globe, BarChart2, Rss, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-const API_BASE = "https://feedbot-eight.vercel.app";
+const API_BASE = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-eight.vercel.app";
 
 interface EndpointProps {
   method: "GET" | "POST" | "DELETE" | "PATCH";

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import { refreshFeed } from "@/lib/feed-engine";
 import { notifyFeedUpdate } from "@/lib/notifications";
@@ -11,7 +12,13 @@ function isAuthorized(request: NextRequest): boolean {
     console.warn("CRON_SECRET not set, rejecting all cron requests");
     return false;
   }
-  return secret === `Bearer ${cronSecret}`;
+  const expected = `Bearer ${cronSecret}`;
+  if (!secret || secret.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
+  } catch {
+    return false;
+  }
 }
 
 function isDueForRefresh(feed: Feed): boolean {
@@ -46,7 +53,8 @@ export async function GET(request: NextRequest) {
     .eq("is_active", true);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Cron feed fetch error:", error.message);
+    return NextResponse.json({ error: "Failed to fetch feeds" }, { status: 500 });
   }
 
   if (!feeds || feeds.length === 0) {

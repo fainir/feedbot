@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Rss, Settings, BarChart3, Mail, Bookmark, Sun, Moon, Eye, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface CommandItem {
   id: string;
@@ -37,6 +38,8 @@ export function CommandPalette({
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
+  const trapRef = useFocusTrap<HTMLDivElement>(open, { onEscape: () => setOpen(false) });
+
   // Cmd+K to open
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,13 +49,10 @@ export function CommandPalette({
         setQuery("");
         setSelectedIndex(0);
       }
-      if (e.key === "Escape" && open) {
-        setOpen(false);
-      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open]);
+  }, []);
 
   // Focus input when opened
   useEffect(() => {
@@ -97,8 +97,12 @@ export function CommandPalette({
     <div
       className="fixed inset-0 z-[200] flex items-start justify-center bg-black/50 pt-[20vh] backdrop-blur-sm"
       onClick={() => setOpen(false)}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
     >
       <div
+        ref={trapRef}
         className="mx-4 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

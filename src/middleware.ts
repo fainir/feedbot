@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // If Supabase isn't configured yet, let all requests through
+  // If Supabase isn't configured yet, let all requests through (dev only)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (
@@ -11,6 +11,9 @@ export async function middleware(request: NextRequest) {
     supabaseUrl.includes("placeholder") ||
     supabaseKey === "placeholder"
   ) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("CRITICAL: Supabase env vars missing in production — auth bypass active");
+    }
     return NextResponse.next({ request });
   }
 

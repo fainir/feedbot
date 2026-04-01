@@ -24,11 +24,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    // SSRF protection: block private/local addresses
-    const hostname = parsedUrl.hostname;
+    // SSRF protection: block private/local/cloud metadata addresses
+    const hostname = parsedUrl.hostname.toLowerCase();
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" ||
         hostname.startsWith("10.") || hostname.startsWith("192.168.") || hostname.startsWith("172.") ||
-        hostname === "[::1]") {
+        hostname.startsWith("169.254.") || // Cloud metadata (AWS/GCP IMDS)
+        hostname === "[::1]" || hostname.startsWith("[fc") || hostname.startsWith("[fe80") || // IPv6 private
+        hostname === "metadata.google.internal") {
       return NextResponse.json({ error: "Private/local URLs not allowed" }, { status: 400 });
     }
 
@@ -51,8 +53,7 @@ export async function POST(req: Request) {
     const article = extractArticle(html, parsedUrl.hostname);
 
     return NextResponse.json(article);
-  } catch (err) {
-    console.error("Reader error:", err);
+  } catch {
     return NextResponse.json({ error: "Failed to parse article" }, { status: 500 });
   }
 }

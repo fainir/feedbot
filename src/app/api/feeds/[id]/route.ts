@@ -27,8 +27,8 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
-  const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0);
 
   const { data: items, error: itemsError } = await supabase
     .from("feed_items")
@@ -38,7 +38,8 @@ export async function GET(
     .range(offset, offset + limit - 1);
 
   if (itemsError) {
-    return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    // DB query failed — error details captured by Vercel runtime
+    return NextResponse.json({ error: "Failed to load feed items" }, { status: 500 });
   }
 
   return NextResponse.json({ feed, items });
@@ -125,7 +126,8 @@ export async function PATCH(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Update failed — error details captured by Vercel runtime
+    return NextResponse.json({ error: "Failed to update feed" }, { status: 500 });
   }
 
   return NextResponse.json({ feed });
@@ -162,7 +164,8 @@ export async function DELETE(
   const { error } = await supabase.from("feeds").delete().eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Delete failed — error details captured by Vercel runtime
+    return NextResponse.json({ error: "Failed to delete feed" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
