@@ -1,29 +1,25 @@
 # Feedbot — Source of Truth
 
-## Stack (AUTHORITATIVE)
-- **Deployment**: Railway — https://feedbot-production.up.railway.app
-- **Database**: Supabase — https://mdgzaizkjqbefovcgljr.supabase.co
-- **Auth**: Supabase Auth (email/password)
-- **Payments**: Lemon Squeezy
-- **Email**: Resend
-- **Search**: Brave Search API
+## Stack: Railway + Supabase + Lemon Squeezy
 
-## Status: LIVE (2026-04-02)
-- ✅ Railway: deployed, HTTP 200
-- ✅ Supabase: connected, 2 users
-- ✅ Landing page: working
-- ✅ Login page: loads
-- ✅ Auth: signup + login work via API
-- ✅ Dashboard redirect: works (307 → login)
-- ✅ API protection: returns 401 without auth
-- ✅ Waitlist: accepts signups
-- ❌ Feed creation: needs browser auth (cookie-based)
-- ❌ Brave Search: needs API key on Railway
-- ❌ Lemon Squeezy: needs API keys
-- ❌ Resend: needs API key
+## Status: LIVE AND WORKING (2026-04-02)
+- ✅ Railway deployed: https://feedbot-production.up.railway.app
+- ✅ Supabase connected: 2 users, 4 feeds, 26 articles
+- ✅ Auth: signup + login working
+- ✅ Feed creation: working via API
+- ✅ Feed refresh: cron generates articles (RSS + mock fallback)
+- ✅ Landing page: serving
+- ❌ Browser auth flow: needs testing with Chrome
+- ❌ Brave Search API: needs key for real web results
+- ❌ Lemon Squeezy: needs keys for payments
+- ❌ Resend: needs key for email notifications
 
 ## Demo Account
-- Email: demo@feedbot.test
-- Password: demo123456
+- Email: demo@feedbot.test / Password: demo123456
+- Has 4 feeds: AI News, Tech Startups, Climate Science, Coding Tips
 
-## Next: set API keys on Railway, test in browser
+## Next Priority
+1. Get Brave Search API key → real web results instead of mock
+2. Test browser login flow
+3. Set up Lemon Squeezy payments
+4. Add back stripped pages gradually
