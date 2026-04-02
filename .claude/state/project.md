@@ -10,7 +10,7 @@
 - ✅ Feed refresh: cron generates articles (RSS + mock fallback)
 - ✅ Landing page: serving
 - ❌ Browser auth flow: needs testing with Chrome
-- ❌ Brave Search API: needs key for real web results
+- ⚠️ Brave Search: optional (RSS works without it — Google News, Reddit, HN, Medium)
 - ❌ Lemon Squeezy: needs keys for payments
 - ❌ Resend: needs key for email notifications
 
