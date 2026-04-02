@@ -55,7 +55,7 @@ export async function GET(
   }
 
   // RSS XML format
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-production.up.railway.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://myfeed-production.up.railway.app";
   const feedItems = (items || [])
     .map(
       (item) => `    <item>
@@ -72,7 +72,7 @@ export async function GET(
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${escapeXml(feed.name)} — FeedBot</title>
+    <title>${escapeXml(feed.name)} — MyFeed</title>
     <link>${baseUrl}/dashboard</link>
     <description>${escapeXml(feed.description || feed.query_text || "")}</description>
     <language>en-us</language>

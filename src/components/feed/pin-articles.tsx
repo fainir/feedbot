@@ -16,7 +16,7 @@ export function usePinnedArticles() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("feedbot-pinned");
+      const saved = localStorage.getItem("myfeed-pinned");
       if (saved) setPinnedIds(new Set(JSON.parse(saved)));
     } catch {}
   }, []);
@@ -26,7 +26,7 @@ export function usePinnedArticles() {
       const next = new Set(prev);
       if (next.has(itemId)) next.delete(itemId);
       else next.add(itemId);
-      localStorage.setItem("feedbot-pinned", JSON.stringify([...next]));
+      localStorage.setItem("myfeed-pinned", JSON.stringify([...next]));
       return next;
     });
   }, []);

@@ -39,7 +39,7 @@ const STEPS: Step[] = [
   {
     icon: Keyboard,
     title: "Master keyboard shortcuts",
-    description: "FeedBot is built for speed. Press '?' to see all shortcuts. Use J/K to navigate items, O to open, R to read inline, M to mark as read.",
+    description: "MyFeed is built for speed. Press '?' to see all shortcuts. Use J/K to navigate items, O to open, R to read inline, M to mark as read.",
     action: "Press ? for shortcuts",
     tip: "Use Cmd+K to open the command palette — the fastest way to do anything.",
   },
@@ -63,7 +63,7 @@ const STEPS: Step[] = [
 export default function GettingStartedPage() {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     try {
-      const saved = localStorage.getItem("feedbot-getting-started");
+      const saved = localStorage.getItem("myfeed-getting-started");
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch { return new Set(); }
   });
@@ -73,7 +73,7 @@ export default function GettingStartedPage() {
       const next = new Set(prev);
       if (next.has(idx)) next.delete(idx);
       else next.add(idx);
-      localStorage.setItem("feedbot-getting-started", JSON.stringify([...next]));
+      localStorage.setItem("myfeed-getting-started", JSON.stringify([...next]));
       return next;
     });
   };
@@ -91,7 +91,7 @@ export default function GettingStartedPage() {
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Getting Started with FeedBot</h1>
+        <h1 className="text-2xl font-bold text-text">Getting Started with MyFeed</h1>
         <p className="mt-1 text-sm text-text-muted">
           Complete these steps to get the most out of your feeds.
         </p>
@@ -176,7 +176,7 @@ export default function GettingStartedPage() {
       {completedSteps.size === STEPS.length && (
         <div className="mt-8 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5 p-8 text-center">
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-primary" />
-          <h2 className="text-xl font-bold text-text">You&apos;re a FeedBot pro!</h2>
+          <h2 className="text-xl font-bold text-text">You&apos;re a MyFeed pro!</h2>
           <p className="mt-2 text-sm text-text-muted">
             You&apos;ve completed all the getting started steps. Enjoy your curated feeds!
           </p>

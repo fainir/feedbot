@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const res = await fetch("https://hnrss.org/newest?count=5", {
-      headers: { "User-Agent": "FeedBot/1.0" },
+      headers: { "User-Agent": "MyFeed/1.0" },
       next: { revalidate: 3600 },
     });
 

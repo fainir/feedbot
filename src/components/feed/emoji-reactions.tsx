@@ -84,7 +84,7 @@ export function useReactions() {
   const [reactions, setReactions] = useState<Record<string, string[]>>(() => {
     if (typeof window === "undefined") return {};
     try {
-      const saved = localStorage.getItem("feedbot-reactions");
+      const saved = localStorage.getItem("myfeed-reactions");
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -103,7 +103,7 @@ export function useReactions() {
       };
       // Clean up empty arrays
       if (next[itemId].length === 0) delete next[itemId];
-      localStorage.setItem("feedbot-reactions", JSON.stringify(next));
+      localStorage.setItem("myfeed-reactions", JSON.stringify(next));
       return next;
     });
   }, []);

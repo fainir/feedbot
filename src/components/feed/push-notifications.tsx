@@ -27,7 +27,7 @@ export function PushNotificationToggle({ enabled, onToggle }: PushNotificationsP
     if (result === "granted") {
       onToggle(true);
       // Show a test notification
-      new Notification("FeedBot Notifications Enabled", {
+      new Notification("MyFeed Notifications Enabled", {
         body: "You'll get notified about keyword alerts and important updates.",
         icon: "/icon-192.png",
       });
@@ -132,7 +132,7 @@ export function PushNotificationToggle({ enabled, onToggle }: PushNotificationsP
 export function sendKeywordNotification(title: string, keyword: string) {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
 
-  new Notification(`FeedBot Alert: "${keyword}"`, {
+  new Notification(`MyFeed Alert: "${keyword}"`, {
     body: title,
     icon: "/icon-192.png",
     tag: `keyword-${keyword}-${Date.now()}`,

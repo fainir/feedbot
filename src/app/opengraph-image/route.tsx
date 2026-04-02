@@ -48,7 +48,7 @@ export async function GET() {
               color: "#f8fafc",
             }}
           >
-            FeedBot
+            MyFeed
           </span>
         </div>
         <h1

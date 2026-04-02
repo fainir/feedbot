@@ -12,9 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FeedBot — Your Internet, Curated by AI",
+  title: "MyFeed — Your Internet, Curated",
   description:
-    "Describe what you care about in plain English. FeedBot scans the entire internet and delivers a personalized, real-time feed. Free to start.",
+    "Describe what you care about in plain English. MyFeed scans the entire internet and delivers a personalized, real-time feed. Free to start.",
   keywords: [
     "AI feed aggregator",
     "personalized news",
@@ -23,21 +23,21 @@ export const metadata: Metadata = {
     "custom news feed",
     "content curation AI",
   ],
-  metadataBase: new URL("https://feedbot-production.up.railway.app"),
+  metadataBase: new URL("https://myfeed-production.up.railway.app"),
   openGraph: {
-    title: "FeedBot — Your Internet, Curated by AI",
+    title: "MyFeed — Your Internet, Curated",
     description:
-      "Describe what you care about. FeedBot scans the internet and delivers a personalized feed — no RSS links needed.",
-    url: "https://feedbot-production.up.railway.app",
-    siteName: "FeedBot",
+      "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
+    url: "https://myfeed-production.up.railway.app",
+    siteName: "MyFeed",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FeedBot — Your Internet, Curated by AI",
+    title: "MyFeed — Your Internet, Curated",
     description:
-      "Describe what you care about. FeedBot scans the internet and delivers a personalized feed — no RSS links needed.",
+      "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
   },
   robots: {
     index: true,

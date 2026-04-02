@@ -4,7 +4,7 @@ import type { Feed, FeedItem } from "@/types/database";
 const rssParser = new RssParser({
   timeout: 10_000,
   headers: {
-    "User-Agent": "FeedBot/1.0 (RSS Aggregator)",
+    "User-Agent": "MyFeed/1.0 (RSS Aggregator)",
     Accept: "application/rss+xml, application/xml, text/xml, */*",
   },
 });

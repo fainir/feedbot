@@ -88,10 +88,10 @@ export default function DigestPage() {
         <div className="border-b border-border bg-primary/5 px-6 py-4">
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <Mail className="h-4 w-4" />
-            <span>From: FeedBot &lt;digest@feedbot.app&gt;</span>
+            <span>From: MyFeed &lt;digest@myfeed.app&gt;</span>
           </div>
           <h2 className="mt-1 text-lg font-bold text-text">
-            Your Weekly FeedBot Digest
+            Your Weekly MyFeed Digest
           </h2>
           <p className="text-xs text-text-muted">{dateRange}</p>
         </div>
@@ -150,7 +150,7 @@ export default function DigestPage() {
         {/* Email Footer */}
         <div className="border-t border-border px-6 py-3">
           <p className="text-center text-xs text-text-muted">
-            Powered by FeedBot — Your Internet, Curated by AI
+            Powered by MyFeed — Your Internet, Curated by AI
           </p>
         </div>
       </div>

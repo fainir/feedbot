@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/dashboard/", "/auth/"],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-production.up.railway.app"}/sitemap.xml`,
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://myfeed-production.up.railway.app"}/sitemap.xml`,
   };
 }

@@ -32,13 +32,13 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("feedbot-notification-prefs");
+      const saved = localStorage.getItem("myfeed-notification-prefs");
       if (saved) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(saved) });
     } catch {}
   }, []);
 
   const save = useCallback(() => {
-    localStorage.setItem("feedbot-notification-prefs", JSON.stringify(prefs));
+    localStorage.setItem("myfeed-notification-prefs", JSON.stringify(prefs));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [prefs]);

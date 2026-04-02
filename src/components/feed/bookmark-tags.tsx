@@ -26,7 +26,7 @@ function getTagColor(tagName: string): string {
 
 // --- Storage ---
 
-const STORAGE_KEY = "feedbot-bookmark-tags";
+const STORAGE_KEY = "myfeed-bookmark-tags";
 
 function loadTagsFromStorage(): Record<string, string[]> {
   if (typeof window === "undefined") return {};

@@ -72,7 +72,7 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Rss className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-text">FeedBot</span>
+          <span className="text-xl font-bold text-text">MyFeed</span>
         </Link>
 
         <h1 className="mb-2 text-center text-2xl font-bold text-text">

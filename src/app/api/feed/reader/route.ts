@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     // Fetch the article HTML
     const response = await fetch(parsedUrl.toString(), {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; FeedBot/1.0; +https://feedbot.app)",
+        "User-Agent": "Mozilla/5.0 (compatible; MyFeed/1.0; +https://myfeed.app)",
         Accept: "text/html,application/xhtml+xml",
       },
       signal: AbortSignal.timeout(10000),

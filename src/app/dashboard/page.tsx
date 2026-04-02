@@ -133,14 +133,14 @@ function DashboardContent() {
 
   // Load bookmarks and read state from localStorage
   useEffect(() => {
-    try { const saved = localStorage.getItem("feedbot-bookmarks"); if (saved) setBookmarkedIds(new Set(JSON.parse(saved))); } catch {}
-    try { const read = localStorage.getItem("feedbot-read"); if (read) setReadIds(new Set(JSON.parse(read))); } catch {}
-    try { const notes = localStorage.getItem("feedbot-notes"); if (notes) setItemNotes(JSON.parse(notes)); } catch {}
-    try { const foldersData = localStorage.getItem("feedbot-folders"); if (foldersData) setFolders(JSON.parse(foldersData)); } catch {}
-    try { const alertsData = localStorage.getItem("feedbot-alerts"); if (alertsData) setKeywordAlerts(JSON.parse(alertsData)); } catch {}
-    try { const mutedData = localStorage.getItem("feedbot-muted-sources"); if (mutedData) setMutedSources(JSON.parse(mutedData)); } catch {}
-    try { const collectionsData = localStorage.getItem("feedbot-collections"); if (collectionsData) setSavedCollections(JSON.parse(collectionsData)); } catch {}
-    try { const notifEnabled = localStorage.getItem("feedbot-notifications"); if (notifEnabled === "true") setNotificationsEnabled(true); } catch {}
+    try { const saved = localStorage.getItem("myfeed-bookmarks"); if (saved) setBookmarkedIds(new Set(JSON.parse(saved))); } catch {}
+    try { const read = localStorage.getItem("myfeed-read"); if (read) setReadIds(new Set(JSON.parse(read))); } catch {}
+    try { const notes = localStorage.getItem("myfeed-notes"); if (notes) setItemNotes(JSON.parse(notes)); } catch {}
+    try { const foldersData = localStorage.getItem("myfeed-folders"); if (foldersData) setFolders(JSON.parse(foldersData)); } catch {}
+    try { const alertsData = localStorage.getItem("myfeed-alerts"); if (alertsData) setKeywordAlerts(JSON.parse(alertsData)); } catch {}
+    try { const mutedData = localStorage.getItem("myfeed-muted-sources"); if (mutedData) setMutedSources(JSON.parse(mutedData)); } catch {}
+    try { const collectionsData = localStorage.getItem("myfeed-collections"); if (collectionsData) setSavedCollections(JSON.parse(collectionsData)); } catch {}
+    try { const notifEnabled = localStorage.getItem("myfeed-notifications"); if (notifEnabled === "true") setNotificationsEnabled(true); } catch {}
   }, []);
 
   // Reset focused index on tab change
@@ -152,7 +152,7 @@ function DashboardContent() {
     setReadIds((prev) => {
       const next = new Set(prev);
       next.add(itemId);
-      localStorage.setItem("feedbot-read", JSON.stringify([...next]));
+      localStorage.setItem("myfeed-read", JSON.stringify([...next]));
       return next;
     });
   }, []);
@@ -274,9 +274,9 @@ function DashboardContent() {
       if (next.has(item.id)) { next.delete(item.id); toast("Removed from saved", "info"); }
       else {
         next.add(item.id); toast("Saved for later", "success");
-        try { const saved = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}"); saved[item.id] = item; localStorage.setItem("feedbot-bookmark-items", JSON.stringify(saved)); } catch {}
+        try { const saved = JSON.parse(localStorage.getItem("myfeed-bookmark-items") || "{}"); saved[item.id] = item; localStorage.setItem("myfeed-bookmark-items", JSON.stringify(saved)); } catch {}
       }
-      localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
+      localStorage.setItem("myfeed-bookmarks", JSON.stringify([...next]));
       return next;
     });
   }, [toast]);
@@ -353,13 +353,13 @@ function DashboardContent() {
     toast(`Exported as ${format.toUpperCase()}`, "success");
   }, [activeTabId, toast]);
 
-  const updateFolders = useCallback((f: FeedFolder[]) => { setFolders(f); localStorage.setItem("feedbot-folders", JSON.stringify(f)); }, []);
-  const updateAlerts = useCallback((a: KeywordAlert[]) => { setKeywordAlerts(a); localStorage.setItem("feedbot-alerts", JSON.stringify(a)); }, []);
-  const updateMutedSources = useCallback((s: MutedSource[]) => { setMutedSources(s); localStorage.setItem("feedbot-muted-sources", JSON.stringify(s)); }, []);
-  const updateCollections = useCallback((c: SavedCollection[]) => { setSavedCollections(c); localStorage.setItem("feedbot-collections", JSON.stringify(c)); }, []);
+  const updateFolders = useCallback((f: FeedFolder[]) => { setFolders(f); localStorage.setItem("myfeed-folders", JSON.stringify(f)); }, []);
+  const updateAlerts = useCallback((a: KeywordAlert[]) => { setKeywordAlerts(a); localStorage.setItem("myfeed-alerts", JSON.stringify(a)); }, []);
+  const updateMutedSources = useCallback((s: MutedSource[]) => { setMutedSources(s); localStorage.setItem("myfeed-muted-sources", JSON.stringify(s)); }, []);
+  const updateCollections = useCallback((c: SavedCollection[]) => { setSavedCollections(c); localStorage.setItem("myfeed-collections", JSON.stringify(c)); }, []);
 
   const markAllAsRead = useCallback(() => {
-    setReadIds((prev) => { const next = new Set(prev); for (const item of displayItems) next.add(item.id); localStorage.setItem("feedbot-read", JSON.stringify([...next])); return next; });
+    setReadIds((prev) => { const next = new Set(prev); for (const item of displayItems) next.add(item.id); localStorage.setItem("myfeed-read", JSON.stringify([...next])); return next; });
     toast("All items marked as read", "success");
   }, [toast]);
 
@@ -368,7 +368,7 @@ function DashboardContent() {
   }, []);
 
   const bulkMarkRead = useCallback(() => {
-    setReadIds((prev) => { const next = new Set(prev); for (const id of selectedIds) next.add(id); localStorage.setItem("feedbot-read", JSON.stringify([...next])); return next; });
+    setReadIds((prev) => { const next = new Set(prev); for (const id of selectedIds) next.add(id); localStorage.setItem("myfeed-read", JSON.stringify([...next])); return next; });
     toast(`${selectedIds.size} items marked as read`, "success");
     setSelectedIds(new Set()); setSelectMode(false);
   }, [selectedIds, toast]);
@@ -377,8 +377,8 @@ function DashboardContent() {
     setBookmarkedIds((prev) => {
       const next = new Set(prev);
       for (const id of selectedIds) next.add(id);
-      try { const saved = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}"); for (const item of displayItems) { if (selectedIds.has(item.id)) saved[item.id] = item; } localStorage.setItem("feedbot-bookmark-items", JSON.stringify(saved)); } catch {}
-      localStorage.setItem("feedbot-bookmarks", JSON.stringify([...next]));
+      try { const saved = JSON.parse(localStorage.getItem("myfeed-bookmark-items") || "{}"); for (const item of displayItems) { if (selectedIds.has(item.id)) saved[item.id] = item; } localStorage.setItem("myfeed-bookmark-items", JSON.stringify(saved)); } catch {}
+      localStorage.setItem("myfeed-bookmarks", JSON.stringify([...next]));
       return next;
     });
     toast(`${selectedIds.size} items bookmarked`, "success");
@@ -399,15 +399,15 @@ function DashboardContent() {
   }, [discoverUrl, toast]);
 
   const saveNote = useCallback((itemId: string, note: string) => {
-    setItemNotes((prev) => { const next = { ...prev }; if (note.trim()) next[itemId] = note.trim(); else delete next[itemId]; localStorage.setItem("feedbot-notes", JSON.stringify(next)); return next; });
+    setItemNotes((prev) => { const next = { ...prev }; if (note.trim()) next[itemId] = note.trim(); else delete next[itemId]; localStorage.setItem("myfeed-notes", JSON.stringify(next)); return next; });
   }, []);
 
   const toggleNotifications = useCallback((enabled: boolean) => {
     setNotificationsEnabled(enabled);
-    localStorage.setItem("feedbot-notifications", enabled ? "true" : "false");
+    localStorage.setItem("myfeed-notifications", enabled ? "true" : "false");
   }, []);
 
-  const clearReadingHistory = useCallback(() => { setReadIds(new Set()); localStorage.setItem("feedbot-read", "[]"); }, []);
+  const clearReadingHistory = useCallback(() => { setReadIds(new Set()); localStorage.setItem("myfeed-read", "[]"); }, []);
 
   const addTab = async () => {
     if (!newTabName.trim() || !newTabPrompt.trim()) return;
@@ -451,7 +451,7 @@ function DashboardContent() {
     const allCurrentItems = tabs.filter((t) => t.id !== "all").flatMap((t) => t.items);
     const items: FeedItem[] = []; const found = new Set<string>();
     for (const item of allCurrentItems) { if (bookmarkedIds.has(item.id) && !found.has(item.id)) { items.push(item); found.add(item.id); } }
-    try { const saved = JSON.parse(localStorage.getItem("feedbot-bookmark-items") || "{}"); for (const id of bookmarkedIds) { if (!found.has(id) && saved[id]) items.push(saved[id]); } } catch {}
+    try { const saved = JSON.parse(localStorage.getItem("myfeed-bookmark-items") || "{}"); for (const id of bookmarkedIds) { if (!found.has(id) && saved[id]) items.push(saved[id]); } } catch {}
     return items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   })();
 

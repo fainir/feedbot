@@ -19,13 +19,13 @@ export function useReadLater() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("feedbot-read-later");
+      const saved = localStorage.getItem("myfeed-read-later");
       if (saved) setQueue(JSON.parse(saved));
     } catch {}
   }, []);
 
   const save = useCallback((items: QueueItem[]) => {
-    localStorage.setItem("feedbot-read-later", JSON.stringify(items));
+    localStorage.setItem("myfeed-read-later", JSON.stringify(items));
   }, []);
 
   const addToQueue = useCallback((item: FeedItem, remindMinutes?: number) => {

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Fetch the page
     const res = await fetch(parsedUrl.toString(), {
       headers: {
-        "User-Agent": "FeedBot/1.0 (RSS Discovery)",
+        "User-Agent": "MyFeed/1.0 (RSS Discovery)",
         Accept: "text/html, application/xhtml+xml, application/xml",
       },
       signal: AbortSignal.timeout(10_000),
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           const testUrl = `${parsedUrl.origin}${path}`;
           const testRes = await fetch(testUrl, {
             method: "HEAD",
-            headers: { "User-Agent": "FeedBot/1.0 (RSS Discovery)" },
+            headers: { "User-Agent": "MyFeed/1.0 (RSS Discovery)" },
             signal: AbortSignal.timeout(5_000),
           });
           if (testRes.ok) {

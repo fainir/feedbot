@@ -46,7 +46,7 @@ function buildEmailHtml(feedName: string, items: FeedItem[]): string {
         <tbody>${itemsHtml}</tbody>
       </table>
       <p style="color: #999; font-size: 12px; margin-top: 24px; text-align: center;">
-        Sent by FeedBot &middot; <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://feedbot.app"}" style="color: #999;">Manage your feeds</a>
+        Sent by MyFeed &middot; <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://myfeed.app"}" style="color: #999;">Manage your feeds</a>
       </p>
     </div>
   `;
@@ -62,7 +62,7 @@ function buildWhatsAppMessage(feedName: string, items: FeedItem[]): string {
 
   const footer =
     items.length > 10
-      ? `\n\n_...and ${items.length - 10} more. View all at ${process.env.NEXT_PUBLIC_APP_URL || "https://feedbot.app"}_`
+      ? `\n\n_...and ${items.length - 10} more. View all at ${process.env.NEXT_PUBLIC_APP_URL || "https://myfeed.app"}_`
       : "";
 
   return header + itemLines + footer;
@@ -81,7 +81,7 @@ export async function sendEmailNotification(
 
   try {
     const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "FeedBot <notifications@feedbot.app>",
+      from: process.env.EMAIL_FROM || "MyFeed <notifications@myfeed.app>",
       to,
       subject: `${feedName}: ${items.length} new item${items.length === 1 ? "" : "s"}`,
       html: buildEmailHtml(feedName, items),

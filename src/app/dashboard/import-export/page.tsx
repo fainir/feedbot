@@ -42,7 +42,7 @@ export default function ImportExportPage() {
 
       if (format === "json") {
         content = JSON.stringify({ feeds, exportedAt: new Date().toISOString() }, null, 2);
-        filename = `feedbot-feeds-${new Date().toISOString().split("T")[0]}.json`;
+        filename = `myfeed-feeds-${new Date().toISOString().split("T")[0]}.json`;
         mime = "application/json";
       } else {
         // Generate OPML
@@ -52,14 +52,14 @@ export default function ImportExportPage() {
         content = `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
-    <title>FeedBot Feeds Export</title>
+    <title>MyFeed Feeds Export</title>
     <dateCreated>${new Date().toISOString()}</dateCreated>
   </head>
   <body>
 ${outlines}
   </body>
 </opml>`;
-        filename = `feedbot-feeds-${new Date().toISOString().split("T")[0]}.opml`;
+        filename = `myfeed-feeds-${new Date().toISOString().split("T")[0]}.opml`;
         mime = "text/xml";
       }
 
@@ -92,7 +92,7 @@ ${outlines}
         </div>
         <div>
           <h1 className="text-2xl font-bold text-text">Import & Export</h1>
-          <p className="text-sm text-text-muted">Move your feeds in and out of FeedBot</p>
+          <p className="text-sm text-text-muted">Move your feeds in and out of MyFeed</p>
         </div>
       </div>
 
