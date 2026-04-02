@@ -12,6 +12,15 @@ interface FeedItem {
   source: string;
 }
 
+function timeAgo(dateStr: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return "now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const DEFAULT_TABS = [
   { id: "tech", name: "Tech News", query: "technology news" },
   { id: "ai", name: "AI & ML", query: "artificial intelligence machine learning" },
@@ -24,21 +33,51 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("tech");
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const fetchFeed = (query: string, cursor?: string) => {
+    const url = `/api/public/feeds?q=${encodeURIComponent(query)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
+    return fetch(url).then((r) => r.json());
+  };
+
+  // Load feed on tab change
   useEffect(() => {
     setLoading(true);
+    setItems([]);
+    setNextCursor(null);
     const tab = DEFAULT_TABS.find((t) => t.id === activeTab);
     if (!tab) return;
 
-    fetch(`/api/public/feeds?q=${encodeURIComponent(tab.query)}`)
-      .then((r) => r.json())
-      .then((d) => setItems(d.items || []))
+    fetchFeed(tab.query)
+      .then((d) => {
+        setItems(d.items || []);
+        setHasMore(d.hasMore || false);
+        setNextCursor(d.nextCursor || null);
+      })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [activeTab]);
+
+  // Load more (infinite scroll)
+  const loadMore = () => {
+    if (loadingMore || !hasMore || !nextCursor) return;
+    setLoadingMore(true);
+    const tab = DEFAULT_TABS.find((t) => t.id === activeTab);
+    if (!tab) return;
+
+    fetchFeed(tab.query, nextCursor)
+      .then((d) => {
+        setItems((prev) => [...prev, ...(d.items || [])]);
+        setHasMore(d.hasMore || false);
+        setNextCursor(d.nextCursor || null);
+      })
+      .finally(() => setLoadingMore(false));
+  };
 
   return (
     <div className="min-h-screen bg-bg text-text">
@@ -108,26 +147,45 @@ export default function Home() {
             <p>No articles yet. Feeds refresh daily.</p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="divide-y divide-border">
             {items.map((item, i) => (
-              <article key={i} className="group">
+              <article key={item.id || i} className="group py-4">
                 <a
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block hover:bg-bg-hover -mx-3 px-3 py-2 rounded-lg transition-colors"
+                  className="block"
                 >
-                  <h2 className="font-semibold text-text group-hover:text-primary transition-colors">
+                  <h2 className="font-semibold text-text group-hover:underline">
                     {item.title}
                   </h2>
                   {item.summary && (
                     <p className="text-sm text-text-muted mt-1 line-clamp-2">{item.summary}</p>
                   )}
-                  <span className="text-xs text-text-muted mt-1 inline-block">{item.source}</span>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
+                    <span>{item.source}</span>
+                    <span>·</span>
+                    <span>{timeAgo(item.publishedAt)}</span>
+                  </div>
                 </a>
               </article>
             ))}
           </div>
+
+          {/* Load more */}
+          {hasMore && (
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="w-full py-4 text-sm text-text-muted hover:text-text border-t border-border transition-colors"
+            >
+              {loadingMore ? "Loading..." : "Show more"}
+            </button>
+          )}
+
+          {!hasMore && items.length > 0 && (
+            <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the beginning of this feed</p>
+          )}
         )}
 
         {/* CTA */}
