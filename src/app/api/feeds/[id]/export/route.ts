@@ -55,7 +55,7 @@ export async function GET(
   }
 
   // RSS XML format
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-eight.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-production.up.railway.app";
   const feedItems = (items || [])
     .map(
       (item) => `    <item>

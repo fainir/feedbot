@@ -24,7 +24,7 @@ const jsonLd = {
   operatingSystem: "Web",
   description:
     "AI-powered feed aggregator. Describe what you care about in plain English and get a personalized, real-time feed from across the internet.",
-  url: "https://feedbot-eight.vercel.app",
+  url: "https://feedbot-production.up.railway.app",
   offers: [
     {
       "@type": "Offer",

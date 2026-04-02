@@ -23,12 +23,12 @@ export const metadata: Metadata = {
     "custom news feed",
     "content curation AI",
   ],
-  metadataBase: new URL("https://feedbot-eight.vercel.app"),
+  metadataBase: new URL("https://feedbot-production.up.railway.app"),
   openGraph: {
     title: "FeedBot — Your Internet, Curated by AI",
     description:
       "Describe what you care about. FeedBot scans the internet and delivers a personalized feed — no RSS links needed.",
-    url: "https://feedbot-eight.vercel.app",
+    url: "https://feedbot-production.up.railway.app",
     siteName: "FeedBot",
     locale: "en_US",
     type: "website",

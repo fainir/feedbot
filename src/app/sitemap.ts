@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-eight.vercel.app";
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://feedbot-production.up.railway.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
