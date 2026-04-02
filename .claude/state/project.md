@@ -1,18 +1,20 @@
-# Feedbot — Source of Truth
+# MyFeed — Source of Truth
 
 ## Stack: Railway + Supabase + Lemon Squeezy
-
-## Status: MVP WORKING (2026-04-02)
-- ✅ Railway: deployed, 81s builds
-- ✅ Supabase: 3 users, 4 feeds, 26 articles  
-- ✅ Signup: server-side, pre-confirmed, instant
-- ✅ Login: JWT auth working
-- ✅ Feeds: create + refresh + real RSS content
-- ✅ Landing page: live
-- ⚠️ Dashboard: needs browser test (cookie auth)
-- ⚠️ Brave Search: optional (RSS works without it)
-- ❌ Lemon Squeezy: needs keys for payments
-- ❌ Resend: needs key for email
-
 ## URL: https://feedbot-production.up.railway.app
-## Demo: demo@feedbot.test / demo123456
+
+## Status: DEPLOYING REBRAND (2026-04-02)
+- Renamed: FeedBot → MyFeed
+- Homepage: product-first with 5 default feed tabs
+- No auth wall: anyone can browse Tech/AI/Startups/Dev/Science feeds
+- Sign in only for creating/editing custom feeds
+- 3 users, 10 feeds, 326 articles
+
+## Architecture Change
+- Old: marketing landing page → sign up → dashboard
+- New: feed tabs ARE the homepage → sign up to customize
+
+## NEVER DO
+- Never deploy to Vercel
+- Never use Stripe
+- Never put auth wall before content
