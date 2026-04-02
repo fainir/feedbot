@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --no-lint",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint",
     "test": "vitest run --dir src",
     "test:watch": "vitest --dir src",
