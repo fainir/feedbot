@@ -6,10 +6,21 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 
 interface FeedItem {
+  id: string;
   title: string;
   url: string;
   summary: string;
   source: string;
+  image_url?: string;
+  publishedAt: string;
+}
+
+function cleanSummary(text: string): string {
+  return text
+    .replace(/Continue reading on [^»]+»/g, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function timeAgo(dateStr: string): string {
@@ -154,19 +165,34 @@ export default function Home() {
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block"
+                  className="flex gap-4"
                 >
-                  <h2 className="font-semibold text-text group-hover:underline">
-                    {item.title}
-                  </h2>
-                  {item.summary && (
-                    <p className="text-sm text-text-muted mt-1 line-clamp-2">{item.summary}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
-                    <span>{item.source}</span>
-                    <span>·</span>
-                    <span>{timeAgo(item.publishedAt)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
+                      <span>{item.source}</span>
+                      <span>·</span>
+                      <span>{timeAgo(item.publishedAt)}</span>
+                    </div>
+                    <h2 className="font-semibold text-text group-hover:underline leading-snug">
+                      {item.title}
+                    </h2>
+                    {item.summary && (
+                      <p className="text-sm text-text-muted mt-1 line-clamp-2">
+                        {cleanSummary(item.summary)}
+                      </p>
+                    )}
                   </div>
+                  {item.image_url && (
+                    <div className="flex-shrink-0 w-20 h-20 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-bg-hover">
+                      <img
+                        src={item.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    </div>
+                  )}
                 </a>
               </article>
             ))}
