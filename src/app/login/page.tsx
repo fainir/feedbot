@@ -22,17 +22,23 @@ export default function LoginPage() {
     setMessage(null);
 
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      if (error) {
-        setError(error.message);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Signup failed");
       } else {
-        setMessage("Check your email to confirm your account, then log in.");
+        // Auto-login after signup
+        const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginErr) {
+          setMessage("Account created! You can now log in.");
+        } else {
+          window.location.href = "/dashboard";
+          return;
+        }
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({
