@@ -1,29 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-secondary: #f59e0b;
-  --color-bg: #0f172a;
-  --color-bg-card: #1e293b;
-  --color-bg-hover: #334155;
-  --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-border: #334155;
+  /* Dark mode (default) — X.com style */
+  --color-primary: #ffffff;
+  --color-primary-dark: #e5e5e5;
+  --color-secondary: #71767b;
+  --color-bg: #000000;
+  --color-bg-card: #16181c;
+  --color-bg-hover: #1d1f23;
+  --color-text: #e7e9ea;
+  --color-text-muted: #71767b;
+  --color-border: #2f3336;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Light theme */
+/* Light mode — clean white like X.com light */
 html.light {
-  --color-bg: #f8fafc;
-  --color-bg-card: #ffffff;
-  --color-bg-hover: #f1f5f9;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-border: #e2e8f0;
+  --color-bg: #ffffff;
+  --color-bg-card: #f7f9f9;
+  --color-bg-hover: #eff3f4;
+  --color-text: #0f1419;
+  --color-text-muted: #536471;
+  --color-border: #eff3f4;
 }
 
 body {
@@ -32,8 +33,8 @@ body {
 }
 
 ::selection {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-text);
+  color: var(--color-bg);
 }
 
 @keyframes slide-in-from-right {

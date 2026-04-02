@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Rss, Plus, LogIn, RefreshCw } from "lucide-react";
+import { Plus, LogIn, RefreshCw, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 
 interface FeedItem {
@@ -23,6 +24,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("tech");
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setLoading(true);
@@ -42,27 +46,27 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Header */}
+      {/* Header — minimal X.com style */}
       <header className="border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Rss className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold">MyFeed</h1>
-          <span className="text-xs text-text-muted bg-bg-hover px-2 py-0.5 rounded-full">beta</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
-          >
-            <LogIn className="h-4 w-4" />
+        <h1 className="text-xl font-bold tracking-tight">MyFeed</h1>
+        <div className="flex items-center gap-3">
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-full hover:bg-bg-hover transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+          )}
+          <Link href="/login" className="text-sm text-text-muted hover:text-text transition-colors">
             Sign in
           </Link>
           <Link
             href="/login?signup=true"
-            className="flex items-center gap-1.5 text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors"
+            className="text-sm font-semibold bg-text text-bg px-4 py-1.5 rounded-full hover:opacity-90 transition-opacity"
           >
-            <Plus className="h-4 w-4" />
-            Create Feed
+            Sign up
           </Link>
         </div>
       </header>
@@ -84,10 +88,9 @@ export default function Home() {
         ))}
         <Link
           href="/login?signup=true"
-          className="px-4 py-3 text-sm text-text-muted hover:text-primary flex items-center gap-1 whitespace-nowrap"
+          className="px-4 py-3 text-sm text-text-muted hover:text-text flex items-center gap-1 whitespace-nowrap transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
-          New Tab
         </Link>
       </nav>
 
@@ -132,17 +135,16 @@ export default function Home() {
         )}
 
         {/* CTA */}
-        <div className="mt-12 text-center border border-border rounded-xl p-6 bg-bg-hover/50">
-          <h3 className="font-semibold text-lg mb-2">Want your own custom feeds?</h3>
-          <p className="text-sm text-text-muted mb-4">
-            Describe what you care about in plain English. MyFeed finds articles from across the internet.
+        <div className="mt-12 text-center border border-border rounded-2xl p-8">
+          <h3 className="font-bold text-lg mb-2">Create your own feeds</h3>
+          <p className="text-sm text-text-muted mb-5">
+            Describe what you care about. MyFeed scans the internet for you.
           </p>
           <Link
             href="/login?signup=true"
-            className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity"
           >
-            <Plus className="h-4 w-4" />
-            Create Your Feed — Free
+            Get started — it&apos;s free
           </Link>
         </div>
       </main>
