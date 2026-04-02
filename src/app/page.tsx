@@ -33,11 +33,7 @@ export default function Home() {
     const tab = DEFAULT_TABS.find((t) => t.id === activeTab);
     if (!tab) return;
 
-    fetch("/api/feed/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: tab.query }),
-    })
+    fetch(`/api/public/feeds?q=${encodeURIComponent(tab.query)}`)
       .then((r) => r.json())
       .then((d) => setItems(d.items || []))
       .catch(() => setItems([]))
