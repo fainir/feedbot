@@ -431,7 +431,7 @@ function DashboardContent() {
   async function handleLogout() { const supabase = createClient(); await supabase.auth.signOut(); window.location.href = "/"; }
   async function handleUpgrade() {
     setCheckingOut(true);
-    try { const res = await fetch("/api/stripe/checkout", { method: "POST" }); const data = await res.json(); if (data.url) window.location.href = data.url; else alert(data.error || "Failed to start checkout"); } catch { alert("Failed to start checkout"); }
+    try { const res = await fetch("/api/payments/checkout", { method: "POST" }); const data = await res.json(); if (data.url) window.location.href = data.url; else alert(data.error || "Failed to start checkout"); } catch { alert("Failed to start checkout"); }
     setCheckingOut(false);
   }
 
