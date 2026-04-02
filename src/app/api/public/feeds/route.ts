@@ -1,41 +1,66 @@
 import { NextRequest, NextResponse } from "next/server";
-import { discoverFeeds } from "@/lib/feed-engine";
+import { createClient } from "@supabase/supabase-js";
 
-// In-memory cache: same query → cached for 30 min
-// 100 users requesting "tech news" = 1 RSS fetch, not 100
-const cache = new Map<string, { items: unknown[]; timestamp: number }>();
-const CACHE_TTL = 30 * 60 * 1000;
+// System user owns the default public feeds
+const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
+// Map tab names to feed names in DB
+const TAB_MAP: Record<string, string> = {
+  "technology news": "Tech News",
+  "artificial intelligence machine learning": "AI & ML",
+  "startup funding venture capital": "Startups",
+  "software engineering programming": "Dev",
+  "science research discoveries": "Science",
+};
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+// Serve articles from DB — content accumulated by background scanner
+// No live RSS fetching — instant response
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get("q");
   if (!query) return NextResponse.json({ error: "q required" }, { status: 400 });
 
-  const key = query.toLowerCase().trim();
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return NextResponse.json({ items: cached.items, cached: true });
+  const supabase = getSupabase();
+  const feedName = TAB_MAP[query.toLowerCase().trim()];
+
+  if (!feedName) {
+    // Custom query — try to find matching feed or return empty
+    return NextResponse.json({ items: [], message: "Sign in to create custom feeds" });
   }
 
-  try {
-    const items = await discoverFeeds(query);
-    const mapped = items.slice(0, 25).map((item, i) => ({
-      id: String(i),
+  // Find the system feed
+  const { data: feed } = await supabase
+    .from("feeds")
+    .select("id")
+    .eq("user_id", SYSTEM_USER)
+    .eq("name", feedName)
+    .single();
+
+  if (!feed) return NextResponse.json({ items: [] });
+
+  // Get articles from DB, newest first
+  const { data: items } = await supabase
+    .from("feed_items")
+    .select("id, title, url, summary, source, image_url, published_at")
+    .eq("feed_id", feed.id)
+    .order("published_at", { ascending: false })
+    .limit(30);
+
+  return NextResponse.json({
+    items: (items || []).map((item) => ({
+      id: item.id,
       title: item.title,
       summary: item.summary,
       source: item.source,
       url: item.url,
+      image_url: item.image_url,
       publishedAt: item.published_at,
-    }));
-
-    cache.set(key, { items: mapped, timestamp: Date.now() });
-
-    // Evict stale entries
-    for (const [k, v] of cache) {
-      if (Date.now() - v.timestamp > CACHE_TTL * 2) cache.delete(k);
-    }
-
-    return NextResponse.json({ items: mapped, cached: false });
-  } catch {
-    return NextResponse.json({ items: [] }, { status: 500 });
-  }
+    })),
+  });
 }
