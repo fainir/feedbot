@@ -1,4 +1,4 @@
-import { PLANS } from "@/lib/stripe";
+import { PLANS } from "@/lib/lemonsqueezy";
 import { getServiceClient } from "@/lib/supabase";
 
 export async function canCreateFeed(userId: string): Promise<boolean> {

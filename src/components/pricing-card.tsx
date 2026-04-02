@@ -28,7 +28,7 @@ export function PricingCard({
 
     setLoading(true);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
