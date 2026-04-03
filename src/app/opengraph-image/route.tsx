@@ -13,9 +13,7 @@ export async function GET() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#0f172a",
-          backgroundImage:
-            "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15), transparent 50%)",
+          backgroundColor: "#000",
         }}
       >
         <div
@@ -23,7 +21,7 @@ export async function GET() {
             display: "flex",
             alignItems: "center",
             gap: "16px",
-            marginBottom: "24px",
+            marginBottom: "32px",
           }}
         >
           <div
@@ -31,21 +29,22 @@ export async function GET() {
               width: "64px",
               height: "64px",
               borderRadius: "16px",
-              backgroundColor: "#6366f1",
+              backgroundColor: "#e7e9ea",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "32px",
-              color: "white",
+              fontSize: "28px",
+              fontWeight: 800,
+              color: "#000",
             }}
           >
-            ⚡
+            MF
           </div>
           <span
             style={{
               fontSize: "48px",
               fontWeight: 700,
-              color: "#f8fafc",
+              color: "#e7e9ea",
             }}
           >
             MyFeed
@@ -55,19 +54,18 @@ export async function GET() {
           style={{
             fontSize: "64px",
             fontWeight: 800,
-            color: "#f8fafc",
+            color: "#e7e9ea",
             textAlign: "center",
             lineHeight: 1.1,
             marginBottom: "16px",
           }}
         >
-          Your Internet,{" "}
-          <span style={{ color: "#6366f1" }}>Curated by AI</span>
+          Your Internet, Curated by AI
         </h1>
         <p
           style={{
             fontSize: "24px",
-            color: "#94a3b8",
+            color: "#71767b",
             textAlign: "center",
             maxWidth: "700px",
           }}
@@ -78,15 +76,17 @@ export async function GET() {
         <div
           style={{
             display: "flex",
-            marginTop: "32px",
+            marginTop: "40px",
             gap: "32px",
-            color: "#94a3b8",
+            color: "#71767b",
             fontSize: "20px",
           }}
         >
-          <span>✓ Free forever</span>
-          <span>✓ No RSS needed</span>
-          <span>✓ 30 sec setup</span>
+          <span>Free to start</span>
+          <span>&#183;</span>
+          <span>No RSS needed</span>
+          <span>&#183;</span>
+          <span>30 sec setup</span>
         </div>
       </div>
     ),

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ServiceWorkerRegister } from "@/components/layout/sw-register";
 import { ToastProvider } from "@/components/ui/toast";
+import { Analytics } from "@/components/analytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,12 +23,12 @@ export const metadata: Metadata = {
     "custom news feed",
     "content curation AI",
   ],
-  metadataBase: new URL("https://myfeed-production.up.railway.app"),
+  metadataBase: new URL("https://myfeed.space"),
   openGraph: {
     title: "MyFeed — Your Internet, Curated",
     description:
       "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
-    url: "https://myfeed-production.up.railway.app",
+    url: "https://myfeed.space",
     siteName: "MyFeed",
     locale: "en_US",
     type: "website",
@@ -59,6 +59,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "MyFeed",
+              url: "https://myfeed.space",
+              description: "AI-powered personalized news feed. Describe what you care about and get curated content from across the internet.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://myfeed.space/login?signup=true&prompt={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-bg font-sans text-text antialiased">
         <a
           href="#main-content"
