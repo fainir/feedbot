@@ -274,12 +274,15 @@ export default function FeedPage() {
       {/* Single top bar: logo | tabs | actions */}
       <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
         {/* Logo */}
-        <Link href="/ai" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
+        <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
 
         {/* Scrollable tabs */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
+          <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
+            <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
+          </Link>
           {TABS.map((tab) => (
             <Link
               key={tab.id}
@@ -293,6 +296,9 @@ export default function FeedPage() {
               <span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
+          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
+            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
+          </Link>
         </div>
 
         {/* Right actions */}

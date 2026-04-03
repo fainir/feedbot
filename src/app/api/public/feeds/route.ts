@@ -3,12 +3,46 @@ import { createClient } from "@supabase/supabase-js";
 
 const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
+// Map tab queries to system feed names in DB
+// Keys are the start of the query text (matched with startsWith)
 const TAB_MAP: Record<string, string> = {
+  "tech industry": "Tech News",
+  "artificial intelligence": "AI & ML",
+  "startup funding": "Startups",
+  "startups": "Startups",
+  "crypto": "Crypto",
+  "cryptocurrency": "Crypto",
+  "design": "Design",
+  "ui ux": "Design",
+  "security": "Security",
+  "cybersecurity": "Security",
+  "gaming": "Gaming",
+  "video games": "Gaming",
+  "business": "Business",
+  "business strategy": "Business",
+  "space": "Space",
+  "spacex": "Space",
+  "health": "Health",
+  "health research": "Health",
+  "climate": "Climate",
+  "climate change": "Climate",
+  "fintech": "Fintech",
+  "fintech news": "Fintech",
+  "devops": "DevOps",
+  "data": "Data",
+  "data science": "Data",
+  "mobile": "Mobile",
+  "mobile app": "Mobile",
+  "marketing": "Marketing",
+  "digital marketing": "Marketing",
+  "software engineering": "Dev",
+  "scientific discoveries": "Science",
+  // Legacy mappings
   "technology news": "Tech News",
-  "artificial intelligence machine learning": "AI & ML",
   "startup funding venture capital": "Startups",
   "software engineering programming": "Dev",
   "science research discoveries": "Science",
+  "artificial intelligence machine learning": "AI & ML",
 };
 
 function getSupabase() {
@@ -28,28 +62,68 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 50, 100);
 
   const supabase = getSupabase();
-  const feedName = TAB_MAP[query.toLowerCase().trim()];
-
+  const queryLower = query.toLowerCase().trim();
+  let feedName = TAB_MAP[queryLower];
   if (!feedName) {
+    // Try prefix matching for longer prompts
+    for (const [prefix, name] of Object.entries(TAB_MAP)) {
+      if (queryLower.startsWith(prefix)) {
+        feedName = name;
+        break;
+      }
+    }
+  }
+
+  // Special case: "all" returns mixed articles from all system feeds
+  const isAll = queryLower === "all";
+
+  if (!isAll && !feedName) {
     return NextResponse.json({ items: [], hasMore: false });
   }
 
-  const { data: feed } = await supabase
-    .from("feeds")
-    .select("id")
-    .eq("user_id", SYSTEM_USER)
-    .eq("name", feedName)
-    .single();
+  let feedIds: string[] = [];
 
-  if (!feed) return NextResponse.json({ items: [], hasMore: false });
+  if (isAll) {
+    // Get all system feeds
+    const { data: feeds } = await supabase
+      .from("feeds")
+      .select("id")
+      .eq("user_id", SYSTEM_USER)
+      .eq("is_active", true);
+    feedIds = (feeds || []).map((f: { id: string }) => f.id);
+    // Optional: filter by specific feed names from "feeds" param
+    const feedsParam = req.nextUrl.searchParams.get("feeds");
+    if (feedsParam) {
+      const wantedNames = feedsParam.split(",").map((s) => s.trim());
+      const { data: filtered } = await supabase
+        .from("feeds")
+        .select("id, name")
+        .eq("user_id", SYSTEM_USER)
+        .in("name", wantedNames);
+      if (filtered && filtered.length > 0) {
+        feedIds = filtered.map((f: { id: string }) => f.id);
+      }
+    }
+  } else {
+    const { data: feed } = await supabase
+      .from("feeds")
+      .select("id")
+      .eq("user_id", SYSTEM_USER)
+      .eq("name", feedName)
+      .single();
+    if (!feed) return NextResponse.json({ items: [], hasMore: false });
+    feedIds = [feed.id];
+  }
+
+  if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
 
   // Get articles — paginated by cursor (published_at), newest first
   let queryBuilder = supabase
     .from("feed_items")
-    .select("id, title, url, summary, source, image_url, published_at")
-    .eq("feed_id", feed.id)
+    .select("id, title, url, summary, source, image_url, published_at, relevance_score")
+    .in("feed_id", feedIds)
     .order("published_at", { ascending: false })
-    .limit(limit + 1); // fetch 1 extra to check hasMore
+    .limit(limit + 1);
 
   if (cursor) {
     queryBuilder = queryBuilder.lt("published_at", cursor);
@@ -57,8 +131,18 @@ export async function GET(req: NextRequest) {
 
   const { data: items } = await queryBuilder;
   const results = items || [];
-  const hasMore = results.length > limit;
-  const page = hasMore ? results.slice(0, limit) : results;
+
+  // Deduplicate by normalized URL (same article from multiple RSS sources)
+  const seenUrls = new Set<string>();
+  const deduped = results.filter((item) => {
+    const normalized = item.url.split("?")[0].split("#")[0].replace(/\/+$/, "");
+    if (seenUrls.has(normalized)) return false;
+    seenUrls.add(normalized);
+    return true;
+  });
+
+  const hasMore = deduped.length > limit;
+  const page = hasMore ? deduped.slice(0, limit) : deduped;
 
   return NextResponse.json({
     items: page.map((item) => ({
