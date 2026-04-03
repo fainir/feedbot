@@ -54,3 +54,18 @@ export interface Subscription {
   current_period_end: string;
   created_at: string;
 }
+
+export interface Reaction {
+  id: string;
+  user_id: string;
+  feed_item_id: string;
+  reaction: "like" | "dislike";
+  created_at: string;
+}
+
+export interface Bookmark {
+  id: string;
+  user_id: string;
+  feed_item_id: string;
+  created_at: string;
+}

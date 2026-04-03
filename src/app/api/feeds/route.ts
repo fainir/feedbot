@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
 import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
+import { generateSearchPlan } from "@/lib/prompt-intelligence";
 
 export async function GET() {
   const supabase = await createClient();
@@ -86,6 +87,14 @@ export async function POST(request: NextRequest) {
     ? schedule
     : allowedSchedules[0];
 
+  // Generate search plan upfront so the cron job can use it immediately
+  let searchPlan = null;
+  try {
+    searchPlan = await generateSearchPlan(query_text);
+  } catch {
+    // Search plan generation failed — feed will still work, cron generates it lazily
+  }
+
   const { data: feed, error } = await supabase
     .from("feeds")
     .insert({
@@ -99,6 +108,7 @@ export async function POST(request: NextRequest) {
       notify_whatsapp: notify_whatsapp ?? false,
       is_active: true,
       last_refreshed_at: null,
+      ...(searchPlan ? { search_plan: searchPlan } : {}),
     })
     .select()
     .single();

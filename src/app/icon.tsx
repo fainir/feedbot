@@ -8,8 +8,8 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 18,
-          background: "#6366f1",
+          fontSize: 13,
+          background: "#000000",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -17,10 +17,11 @@ export default function Icon() {
           justifyContent: "center",
           color: "white",
           borderRadius: "6px",
-          fontWeight: 700,
+          fontWeight: 800,
+          letterSpacing: "-0.5px",
         }}
       >
-        F
+        MF
       </div>
     ),
     { ...size }
