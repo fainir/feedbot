@@ -342,13 +342,15 @@ export default function FeedPage() {
       {/* Feed */}
       <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 pb-6">
         {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">{[1,2,3,4].map((i) => (
-            <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
-              {i <= 2 && <div className="w-full aspect-[2.5/1] bg-bg-hover" />}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-3"><div className="w-4 h-4 rounded-full bg-bg-hover" /><div className="h-3 bg-bg-hover rounded w-16" /></div>
-                <div className="h-5 bg-bg-hover rounded w-4/5 mb-2" />
-                <div className="h-3 bg-bg-hover rounded w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pt-2">{[1,2,3,4,5,6].map((i) => (
+            <div key={i} className="animate-pulse rounded-xl border border-border overflow-hidden bg-bg-card p-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2"><div className="w-12 h-4 rounded-full bg-bg-hover" /><div className="w-8 h-3 bg-bg-hover rounded" /></div>
+                  <div className="h-4 bg-bg-hover rounded w-4/5 mb-1.5" />
+                  <div className="h-3 bg-bg-hover rounded w-full" />
+                </div>
+                {i <= 3 && <div className="w-24 h-24 rounded-lg bg-bg-hover flex-shrink-0" />}
               </div>
             </div>
           ))}</div>
@@ -359,45 +361,43 @@ export default function FeedPage() {
             <p className="text-xs text-text-muted mt-1">Content refreshes automatically every 15 minutes</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pt-2">
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
               const title = cleanTitle(item.title);
               const summary = cleanSummary(item.summary);
               const hasImage = !!item.image_url;
               return (
-                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-                    {hasImage ? (
-                      <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                <article key={item.id || i} className="group rounded-xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex flex-col h-full">
+                    <div className="flex gap-3 p-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${src.color}`}>
+                            {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                            {src.name}
+                          </span>
+                          <span className="text-[10px] text-text-muted">{timeAgo(item.publishedAt)}</span>
+                        </div>
+                        <h2 className="font-semibold text-text leading-snug text-sm group-hover:text-text/80 transition-colors line-clamp-2">{title}</h2>
+                        {summary && summary !== title && summary.length > 10 && (
+                          <p className="text-xs text-text-muted mt-1 line-clamp-2 leading-relaxed">{summary}</p>
+                        )}
                       </div>
-                    ) : i < 5 ? (
-                      <div className={`w-full aspect-[3/1] bg-gradient-to-br ${getGradient(title)} flex items-center justify-center`}>
-                        <span className="text-3xl opacity-60">{src.icon ? "" : activeTab.icon}</span>
-                      </div>
-                    ) : null}
-                    <div className="p-3 sm:p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
-                          {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
-                          {src.name}
-                        </span>
-                        <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>
-                      </div>
-                      <h2 className="font-semibold text-text leading-snug text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
-                      {summary && summary !== title && summary.length > 10 && (
-                        <p className="text-sm text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{summary}</p>
+                      {hasImage && (
+                        <div className="flex-shrink-0 w-24 h-24 rounded-lg bg-bg-hover overflow-hidden">
+                          <img src={item.image_url} alt={title} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                        </div>
                       )}
-                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
-                        <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
-                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="px-2 py-1 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center gap-1 transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
-                        </div>
+                    </div>
+                    <div className="flex items-center justify-between px-3 pb-2 mt-auto">
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "like"); }} className={`p-1.5 rounded-lg text-xs transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
+                        <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "dislike"); }} className={`p-1.5 rounded-lg text-xs transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={(e) => { e.preventDefault(); if (user) handleBookmark(item.id); }} className={`p-1.5 rounded-lg text-xs transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
+                        <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="p-1.5 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                   </a>
