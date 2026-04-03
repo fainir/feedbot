@@ -64,8 +64,8 @@ function getSourceInfo(raw: string): { name: string; icon: string; color: string
   const s = raw.toLowerCase();
   if (s.includes("hacker news") || s.includes("hnrss"))
     return { name: "Hacker News", icon: "https://news.ycombinator.com/favicon.ico", color: "bg-orange-500/10 text-orange-400" };
-  if (s.includes("reddit") || s.includes("everything science"))
-    return { name: raw.includes("/r/") ? raw.split("/r/")[1]?.split("/")[0] || "Reddit" : "Reddit", icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
+  if (s.includes("reddit") || s.includes("everything science") || s.includes("the community for"))
+    return { name: raw.includes("/r/") ? "r/" + (raw.split("/r/")[1]?.split("/")[0]?.split("?")[0] || "reddit") : "Reddit", icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
   if (s.includes("medium"))
     return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-white/10 text-white" };
   if (s.includes("dev community") || s.includes("dev.to"))
@@ -81,7 +81,7 @@ function getSourceInfo(raw: string): { name: string; icon: string; color: string
   if (s.includes("entrepreneur"))
     return { name: "Entrepreneur", icon: "", color: "bg-red-500/10 text-red-400" };
   if (s.includes("google news") || s.includes("- google") || s.includes("artificial intelligence") || s.includes("machine learning") || s.includes("big tech") || s.includes("startup funding") || s.includes("software engineering") || s.includes("scientific discoveries"))
-    return { name: "News", icon: "https://news.google.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
+    return { name: "News", icon: "", color: "bg-blue-500/10 text-blue-400" };
   return { name: raw.length > 25 ? raw.slice(0, 22) + "..." : raw, icon: "", color: "bg-text/5 text-text-muted" };
 }
 
@@ -370,7 +370,7 @@ export default function FeedPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {hasImage ? (
                       <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
-                        <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
                       </div>
                     ) : i < 5 ? (
                       <div className={`w-full aspect-[3/1] bg-gradient-to-br ${getGradient(title)} flex items-center justify-center`}>
