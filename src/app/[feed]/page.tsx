@@ -323,7 +323,7 @@ export default function FeedPage() {
       </nav>
 
       {/* Feed header */}
-      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-3 pb-1">
+      <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab.icon} {activeTab.name}</h2>
@@ -340,7 +340,7 @@ export default function FeedPage() {
       </div>
 
       {/* Feed */}
-      <main id="main-content" className="max-w-4xl mx-auto px-3 sm:px-6 pb-6">
+      <main id="main-content" className="max-w-4xl mx-auto px-3 pb-6">
         {loading ? (
           <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
