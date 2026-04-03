@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -144,6 +144,7 @@ export default function FeedPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [newPrompt, setNewPrompt] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -270,47 +271,32 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border px-3 py-2 flex items-center justify-between">
-        <Link href="/ai" className="text-lg font-bold tracking-tight flex items-center gap-1.5">
+      {/* Single top bar: logo | tabs | actions */}
+      <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
+        {/* Logo */}
+        <Link href="/ai" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
-          MyFeed
         </Link>
-        <div className="flex items-center gap-2 sm:gap-3">
-          {mounted && (
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="p-2 rounded-full hover:bg-bg-hover transition-colors" aria-label="Toggle theme">
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-          )}
-          {user ? (
-            <Link href="/dashboard" className="text-xs sm:text-sm font-semibold bg-text text-bg px-3 sm:px-4 py-1.5 rounded-full hover:opacity-90 transition-opacity">Dashboard</Link>
-          ) : (
-            <>
-              <Link href="/login" className="hidden sm:inline text-sm text-text-muted hover:text-text transition-colors">Sign in</Link>
-              <Link href="/login?signup=true" className="text-xs sm:text-sm font-semibold bg-text text-bg px-3 sm:px-4 py-1.5 rounded-full hover:opacity-90 transition-opacity">Sign up</Link>
-            </>
-          )}
-        </div>
-      </header>
 
-      {/* Tab Bar — scrollable tabs + sticky create button */}
-      <nav className="sticky top-[45px] z-40 bg-bg/80 backdrop-blur-md border-b border-border flex">
-        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex gap-0 px-2">
+        {/* Scrollable tabs */}
+        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           {TABS.map((tab) => (
             <Link
               key={tab.id}
               href={`/${tab.id}`}
               data-active={feedSlug === tab.id}
-              className={`px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
+              className={`px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
                 feedSlug === tab.id ? "border-text text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"
               }`}
             >
               <span className="text-sm">{tab.icon}</span>
-              <span>{tab.name}</span>
+              <span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
         </div>
-        <div className="flex-shrink-0 flex items-center border-l border-border bg-bg/80 backdrop-blur-md px-2">
+
+        {/* Right actions */}
+        <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
           <button
             onClick={() => setShowNewFeed(true)}
             className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"
@@ -319,8 +305,34 @@ export default function FeedPage() {
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>
+          {user ? (
+            <Link href="/dashboard" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Dashboard</Link>
+          ) : (
+            <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
+          )}
+          <div className="relative">
+            <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
+              <MoreVertical className="h-4 w-4 text-text-muted" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 w-44 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+                {mounted && (
+                  <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                  </button>
+                )}
+                {!user && (
+                  <Link href="/login" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
+                    <LogIn className="h-4 w-4" />
+                    Sign in
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* Feed header */}
       <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
