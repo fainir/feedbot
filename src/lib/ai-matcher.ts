@@ -66,7 +66,10 @@ async function scoreBatch(
   plan?: SearchPlan | null
 ): Promise<ScoredArticle[]> {
   const articleList = articles
-    .map((a, i) => `${i}|${a.title}|${a.source}`)
+    .map((a, i) => {
+      const summary = a.summary?.slice(0, 120) || "";
+      return summary ? `${i}|${a.title}|${a.source}|${summary}` : `${i}|${a.title}|${a.source}`;
+    })
     .join("\n");
 
   const client = getClient();
@@ -91,8 +94,10 @@ async function scoreBatch(
 
 FEED: "${feedPrompt}"${qualityNote}${excludeNote}
 
+FORMAT: index|title|source|summary (summary may be absent)
+
 STRICT RULES:
-- 85-100: ONLY for articles whose PRIMARY topic matches the feed. The article must be ABOUT this topic, not just mention a keyword.
+- 85-100: Article's PRIMARY topic matches the feed. Must be ABOUT this topic, not just mention a keyword. Use the summary to verify depth.
 - 70-84: Clearly related, would genuinely interest a follower of this topic
 - 40-69: Mentions a keyword but is about something else — REJECT
 - 0-39: Completely unrelated
@@ -100,11 +105,13 @@ STRICT RULES:
 COMMON TRAPS (score LOW):
 - "Technology Networks" is a BIOLOGY/MEDICAL publisher — score 0 for tech feeds
 - "Washington Technology" is gov procurement — score 0 for consumer tech
-- An article about "carwash technology" is NOT tech news — score 0
-- An article about EV cars is NOT AI/ML news even if AI is mentioned — score 20
-- A cybersecurity breach is NOT AI/ML — score 10 for AI feeds
+- "Carwash technology" is NOT tech news — score 0
+- EV cars are NOT AI/ML news even if AI mentioned — score 20
+- Cybersecurity breach is NOT AI/ML — score 10 for AI feeds
 - Company hiring/HR announcements are NOT industry news — score 10
 - Generic "how technology changed X" essays are NOT tech news — score 20
+- Listicles and spam-like "Top 10" with no substance — score 30
+- Duplicate/repost of same story from different source — score lower for weaker source
 
 ARTICLES:
 ${articleList}

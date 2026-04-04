@@ -56,6 +56,7 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
 
   // Crypto
   { url: "https://www.reddit.com/r/CryptoCurrency/top/.rss?t=day", category: "crypto" },
+  { url: "https://medium.com/feed/tag/cryptocurrency", category: "crypto" },
 
   // Design
   { url: "https://www.reddit.com/r/design/top/.rss?t=day", category: "design" },
@@ -63,6 +64,46 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
 
   // Security
   { url: "https://www.reddit.com/r/netsec/top/.rss?t=day", category: "security" },
+  { url: "https://medium.com/feed/tag/cybersecurity", category: "security" },
+
+  // Gaming
+  { url: "https://www.reddit.com/r/Games/top/.rss?t=day", category: "gaming" },
+  { url: "https://www.reddit.com/r/gamedev/top/.rss?t=day", category: "gaming" },
+
+  // Space
+  { url: "https://www.reddit.com/r/space/top/.rss?t=day", category: "space" },
+
+  // Health
+  { url: "https://www.reddit.com/r/Health/top/.rss?t=day", category: "health" },
+  { url: "https://medium.com/feed/tag/health", category: "health" },
+
+  // Climate
+  { url: "https://www.reddit.com/r/climate/top/.rss?t=day", category: "climate" },
+  { url: "https://www.reddit.com/r/RenewableEnergy/top/.rss?t=day", category: "climate" },
+
+  // Fintech
+  { url: "https://www.reddit.com/r/fintech/top/.rss?t=day", category: "fintech" },
+
+  // DevOps
+  { url: "https://www.reddit.com/r/devops/top/.rss?t=day", category: "devops" },
+
+  // Data Science
+  { url: "https://www.reddit.com/r/datascience/top/.rss?t=day", category: "data" },
+  { url: "https://medium.com/feed/tag/data-science", category: "data" },
+
+  // Mobile
+  { url: "https://www.reddit.com/r/iOSProgramming/top/.rss?t=day", category: "mobile" },
+  { url: "https://www.reddit.com/r/androiddev/top/.rss?t=day", category: "mobile" },
+
+  // Marketing
+  { url: "https://www.reddit.com/r/digital_marketing/top/.rss?t=day", category: "marketing" },
+  { url: "https://medium.com/feed/tag/marketing", category: "marketing" },
+
+  // Software Engineering (broader)
+  { url: "https://medium.com/feed/tag/software-engineering", category: "programming" },
+  { url: "https://medium.com/feed/tag/web-development", category: "programming" },
+  { url: "https://medium.com/feed/tag/python-programming", category: "programming" },
+  { url: "https://medium.com/feed/tag/machine-learning", category: "ai" },
 ];
 
 // ─── Source quality weights ───
