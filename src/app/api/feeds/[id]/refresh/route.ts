@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { refreshFeed } from "@/lib/feed-engine";
+import { scoreArticles, preFilterArticles } from "@/lib/ai-matcher";
 import { rateLimit, getClientKey } from "@/lib/rate-limit";
 import type { Feed } from "@/types/database";
 
@@ -63,7 +64,21 @@ export async function POST(
     );
 
     if (uniqueNewItems.length > 0) {
-      const rows = uniqueNewItems.map((item) => ({
+      // AI score to filter out irrelevant results
+      const poolFormat = uniqueNewItems.map((item, i) => ({
+        id: String(i),
+        title: item.title,
+        summary: item.summary,
+        source: item.source,
+      }));
+      const plan = (feed as Record<string, unknown>).search_plan as import("@/lib/prompt-intelligence").SearchPlan | null;
+      const preFiltered = preFilterArticles(feed.query_text, poolFormat, plan);
+      const scored = await scoreArticles(feed.query_text, preFiltered, plan);
+      const relevantIds = new Set(scored.filter((s) => s.score >= 65).map((s) => s.id));
+      const scoreMap = new Map(scored.map((s) => [s.id, s.score]));
+
+      const qualityItems = uniqueNewItems.filter((_, i) => relevantIds.has(String(i)));
+      const rows = qualityItems.map((item, i) => ({
         feed_id: id,
         title: item.title,
         url: item.url,
@@ -71,6 +86,7 @@ export async function POST(
         source: item.source,
         image_url: item.image_url,
         published_at: item.published_at,
+        relevance_score: scoreMap.get(String(uniqueNewItems.indexOf(item))) || 70,
       }));
 
       const { error: insertError } = await getServiceClient()
