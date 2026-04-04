@@ -105,9 +105,9 @@ export default function ContactPage() {
 
         <div className="mt-10 space-y-3">
           <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Or reach us directly</p>
-          <a href="mailto:hello@myfeed.space" className="flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-text/20 transition-all">
+          <a href="mailto:hi@myfeed.space" className="flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-text/20 transition-all">
             <Mail className="h-4 w-4 text-text-muted" />
-            <span className="text-sm text-text-muted">hello@myfeed.space</span>
+            <span className="text-sm text-text-muted">hi@myfeed.space</span>
           </a>
           <a href="https://github.com/fainir/feedbot/issues" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-text/20 transition-all">
             <Github className="h-4 w-4 text-text-muted" />
@@ -117,7 +117,7 @@ export default function ContactPage() {
 
         <div className="mt-10 p-4 rounded-xl border border-border bg-bg-card">
           <p className="text-xs font-medium text-text mb-1">For publishers</p>
-          <p className="text-xs text-text-muted">Want to add or remove your RSS feed? Email <a href="mailto:hello@myfeed.space" className="text-text underline">hello@myfeed.space</a> with your site URL.</p>
+          <p className="text-xs text-text-muted">Want to add or remove your RSS feed? Email <a href="mailto:hi@myfeed.space" className="text-text underline">hi@myfeed.space</a> with your site URL.</p>
         </div>
       </main>
     </div>

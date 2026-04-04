@@ -62,7 +62,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-semibold text-text mb-2">Contact</h2>
-            <p>Questions? Email <a href="mailto:hello@myfeed.space" className="text-text underline">hello@myfeed.space</a>.</p>
+            <p>Questions? Email <a href="mailto:hi@myfeed.space" className="text-text underline">hi@myfeed.space</a>.</p>
           </section>
         </div>
       </main>
