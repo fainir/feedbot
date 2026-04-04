@@ -40,6 +40,7 @@ body {
 /* Dark mode: soften bright article images */
 html:not(.light) article img {
   filter: brightness(0.9);
+  transition: filter 0.3s ease;
 }
 html:not(.light) article img:hover {
   filter: brightness(1);

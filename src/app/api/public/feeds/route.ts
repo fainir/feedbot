@@ -138,15 +138,22 @@ export async function GET(req: NextRequest) {
     const normalized = item.url.split("?")[0].split("#")[0].replace(/\/+$/, "");
     if (seenUrls.has(normalized)) return false;
     seenUrls.add(normalized);
-    // Filter garbage titles (too short, all caps noise, non-Latin scripts for English prompts)
+    // Filter garbage titles
     const title = (item.title || "").trim();
-    if (title.length < 10) return false;
-    // Detect if prompt is Latin-script (English etc) — if so, filter non-Latin titles
+    if (title.length < 15) return false;
+    // Detect if prompt is Latin-script — if so, filter non-Latin titles
     const promptIsLatin = /^[a-zA-Z]/.test(queryLower);
     if (promptIsLatin) {
       const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'"\-—:;()\[\]@#$%&*+=/\\|<>{}~`^_]/g) || []).length / title.length;
       if (latinRatio < 0.5) return false;
     }
+    // Filter garbage patterns: excessive special chars, alternating case noise
+    const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
+    if (specialRatio > 0.05) return false;
+    // Filter titles that are mostly uppercase with random casing (spam/noise)
+    const upperCount = (title.match(/[A-Z]/g) || []).length;
+    const letterCount = (title.match(/[a-zA-Z]/g) || []).length;
+    if (letterCount > 10 && upperCount / letterCount > 0.6) return false;
     return true;
   });
 

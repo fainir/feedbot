@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
+import { useToast } from "@/components/ui/toast";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -94,6 +95,7 @@ export default function ForYouPage() {
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [enabledFeeds, setEnabledFeeds] = useState<Set<string>>(DEFAULT_ENABLED);
+  const { toast } = useToast();
 
   useEffect(() => setMounted(true), []);
 
@@ -158,14 +160,14 @@ export default function ForYouPage() {
   };
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
-    if (!user) return;
+    if (!user) { toast("Sign up to save your preferences", "info"); return; }
     const prev = userReactions[feedItemId];
     setUserReactions((r) => { const next = { ...r }; if (next[feedItemId] === reaction) delete next[feedItemId]; else next[feedItemId] = reaction; return next; });
     try { const res = await fetch("/api/reactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId, reaction }) }); if (!res.ok) throw new Error(); } catch { setUserReactions((r) => { const next = { ...r }; if (prev) next[feedItemId] = prev; else delete next[feedItemId]; return next; }); }
   }, [user, userReactions]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) return;
+    if (!user) { toast("Sign up to save articles", "info"); return; }
     const was = userBookmarks.has(feedItemId);
     setUserBookmarks((s) => { const next = new Set(s); if (next.has(feedItemId)) next.delete(feedItemId); else next.add(feedItemId); return next; });
     try { const res = await fetch("/api/bookmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId }) }); if (!res.ok) throw new Error(); } catch { setUserBookmarks((s) => { const next = new Set(s); if (was) next.add(feedItemId); else next.delete(feedItemId); return next; }); }
@@ -203,7 +205,7 @@ export default function ForYouPage() {
           {user ? (
             <Link href="/dashboard" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Dashboard</Link>
           ) : (
-            <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
+            <Link href="/login" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
           )}
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
