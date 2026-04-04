@@ -399,15 +399,11 @@ export default function FeedPage() {
               return (
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-                    {hasImage ? (
+                    {hasImage && (
                       <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add("hidden"); }} />
                       </div>
-                    ) : i < 5 ? (
-                      <div className={`w-full aspect-[3/1] bg-gradient-to-br ${getGradient(title)} flex items-end p-4`}>
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>{src.name}</span>
-                      </div>
-                    ) : null}
+                    )}
                     <div className="p-3 sm:p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
