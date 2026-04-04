@@ -468,6 +468,15 @@ export default function FeedPage() {
         </div>
       </main>
 
+      <footer className="border-t border-border py-6 mt-8">
+        <div className="max-w-4xl mx-auto px-3 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
+          <span>MyFeed &copy; {new Date().getFullYear()}</span>
+          <Link href="/privacy" className="hover:text-text transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-text transition-colors">Terms</Link>
+          <Link href="/contact" className="hover:text-text transition-colors">Contact</Link>
+        </div>
+      </footer>
+
       {/* New Feed Modal */}
       {showNewFeed && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowNewFeed(false)}>
