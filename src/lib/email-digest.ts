@@ -167,7 +167,7 @@ async function sendEmail(apiKey: string, to: string, subject: string, html: stri
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "MyFeed <digest@myfeed.space>",
+      from: "MyFeed <hi@myfeed.space>",
       to,
       subject,
       html,
