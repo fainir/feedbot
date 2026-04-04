@@ -147,13 +147,18 @@ export async function GET(req: NextRequest) {
       const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'"\-—:;()\[\]@#$%&*+=/\\|<>{}~`^_]/g) || []).length / title.length;
       if (latinRatio < 0.5) return false;
     }
-    // Filter garbage patterns: excessive special chars, alternating case noise
+    // Filter garbage patterns: excessive special chars
     const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
-    if (specialRatio > 0.05) return false;
+    if (specialRatio > 0.03) return false;
     // Filter titles that are mostly uppercase with random casing (spam/noise)
     const upperCount = (title.match(/[A-Z]/g) || []).length;
     const letterCount = (title.match(/[a-zA-Z]/g) || []).length;
     if (letterCount > 10 && upperCount / letterCount > 0.6) return false;
+    // Filter mid-word uppercase (aLtErNaTiNg CaSe spam)
+    const midWordUpper = (title.match(/[a-z][A-Z]/g) || []).length;
+    if (midWordUpper > 3) return false;
+    // Filter raw CVE/GHSA vulnerability dumps
+    if (/^(GHSA-|CVE-\d{4})/i.test(title)) return false;
     return true;
   });
 

@@ -336,6 +336,12 @@ export default function FeedPage() {
                     Sign in
                   </Link>
                 )}
+                {user && (
+                  <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
+                    <LogIn className="h-4 w-4" />
+                    Sign out
+                  </button>
+                )}
               </div>
             )}
           </div>

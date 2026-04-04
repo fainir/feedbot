@@ -32,12 +32,21 @@ export const metadata: Metadata = {
     siteName: "MyFeed",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "https://myfeed.space/og.png",
+        width: 1200,
+        height: 630,
+        alt: "MyFeed — Your Internet, Curated by AI",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "MyFeed — Your Internet, Curated",
     description:
       "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
+    images: ["https://myfeed.space/og.png"],
   },
   robots: {
     index: true,

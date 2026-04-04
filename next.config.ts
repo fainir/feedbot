@@ -29,6 +29,26 @@ const nextConfig: NextConfig = {
         destination: "https://myfeed.space/:path*",
         permanent: true,
       },
+      {
+        source: "/sign-in",
+        destination: "/login",
+        permanent: true,
+      },
+      {
+        source: "/sign-up",
+        destination: "/login?signup=true",
+        permanent: true,
+      },
+      {
+        source: "/signin",
+        destination: "/login",
+        permanent: true,
+      },
+      {
+        source: "/signup",
+        destination: "/login?signup=true",
+        permanent: true,
+      },
     ];
   },
   async headers() {

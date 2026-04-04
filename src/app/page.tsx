@@ -213,6 +213,7 @@ export default function ForYouPage() {
               <div className="absolute right-0 top-full mt-1 w-44 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
                 {mounted && <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{theme === "dark" ? "Light mode" : "Dark mode"}</button>}
                 {!user && <Link href="/login" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign in</Link>}
+                {user && <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><LogIn className="h-4 w-4" />Sign out</button>}
               </div>
             )}
           </div>
@@ -297,11 +298,11 @@ export default function ForYouPage() {
                       )}
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
+                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
                           <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="px-2 py-1 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center gap-1 transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
@@ -316,6 +317,9 @@ export default function ForYouPage() {
           <button onClick={loadMore} disabled={loadingMore} className="w-full mt-4 py-3 text-sm font-medium text-text-muted hover:text-text border border-border rounded-2xl hover:bg-bg-card transition-all">
             {loadingMore ? "Loading..." : "Load more articles"}
           </button>
+        )}
+        {!hasMore && !loading && dedupedItems.length > 0 && (
+          <p className="text-center py-8 text-xs text-text-muted">You&apos;re all caught up</p>
         )}
       </main>
 
