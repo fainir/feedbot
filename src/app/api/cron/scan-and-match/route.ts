@@ -143,13 +143,14 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Phase 2: AI-match pool articles to feeds ──
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  // Use 3-day window to ensure thin feeds (Space, Health) have enough candidates
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentArticles } = await supabase
     .from("article_pool")
     .select("id, title, summary, source")
-    .gte("published_at", oneDayAgo)
+    .gte("published_at", threeDaysAgo)
     .order("published_at", { ascending: false })
-    .limit(500);
+    .limit(1000);
 
   if (!recentArticles || recentArticles.length === 0) {
     return NextResponse.json(results);

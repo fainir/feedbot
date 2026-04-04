@@ -245,6 +245,11 @@ export function preFilterArticles(
     // Spam/SEO filter — reject promotional content
     if (SPAM_PATTERNS.some((p) => p.test(text))) return false;
 
+    // Language filter — reject non-Latin articles (non-English) for English feeds
+    const title = article.title || "";
+    const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'":\-]/g) || []).length / Math.max(title.length, 1);
+    if (latinRatio < 0.6) return false;
+
     // Hard exclude
     if (excludeTerms.some((term) => text.includes(term))) return false;
 
