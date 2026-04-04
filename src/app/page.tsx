@@ -95,6 +95,10 @@ export default function ForYouPage() {
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [enabledFeeds, setEnabledFeeds] = useState<Set<string>>(DEFAULT_ENABLED);
+  const [heroDismissed, setHeroDismissed] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("myfeed-hero-dismissed") === "1";
+    return false;
+  });
   const { toast } = useToast();
 
   useEffect(() => setMounted(true), []);
@@ -223,6 +227,21 @@ export default function ForYouPage() {
           </div>
         </div>
       </header>
+
+      {/* Hero banner for guests */}
+      {!user && !heroDismissed && (
+        <div className="max-w-4xl mx-auto px-3 pt-3">
+          <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
+            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
+            <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
+            <p className="text-sm text-text-muted mb-4 max-w-lg">Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.</p>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-3.5 w-3.5" />Create your free feed</Link>
+              <button onClick={() => setShowNewFeed(true)} className="inline-flex items-center gap-1.5 border border-text/30 text-text px-4 py-2 rounded-full text-sm font-medium hover:bg-text hover:text-bg transition-all">Try it now</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feed header with filter toggle */}
       <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
