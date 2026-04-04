@@ -58,8 +58,10 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Filter feeds that are due for refresh based on schedule ──
+  // Always process all feeds on first run after deploy (forceAll param)
+  const forceAll = request.nextUrl.searchParams.get("force") === "1";
   const now = Date.now();
-  const feeds = allFeeds.filter((feed) => {
+  const feeds = forceAll ? allFeeds : allFeeds.filter((feed) => {
     if (!feed.last_refreshed_at) return true; // never refreshed
     const lastRefresh = new Date(feed.last_refreshed_at).getTime();
     const elapsed = now - lastRefresh;
@@ -67,7 +69,7 @@ export async function GET(request: NextRequest) {
       case "realtime": return elapsed > 10 * 60 * 1000;   // 10 min
       case "hourly":   return elapsed > 50 * 60 * 1000;   // 50 min
       case "daily":
-      default:         return elapsed > 23 * 60 * 60 * 1000; // 23 hours
+      default:         return elapsed > 12 * 60 * 60 * 1000; // 12 hours (was 23h, too long for daily)
     }
   });
 
