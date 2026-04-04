@@ -37,6 +37,14 @@ body {
   color: var(--color-bg);
 }
 
+/* Dark mode: soften bright article images */
+html:not(.light) article img {
+  filter: brightness(0.9);
+}
+html:not(.light) article img:hover {
+  filter: brightness(1);
+}
+
 @keyframes slide-in-from-right {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }

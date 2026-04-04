@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
+import { useToast } from "@/components/ui/toast";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -152,6 +153,7 @@ export default function FeedPage() {
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => setMounted(true), []);
 
@@ -171,7 +173,7 @@ export default function FeedPage() {
   }, []);
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
-    if (!user) return;
+    if (!user) { toast("Sign up to save your preferences", "info"); return; }
     const prev = userReactions[feedItemId];
     // Optimistic update
     setUserReactions((r) => {
@@ -199,7 +201,7 @@ export default function FeedPage() {
   }, [user, userReactions]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) return;
+    if (!user) { toast("Sign up to save articles", "info"); return; }
     const wasBookmarked = userBookmarks.has(feedItemId);
     // Optimistic update
     setUserBookmarks((s) => {
@@ -314,7 +316,7 @@ export default function FeedPage() {
           {user ? (
             <Link href="/dashboard" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Dashboard</Link>
           ) : (
-            <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
+            <Link href="/login" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
           )}
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
@@ -386,11 +388,15 @@ export default function FeedPage() {
               return (
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-                    {hasImage && (
+                    {hasImage ? (
                       <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add("hidden"); }} />
                       </div>
-                    )}
+                    ) : i < 5 ? (
+                      <div className={`w-full aspect-[3/1] bg-gradient-to-br ${getGradient(title)} flex items-end p-4`}>
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>{src.name}</span>
+                      </div>
+                    ) : null}
                     <div className="p-3 sm:p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
@@ -405,11 +411,11 @@ export default function FeedPage() {
                       )}
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); if (user) handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
+                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
                           <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="px-2 py-1 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center gap-1 transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
@@ -422,9 +428,7 @@ export default function FeedPage() {
         )}
 
         {hasMore && (
-          <button onClick={loadMore} disabled={loadingMore} className="w-full mt-4 py-3 text-sm font-medium text-text-muted hover:text-text border border-border rounded-2xl hover:bg-bg-card transition-all">
-            {loadingMore ? "Loading..." : "Load more articles"}
-          </button>
+          <LoadMoreSentinel loading={loadingMore} onVisible={loadMore} />
         )}
         {!hasMore && dedupedItems.length > 0 && (
           <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
@@ -512,6 +516,8 @@ export default function FeedPage() {
         </div>
       )}
 
+      {/* Load More Sentinel is defined below */}
+
       {/* Customize Feed Modal */}
       {showCustomize && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCustomize(false)}>
@@ -536,6 +542,31 @@ export default function FeedPage() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function LoadMoreSentinel({ loading, onVisible }: { loading: boolean; onVisible: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onVisibleRef = useRef(onVisible);
+  onVisibleRef.current = onVisible;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) onVisibleRef.current(); },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="flex justify-center py-6">
+      {loading && (
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-text-muted border-t-transparent" />
       )}
     </div>
   );

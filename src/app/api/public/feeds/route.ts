@@ -132,12 +132,21 @@ export async function GET(req: NextRequest) {
   const { data: items } = await queryBuilder;
   const results = items || [];
 
-  // Deduplicate by normalized URL (same article from multiple RSS sources)
+  // Deduplicate by normalized URL + filter low-quality content
   const seenUrls = new Set<string>();
   const deduped = results.filter((item) => {
     const normalized = item.url.split("?")[0].split("#")[0].replace(/\/+$/, "");
     if (seenUrls.has(normalized)) return false;
     seenUrls.add(normalized);
+    // Filter garbage titles (too short, all caps noise, non-Latin scripts for English prompts)
+    const title = (item.title || "").trim();
+    if (title.length < 10) return false;
+    // Detect if prompt is Latin-script (English etc) — if so, filter non-Latin titles
+    const promptIsLatin = /^[a-zA-Z]/.test(queryLower);
+    if (promptIsLatin) {
+      const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'"\-—:;()\[\]@#$%&*+=/\\|<>{}~`^_]/g) || []).length / title.length;
+      if (latinRatio < 0.5) return false;
+    }
     return true;
   });
 
