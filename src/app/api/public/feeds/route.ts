@@ -132,12 +132,18 @@ export async function GET(req: NextRequest) {
   const { data: items } = await queryBuilder;
   const results = items || [];
 
-  // Deduplicate by normalized URL + filter low-quality content
+  // Deduplicate by normalized URL + title similarity + filter low-quality content
   const seenUrls = new Set<string>();
+  const seenTitles = new Map<string, boolean>();
   const deduped = results.filter((item) => {
     const normalized = item.url.split("?")[0].split("#")[0].replace(/\/+$/, "");
     if (seenUrls.has(normalized)) return false;
     seenUrls.add(normalized);
+    // Title dedup: normalize title, check for near-duplicates
+    const normTitle = (item.title || "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+    const titleKey = normTitle.split(" ").slice(0, 8).join(" "); // first 8 words
+    if (seenTitles.has(titleKey)) return false;
+    seenTitles.set(titleKey, true);
     // Filter garbage titles
     const title = (item.title || "").trim();
     if (title.length < 15) return false;

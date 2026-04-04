@@ -138,6 +138,13 @@ COMMON TRAPS (score LOW):
 - Generic "how technology changed X" essays are NOT tech news — score 20
 - Listicles and spam-like "Top 10" with no substance — score 30
 - Duplicate/repost of same story from different source — score lower for weaker source
+- UX/UI design articles are NOT science — score 0 for science feeds
+- Brand case studies are NOT science or tech news — score 0
+- Promotional agency/service posts ("hire us", "pricing guide") — score 0
+- Articles about a topic USING AI are not AI articles (e.g. "AI in agriculture" is agriculture, not AI)
+- Space/NASA articles are NOT AI/ML — score 0 for AI feeds
+- Finance/investment analysis is NOT science — score 0 for science feeds
+- AppSec/OWASP security articles are NOT science or AI — score 0 for those feeds
 
 ARTICLES:
 ${articleList}
@@ -199,6 +206,18 @@ function keywordScore(
   });
 }
 
+// Spam/SEO patterns that should never pass pre-filter
+const SPAM_PATTERNS = [
+  /\bagency\b.*\b(dubai|india|pakistan|uae)\b/i,
+  /\b(dubai|uae)\b.*\b(gifts?|pricing|cost|guide)\b/i,
+  /\bwebsite\s+(design|development)\s+(cost|pricing|agency)\b/i,
+  /\bgrow your\s+(online\s+)?business\b/i,
+  /\bcorporate gifts?\b/i,
+  /\bhire\s+(a\s+)?(developer|team|agency)\b/i,
+  /\b(mock test|free certificate|get certified)\b/i,
+  /\btrusted\s+(ecommerce|web|digital)\s+(development\s+)?agency\b/i,
+];
+
 /**
  * Smart pre-filter using search plan. Removes obviously irrelevant articles
  * before sending to AI, reducing token cost by ~80%.
@@ -222,6 +241,9 @@ export function preFilterArticles(
 
   return articles.filter((article) => {
     const text = `${article.title} ${article.summary}`.toLowerCase();
+
+    // Spam/SEO filter — reject promotional content
+    if (SPAM_PATTERNS.some((p) => p.test(text))) return false;
 
     // Hard exclude
     if (excludeTerms.some((term) => text.includes(term))) return false;
