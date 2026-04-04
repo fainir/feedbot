@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanForPlan, scanBrave } from "@/lib/global-scanner";
-import { scoreArticles, preFilterArticles } from "@/lib/ai-matcher";
+import { scoreArticles, preFilterArticles, type FeedbackHint } from "@/lib/ai-matcher";
 import { generateSearchPlan, type SearchPlan } from "@/lib/prompt-intelligence";
 
 function isAuthorized(request: NextRequest): boolean {
@@ -48,13 +48,31 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Get all active feeds ──
-  const { data: feeds } = await supabase
+  const { data: allFeeds } = await supabase
     .from("feeds")
-    .select("id, query_text, last_refreshed_at, search_plan")
+    .select("id, query_text, last_refreshed_at, search_plan, schedule")
     .eq("is_active", true);
 
-  if (!feeds || feeds.length === 0) {
+  if (!allFeeds || allFeeds.length === 0) {
     return NextResponse.json(results);
+  }
+
+  // ── Filter feeds that are due for refresh based on schedule ──
+  const now = Date.now();
+  const feeds = allFeeds.filter((feed) => {
+    if (!feed.last_refreshed_at) return true; // never refreshed
+    const lastRefresh = new Date(feed.last_refreshed_at).getTime();
+    const elapsed = now - lastRefresh;
+    switch (feed.schedule) {
+      case "realtime": return elapsed > 10 * 60 * 1000;   // 10 min
+      case "hourly":   return elapsed > 50 * 60 * 1000;   // 50 min
+      case "daily":
+      default:         return elapsed > 23 * 60 * 60 * 1000; // 23 hours
+    }
+  });
+
+  if (feeds.length === 0) {
+    return NextResponse.json({ ...results, skipped: `${allFeeds.length} feeds not due` });
   }
 
   // ── Phase 1B: Generate search plans for feeds that don't have one ──
@@ -95,9 +113,29 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Brave Search for extra coverage (if API key available) ──
+  // Use per-feed search plan queries instead of generic defaults
   try {
-    const braveResult = await scanBrave();
-    results.phase1_scan.brave = braveResult;
+    const braveQueries: string[] = [];
+    const seenQueries = new Set<string>();
+    for (const feed of feeds) {
+      const plan = feed.search_plan as SearchPlan | null;
+      if (!plan?.google_queries?.length) continue;
+      for (const q of plan.google_queries.slice(0, 2)) {
+        const key = q.toLowerCase().trim();
+        if (!seenQueries.has(key)) {
+          seenQueries.add(key);
+          braveQueries.push(q);
+        }
+      }
+    }
+    if (braveQueries.length > 0) {
+      // Cap at 10 queries per cycle to stay within free tier (2000/month)
+      const braveResult = await scanBrave(braveQueries.slice(0, 10));
+      results.phase1_scan.brave = braveResult;
+    } else {
+      const braveResult = await scanBrave();
+      results.phase1_scan.brave = braveResult;
+    }
   } catch {
     // Brave is optional
   }
@@ -115,9 +153,43 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(results);
   }
 
+  // ── Load user feedback (reactions) for personalized scoring ──
+  const feedbackMap = new Map<string, FeedbackHint>();
+  try {
+    const feedIds = feeds.map((f) => f.id);
+    const { data: reactions } = await supabase
+      .from("reactions")
+      .select("feed_item_id, reaction, feed_items!inner(feed_id, title, source)")
+      .in("feed_items.feed_id", feedIds)
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (reactions) {
+      for (const r of reactions as unknown as Array<{ reaction: string; feed_items: { feed_id: string; title: string; source: string } }>) {
+        const feedId = r.feed_items.feed_id;
+        if (!feedbackMap.has(feedId)) {
+          feedbackMap.set(feedId, { likedSources: [], dislikedSources: [], likedTopics: [], dislikedTopics: [] });
+        }
+        const fb = feedbackMap.get(feedId)!;
+        const src = r.feed_items.source.toLowerCase();
+        const titleWords = r.feed_items.title.toLowerCase().split(/\s+/).filter((w) => w.length > 4).slice(0, 3);
+        if (r.reaction === "like") {
+          if (!fb.likedSources.includes(src)) fb.likedSources.push(src);
+          fb.likedTopics.push(...titleWords.filter((w) => !fb.likedTopics.includes(w)));
+        } else {
+          if (!fb.dislikedSources.includes(src)) fb.dislikedSources.push(src);
+          fb.dislikedTopics.push(...titleWords.filter((w) => !fb.dislikedTopics.includes(w)));
+        }
+      }
+    }
+  } catch {
+    // Feedback is optional — proceed without it
+  }
+
   for (const feed of feeds) {
     try {
       const plan = feed.search_plan as SearchPlan | null;
+      const feedback = feedbackMap.get(feed.id) || null;
 
       // Get already-matched article IDs
       const { data: existing } = await supabase
@@ -138,8 +210,8 @@ export async function GET(request: NextRequest) {
       const preFiltered = preFilterArticles(feed.query_text, newArticles, plan);
       if (preFiltered.length === 0) continue;
 
-      // AI score with quality guidance from search plan
-      const scored = await scoreArticles(feed.query_text, preFiltered, plan);
+      // AI score with quality guidance from search plan + user feedback
+      const scored = await scoreArticles(feed.query_text, preFiltered, plan, feedback);
       results.phase2_match.ai_calls++;
 
       // Only high-quality matches (70+)

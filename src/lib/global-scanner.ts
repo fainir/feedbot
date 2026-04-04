@@ -49,6 +49,9 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   // Science
   { url: "https://www.reddit.com/r/science/top/.rss?t=day", category: "science" },
   { url: "https://news.google.com/rss/search?q=scientific+discovery+research+breakthrough&hl=en-US&gl=US&ceid=US:en", category: "science" },
+  { url: "https://www.nature.com/nature.rss", category: "science" },
+  { url: "https://www.sciencedaily.com/rss/all.xml", category: "science" },
+  { url: "https://phys.org/rss-feed/", category: "science" },
 
   // Business & Finance
   { url: "https://www.reddit.com/r/business/top/.rss?t=day", category: "business" },
@@ -72,14 +75,21 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
 
   // Space
   { url: "https://www.reddit.com/r/space/top/.rss?t=day", category: "space" },
+  { url: "https://www.nasa.gov/feed/", category: "space" },
+  { url: "https://spacenews.com/feed/", category: "space" },
+  { url: "https://www.space.com/feeds/all", category: "space" },
 
   // Health
   { url: "https://www.reddit.com/r/Health/top/.rss?t=day", category: "health" },
   { url: "https://medium.com/feed/tag/health", category: "health" },
+  { url: "https://www.statnews.com/feed/", category: "health" },
+  { url: "https://news.google.com/rss/search?q=medical+research+health+breakthrough&hl=en-US&gl=US&ceid=US:en", category: "health" },
 
   // Climate
   { url: "https://www.reddit.com/r/climate/top/.rss?t=day", category: "climate" },
   { url: "https://www.reddit.com/r/RenewableEnergy/top/.rss?t=day", category: "climate" },
+  { url: "https://news.google.com/rss/search?q=climate+change+renewable+energy+sustainability&hl=en-US&gl=US&ceid=US:en", category: "climate" },
+  { url: "https://www.carbonbrief.org/feed/", category: "climate" },
 
   // Fintech
   { url: "https://www.reddit.com/r/fintech/top/.rss?t=day", category: "fintech" },
@@ -115,6 +125,13 @@ const SOURCE_QUALITY: Record<string, number> = {
   "wired.com": 15,
   "techcrunch.com": 15,
   "nature.com": 15,
+  "sciencedaily.com": 12,
+  "phys.org": 12,
+  "nasa.gov": 15,
+  "spacenews.com": 12,
+  "space.com": 10,
+  "statnews.com": 15,
+  "carbonbrief.org": 12,
   "reddit.com": 10,
   "dev.to": 5,
   "medium.com": 5,

@@ -21,17 +21,25 @@ function getClient(): Anthropic | null {
   return _client;
 }
 
+export interface FeedbackHint {
+  likedSources: string[];   // sources user likes (from reactions)
+  dislikedSources: string[]; // sources user dislikes
+  likedTopics: string[];     // keywords from liked article titles
+  dislikedTopics: string[];  // keywords from disliked article titles
+}
+
 /**
  * Full scoring pipeline:
  * 1. Pre-filter with search plan's include/exclude terms (free)
  * 2. AI score survivors with quality guidance (Haiku, cheap)
- * 3. Apply source quality boost
+ * 3. Apply source quality boost + user feedback adjustment
  * 4. Return only high-quality matches (70+)
  */
 export async function scoreArticles(
   feedPrompt: string,
   articles: PoolArticle[],
-  plan?: SearchPlan | null
+  plan?: SearchPlan | null,
+  feedback?: FeedbackHint | null
 ): Promise<ScoredArticle[]> {
   if (articles.length === 0) return [];
 
@@ -39,21 +47,32 @@ export async function scoreArticles(
     return keywordScore(feedPrompt, articles, plan);
   }
 
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 100;
   const results: ScoredArticle[] = [];
 
   for (let i = 0; i < articles.length; i += BATCH_SIZE) {
     const batch = articles.slice(i, i + BATCH_SIZE);
-    const batchResults = await scoreBatch(feedPrompt, batch, plan);
+    const batchResults = await scoreBatch(feedPrompt, batch, plan, feedback);
     results.push(...batchResults);
   }
 
-  // Apply source quality boost
+  // Apply source quality boost + user feedback adjustment
   for (const result of results) {
     const article = articles.find((a) => a.id === result.id);
     if (article) {
       const boost = getSourceBoost(article.source);
       result.score = Math.min(100, result.score + boost);
+
+      // User feedback adjustment
+      if (feedback) {
+        const srcLower = article.source.toLowerCase();
+        if (feedback.likedSources.some((s) => srcLower.includes(s))) {
+          result.score = Math.min(100, result.score + 5);
+        }
+        if (feedback.dislikedSources.some((s) => srcLower.includes(s))) {
+          result.score = Math.max(0, result.score - 10);
+        }
+      }
     }
   }
 
@@ -63,11 +82,12 @@ export async function scoreArticles(
 async function scoreBatch(
   feedPrompt: string,
   articles: PoolArticle[],
-  plan?: SearchPlan | null
+  plan?: SearchPlan | null,
+  feedback?: FeedbackHint | null
 ): Promise<ScoredArticle[]> {
   const articleList = articles
     .map((a, i) => {
-      const summary = a.summary?.slice(0, 120) || "";
+      const summary = a.summary?.slice(0, 200) || "";
       return summary ? `${i}|${a.title}|${a.source}|${summary}` : `${i}|${a.title}|${a.source}`;
     })
     .join("\n");
@@ -83,16 +103,22 @@ async function scoreBatch(
     ? `\nEXCLUDE topics about: ${plan.exclude_terms.join(", ")}`
     : "";
 
+  const feedbackNote = feedback?.likedTopics?.length || feedback?.dislikedTopics?.length
+    ? `\nUSER PREFERENCES (from past reactions):` +
+      (feedback.likedTopics.length ? `\n- User LIKES articles about: ${feedback.likedTopics.join(", ")}` : "") +
+      (feedback.dislikedTopics.length ? `\n- User DISLIKES articles about: ${feedback.dislikedTopics.join(", ")}` : "")
+    : "";
+
   try {
     const response = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [
         {
           role: "user",
           content: `Score each article 0-100 for this feed. Be STRICT — only truly relevant articles score high.
 
-FEED: "${feedPrompt}"${qualityNote}${excludeNote}
+FEED: "${feedPrompt}"${qualityNote}${excludeNote}${feedbackNote}
 
 FORMAT: index|title|source|summary (summary may be absent)
 

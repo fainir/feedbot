@@ -74,7 +74,7 @@ export async function POST(
       const plan = (feed as Record<string, unknown>).search_plan as import("@/lib/prompt-intelligence").SearchPlan | null;
       const preFiltered = preFilterArticles(feed.query_text, poolFormat, plan);
       const scored = await scoreArticles(feed.query_text, preFiltered, plan);
-      const relevantIds = new Set(scored.filter((s) => s.score >= 65).map((s) => s.id));
+      const relevantIds = new Set(scored.filter((s) => s.score >= 70).map((s) => s.id));
       const scoreMap = new Map(scored.map((s) => [s.id, s.score]));
 
       const qualityItems = uniqueNewItems.filter((_, i) => relevantIds.has(String(i)));
