@@ -193,14 +193,14 @@ export default function ForYouPage() {
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
+          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
+            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
+          </Link>
           {FEEDS.map((tab) => (
             <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
               <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
-          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
-          </Link>
         </div>
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
           <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">

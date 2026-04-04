@@ -52,14 +52,14 @@ export default function ExplorePage() {
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
+          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
+            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
+          </Link>
           {TABS.map((tab) => (
             <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
               <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
-          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
-            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
-          </Link>
         </div>
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
           <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">
@@ -86,10 +86,34 @@ export default function ExplorePage() {
       <main id="main-content" className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Explore Feeds</h1>
-          <p className="text-text-muted text-sm sm:text-base">Browse curated feeds or create your own with AI</p>
+          <p className="text-text-muted text-sm sm:text-base">18 curated feeds. Thousands of sources. Or create your own.</p>
+        </div>
+
+        {/* Trending / popular prompts */}
+        <div className="mb-8">
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Popular custom feeds</h2>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "AI tools launching this week",
+              "YC startups Demo Day 2026",
+              "React Server Components tutorials",
+              "Indie hackers building in public",
+              "Climate tech breakthroughs",
+              "Remote job postings for developers",
+              "Open source alternatives to SaaS",
+              "AI art and creative coding",
+              "Rust programming language news",
+              "Web3 gaming and metaverse",
+              "Mental health for developers",
+              "Space mission updates",
+            ].map((prompt) => (
+              <button key={prompt} onClick={() => { setNewPrompt(prompt); setShowNewFeed(true); }} className="text-xs px-3 py-1.5 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 hover:bg-bg-hover/50 transition-all">{prompt}</button>
+            ))}
+          </div>
         </div>
 
         {/* Feed grid */}
+        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Curated feeds</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {FEEDS.map((feed) => (
             <Link key={feed.id} href={`/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
@@ -109,6 +133,19 @@ export default function ExplorePage() {
             </div>
             <p className="text-xs text-text-muted leading-relaxed">Describe any topic in plain English. AI will curate content from across the internet.</p>
           </button>
+        </div>
+
+        {/* Community CTA */}
+        <div className="mt-12 rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-6 sm:p-8 text-center">
+          <h2 className="text-lg font-bold mb-2">Share your feeds with the world</h2>
+          <p className="text-sm text-text-muted mb-4 max-w-md mx-auto">Create a feed, make it public, and anyone can subscribe. Build the feed you wish existed.</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {user ? (
+              <Link href="/dashboard" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-4 w-4" />Go to dashboard</Link>
+            ) : (
+              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-4 w-4" />Create your free account</Link>
+            )}
+          </div>
         </div>
       </main>
 
