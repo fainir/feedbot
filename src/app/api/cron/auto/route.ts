@@ -14,9 +14,9 @@ export async function GET() {
     return NextResponse.json({ error: "CRON_SECRET not set" }, { status: 500 });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.RAILWAY_PUBLIC_DOMAIN
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : "https://feedbot-production.up.railway.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null)
+    || "https://myfeed.space";
 
   try {
     const res = await fetch(`${baseUrl}/api/cron/scan-and-match`, {
