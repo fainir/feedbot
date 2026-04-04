@@ -301,7 +301,6 @@ export default function FeedPage() {
               <span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
-          </Link>
         </div>
 
         {/* Right actions */}
