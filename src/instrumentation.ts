@@ -35,7 +35,7 @@ async function runCycle(baseUrl: string, cronSecret: string, forceAll: boolean) 
     console.log(`[Cron] Running scan-and-match...${forceAll ? " (force-all after deploy)" : ""}`);
     const res = await fetch(`${baseUrl}/api/cron/scan-and-match${forceParam}`, {
       headers: { Authorization: `Bearer ${cronSecret}` },
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(300_000),
     });
     const data = await res.json();
     const skipped = data.skipped ? ` (${data.skipped})` : "";
