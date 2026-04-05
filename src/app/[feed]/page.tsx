@@ -369,8 +369,15 @@ export default function FeedPage() {
     setShowRemoveConfirm(null);
   }, [hiddenTabs]);
 
-  const handleDragStart = useCallback((tabId: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent, tabId: string, tabName: string, tabIcon: string) => {
     setDraggedTab(tabId);
+    // Create a clean drag image that looks like the tab
+    const ghost = document.createElement("div");
+    ghost.textContent = `${tabIcon} ${tabName}`;
+    ghost.style.cssText = "position:fixed;top:-100px;left:-100px;padding:6px 12px;font-size:12px;font-weight:500;background:var(--color-bg-card);color:var(--color-text);border:1px solid var(--color-border);border-radius:8px;white-space:nowrap;z-index:9999;";
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+    requestAnimationFrame(() => ghost.remove());
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
@@ -407,7 +414,7 @@ export default function FeedPage() {
             <div
               key={tab.id}
               draggable
-              onDragStart={() => handleDragStart(tab.id)}
+              onDragStart={(e) => handleDragStart(e, tab.id, tab.name, tab.icon)}
               onDragOver={(e) => handleDragOver(e, tab.id)}
               onDragEnd={handleDragEnd}
               className={`group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40" : ""}`}
