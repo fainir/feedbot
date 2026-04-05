@@ -103,6 +103,11 @@ async function scoreBatch(
     ? `\nEXCLUDE topics about: ${plan.exclude_terms.join(", ")}`
     : "";
 
+  // Per-feed scoring criteria — domain-specific judgment instructions
+  const scoringNote = plan?.scoring_criteria
+    ? `\nFEED-SPECIFIC SCORING: ${plan.scoring_criteria}`
+    : "";
+
   const feedbackNote = feedback?.likedTopics?.length || feedback?.dislikedTopics?.length
     ? `\nUSER PREFERENCES (from past reactions):` +
       (feedback.likedTopics.length ? `\n- User LIKES articles about: ${feedback.likedTopics.join(", ")}` : "") +
@@ -118,7 +123,7 @@ async function scoreBatch(
           role: "user",
           content: `Score each article 0-100 for this feed. Be STRICT — only truly relevant articles score high.
 
-FEED: "${feedPrompt}"${qualityNote}${excludeNote}${feedbackNote}
+FEED: "${feedPrompt}"${qualityNote}${excludeNote}${scoringNote}${feedbackNote}
 
 FORMAT: index|title|source|summary (summary may be absent)
 
@@ -244,6 +249,11 @@ export function preFilterArticles(
 
     // Spam/SEO filter — reject promotional content
     if (SPAM_PATTERNS.some((p) => p.test(text))) return false;
+
+    // Article quality signal — reject stubs with no substance
+    const summaryLen = (article.summary || "").trim().length;
+    const titleLen = (article.title || "").trim().length;
+    if (summaryLen < 30 && titleLen < 30) return false; // no content at all
 
     // Language filter — reject non-English articles
     const title = article.title || "";

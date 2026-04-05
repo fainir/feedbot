@@ -13,6 +13,7 @@ export interface SearchPlan {
   include_terms: string[];
   exclude_terms: string[];
   quality_guidance: string;
+  scoring_criteria?: string;
 }
 
 let _client: Anthropic | null = null;
@@ -45,16 +46,23 @@ export async function generateSearchPlan(prompt: string): Promise<SearchPlan> {
 
 FEED: "${prompt}"
 
+IMPORTANT — Think about what the user ACTUALLY means:
+- Expand the topic: what subtopics, related fields, key players, and terminology would a knowledgeable person include?
+- Be specific: "AI safety" means alignment research, RLHF, Constitutional AI, governance, not just any article mentioning "AI" and "safe"
+- Include_terms should be DOMAIN-SPECIFIC, not generic words like "research", "study", "news", "latest"
+- Exclude_terms should block the most common false positives for this topic
+
 Return this exact JSON structure:
 {
-  "google_queries": ["2-4 specific Google News search queries that would find the best articles for this topic"],
-  "subreddits": ["3-5 most relevant subreddit names like r/programming, without the r/ prefix"],
-  "hn_queries": ["1-3 Hacker News search terms"],
+  "google_queries": ["3-5 specific Google News search queries — use domain terminology, not generic phrases"],
+  "subreddits": ["3-5 most relevant subreddit names, without the r/ prefix"],
+  "hn_queries": ["2-3 Hacker News search terms"],
   "medium_tags": ["2-3 Medium tags (lowercase, hyphenated)"],
   "devto_tags": ["2-3 Dev.to tags (lowercase)"],
-  "include_terms": ["5-10 keywords that relevant articles MUST contain at least one of"],
-  "exclude_terms": ["3-5 keywords that indicate an article is NOT relevant"],
-  "quality_guidance": "One sentence describing what makes a GREAT article for this feed vs a mediocre one"
+  "include_terms": ["8-15 DOMAIN-SPECIFIC keywords/phrases — terms a specialist would use, NOT generic words like 'research' or 'study'"],
+  "exclude_terms": ["5-8 terms that indicate an article is NOT about this topic — think about the most common false positives"],
+  "quality_guidance": "2-3 sentences: What makes a GREAT article for this feed? What specific signals indicate quality vs noise? What domains/topics should be EXCLUDED even if they share keywords?",
+  "scoring_criteria": "One paragraph telling a scorer how to judge articles for THIS specific feed. What counts as 85+? What's a common trap that looks relevant but isn't? What sources are most trustworthy for this topic?"
 }`,
         },
       ],
