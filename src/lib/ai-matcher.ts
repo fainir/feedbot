@@ -2,6 +2,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SearchPlan } from "@/lib/prompt-intelligence";
 import { getSourceBoost } from "@/lib/global-scanner";
 
+/**
+ * Detect the primary script/language family of a text.
+ * Returns: "latin" (English/European), "hebrew", "arabic", "cjk" (Chinese/Japanese/Korean), "cyrillic", "mixed"
+ */
+function detectLanguageScript(text: string): string {
+  if (!text || text.length < 3) return "mixed";
+  const latin = (text.match(/[a-zA-Z]/g) || []).length;
+  const hebrew = (text.match(/[\u0590-\u05FF]/g) || []).length;
+  const arabic = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const cjk = (text.match(/[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/g) || []).length;
+  const cyrillic = (text.match(/[\u0400-\u04FF]/g) || []).length;
+  const total = text.replace(/[\s\d.,!?'":\-()[\]{}@#$%&*+=/\\|<>~`^_]/g, "").length || 1;
+  const scores = { latin: latin / total, hebrew: hebrew / total, arabic: arabic / total, cjk: cjk / total, cyrillic: cyrillic / total };
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > 0.4 ? best[0] : "mixed";
+}
+
 interface PoolArticle {
   id: string;
   title: string;
@@ -255,14 +272,14 @@ export function preFilterArticles(
     const titleLen = (article.title || "").trim().length;
     if (summaryLen < 30 && titleLen < 30) return false; // no content at all
 
-    // Language filter — reject non-English articles
+    // Language filter — match article language to prompt language
     const title = article.title || "";
-    // Reject non-Latin scripts (Chinese, Arabic, Korean, etc.)
-    const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'":\-]/g) || []).length / Math.max(title.length, 1);
-    if (latinRatio < 0.6) return false;
-    // Reject common non-English Latin-script articles (Portuguese, Spanish, French, etc.)
-    const nonEnglishMarkers = /\b(introdução|guia definitivo|iniciantes|como|você|também|através|começar|explicado|para que|qué es|cómo|depuis|pourquoi|comment|tutoriel|memulai|pemrograman|dengan)\b/i;
-    if (nonEnglishMarkers.test(title)) return false;
+    const promptLang = detectLanguageScript(feedPrompt);
+    const titleLang = detectLanguageScript(title);
+    // If prompt is Latin-script (English/European), reject non-Latin articles
+    // If prompt is Hebrew/Arabic, reject Latin articles
+    // If prompt is CJK, reject non-CJK articles
+    if (promptLang !== titleLang && promptLang !== "mixed" && titleLang !== "mixed") return false;
 
     // Hard exclude
     if (excludeTerms.some((term) => text.includes(term))) return false;
