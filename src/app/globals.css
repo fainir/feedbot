@@ -17,6 +17,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Hide scrollbar for horizontal tab scroller */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Light mode — clean white like X.com light */
 html.light {
   --color-bg: #ffffff;
