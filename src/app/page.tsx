@@ -61,6 +61,23 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+const GRADIENTS = [
+  "from-blue-900/40 to-blue-800/20",
+  "from-purple-900/40 to-purple-800/20",
+  "from-green-900/40 to-green-800/20",
+  "from-orange-900/40 to-orange-800/20",
+  "from-red-900/40 to-red-800/20",
+  "from-cyan-900/40 to-cyan-800/20",
+  "from-pink-900/40 to-pink-800/20",
+  "from-indigo-900/40 to-indigo-800/20",
+];
+
+function getGradient(title: string): string {
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+}
+
 function cleanTitle(title: string): string {
   return title.replace(/\s*[-–|]\s*(Google News|Bloomberg\.com|Bioengineer\.org|Pulse 2\.0|technologymagazine\.com|Yahoo Finance|ADWEEK|TradingView|SpaceNews|Entrepreneur|Washington Technology|Sports Video Group|Stock Titan|Physics World|Focus2Move|KIMT|E3-Magazin|Global Design News|Community Impact \| News|Ocean News & Technology|EMJ|Professional Carwash Magazine|EquiManagement|Black PR Wire|carwash\.com|The Cannata Report -).*$/i, "").trim();
 }
@@ -272,7 +289,7 @@ export default function ForYouPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ {user ? "For You" : "Discover"}</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` · From ${sc} sources` : ""; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -324,11 +341,11 @@ export default function ForYouPage() {
               const summary = cleanSummary(item.summary);
               const hasImage = !!item.image_url;
               return (
-                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
+                <article key={item.id || i} className={`group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200${!hasImage ? " border-l-4 border-l-text/10" : ""}`}>
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {hasImage && (
-                      <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                      <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-3 sm:p-4">
@@ -337,6 +354,7 @@ export default function ForYouPage() {
                           {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
+                        <span className="text-[10px] text-text-muted/70">via {(() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.source; } })()}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>
                       </div>
                       <h2 className="font-semibold text-text leading-snug text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
@@ -345,12 +363,12 @@ export default function ForYouPage() {
                       )}
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-4 w-4" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-4 w-4" /></button>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
-                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="px-2 py-1 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center gap-1 transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}</button>
+                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center justify-center gap-1 transition-all" aria-label="Share"><Share2 className="h-4 w-4" /></button>
                         </div>
                       </div>
                     </div>

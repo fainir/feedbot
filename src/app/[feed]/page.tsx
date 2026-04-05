@@ -155,6 +155,7 @@ export default function FeedPage() {
   const activeTab = TABS.find((t) => t.id === feedSlug);
 
   const [items, setItems] = useState<FeedItem[]>([]);
+  const [newArticlesAvailable, setNewArticlesAvailable] = useState(0);
   const [communityFeed, setCommunityFeed] = useState<{ id: string; name: string; description: string; creator: string; followers: number } | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [userFeeds, setUserFeeds] = useState<{ id: string; slug: string; name: string; icon: string }[]>([]);
@@ -331,6 +332,24 @@ export default function FeedPage() {
     }
   }, [feedSlug, activeTab, fetchFeed, fetchBySlug]);
 
+  // Poll for new articles every 2 minutes
+  useEffect(() => {
+    if (!activeTab || items.length === 0) return;
+    const interval = setInterval(() => {
+      const q = activeTab.query;
+      fetch(`/api/public/feeds?q=${encodeURIComponent(q)}&limit=1`)
+        .then((r) => r.json())
+        .then((d) => {
+          const latest = d.items?.[0];
+          if (latest && items[0] && new Date(latest.publishedAt) > new Date(items[0].publishedAt)) {
+            setNewArticlesAvailable((prev) => prev + 1);
+          }
+        })
+        .catch(() => {});
+    }, 120000);
+    return () => clearInterval(interval);
+  }, [activeTab, items]);
+
   const dedupedItems = useMemo(() => {
     const seen = new Set<string>();
     return items.filter((item) => {
@@ -491,6 +510,7 @@ export default function FeedPage() {
         </Link>
 
         {/* Scrollable tabs — drag to reorder, X to remove */}
+        {/* TODO: Add unread count badges per tab — requires tracking last visit timestamp per feed */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
@@ -518,22 +538,20 @@ export default function FeedPage() {
               >
                 <span className="text-sm">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.name}</span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (dontShowRemoveAgain) { removeTab(tab.id); }
-                    else { setShowRemoveConfirm(tab.id); }
-                  }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); if (dontShowRemoveAgain) { removeTab(tab.id); } else { setShowRemoveConfirm(tab.id); } } }}
-                  className="hidden group-hover:inline-flex ml-0.5 w-3.5 h-3.5 items-center justify-center rounded-sm hover:bg-text/10 transition-colors"
-                  aria-label={`Remove ${tab.name}`}
-                >
-                  <X className="h-2.5 w-2.5" />
-                </span>
               </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (dontShowRemoveAgain) { removeTab(tab.id); }
+                  else { setShowRemoveConfirm(tab.id); }
+                }}
+                className="hidden group-hover:inline-flex ml-0.5 w-3.5 h-3.5 items-center justify-center rounded-sm hover:bg-text/10 transition-colors"
+                aria-label={`Remove ${tab.name}`}
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
             </div>
           ))}
         </div>
@@ -604,6 +622,11 @@ export default function FeedPage() {
 
       {/* Feed */}
       <main id="main-content" className="max-w-4xl mx-auto px-3 pb-6">
+        {newArticlesAvailable > 0 && (
+          <button onClick={() => { setNewArticlesAvailable(0); setLoading(true); setItems([]); setNextCursor(null); if (activeTab) { fetchFeed(activeTab.query).then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); } }} className="sticky top-12 z-40 mx-auto block bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold shadow-lg hover:opacity-90 transition-opacity mt-2">
+            {newArticlesAvailable} new {newArticlesAvailable === 1 ? "article" : "articles"} — tap to refresh
+          </button>
+        )}
         {loading ? (
           <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
@@ -629,11 +652,11 @@ export default function FeedPage() {
               const summary = cleanSummary(item.summary);
               const hasImage = !!item.image_url;
               return (
-                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
+                <article key={item.id || i} className={`group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200${!hasImage ? " border-l-4 border-l-text/10" : ""}`}>
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {hasImage && (
-                      <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add("hidden"); }} />
+                      <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-3 sm:p-4">
@@ -650,12 +673,12 @@ export default function FeedPage() {
                       )}
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /></button>
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-4 w-4" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-4 w-4" /></button>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
-                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="px-2 py-1 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center gap-1 transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}</button>
+                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center justify-center gap-1 transition-all" aria-label="Share"><Share2 className="h-4 w-4" /></button>
                         </div>
                       </div>
                     </div>
@@ -814,10 +837,17 @@ export default function FeedPage() {
               <textarea autoFocus className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} />
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowCustomize(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
+                {user ? (
+                  <button onClick={async () => { if (!newPrompt.trim()) return; try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } } catch {} setShowCustomize(false); }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Save as custom feed
+                  </button>
+                ) : (
                 <Link href={`/login?signup=true${newPrompt ? `&prompt=${encodeURIComponent(newPrompt)}` : ""}`} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
                   Sign up to customize
                 </Link>
+                )}
               </div>
             </div>
           </div>

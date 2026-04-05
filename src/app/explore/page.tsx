@@ -52,6 +52,7 @@ export default function ExplorePage() {
   const [user, setUser] = useState<User | null>(null);
   const [communityFeeds, setCommunityFeeds] = useState<CommunityFeed[]>([]);
   const [loadingCommunity, setLoadingCommunity] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { createClient().auth.getUser().then(({ data: { user } }) => setUser(user)); }, []);
@@ -135,9 +136,10 @@ export default function ExplorePage() {
 
         {/* Unified public feeds grid — curated + community together */}
         <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Public feeds</h2>
+        <input type="text" placeholder="Search feeds..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-bg-hover border border-border rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-text/50" aria-label="Search feeds" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* System feeds */}
-          {FEEDS.map((feed) => (
+          {FEEDS.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (
             <Link key={feed.id} href={`/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">{feed.icon}</span>
@@ -148,7 +150,7 @@ export default function ExplorePage() {
           ))}
 
           {/* Community public feeds */}
-          {communityFeeds.map((feed) => (
+          {communityFeeds.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (
             <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">📡</span>

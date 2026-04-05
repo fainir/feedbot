@@ -192,7 +192,15 @@ function extractImageUrl(item: RssParser.Item): string | null {
   return null;
 }
 
-function cleanSourceName(raw: string): string {
+function cleanSourceFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return "";
+  }
+}
+
+function cleanSourceName(raw: string, articleUrl?: string): string {
   // Reddit feeds: extract subreddit name
   if (/top scoring links|^r\/|\/r\//i.test(raw)) {
     const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
@@ -217,6 +225,12 @@ function cleanSourceName(raw: string): string {
   // Truncate to 30 chars
   if (name.length > 30) name = name.slice(0, 27) + "...";
 
+  // Fallback: if name still contains quotes or looks like a search query, extract domain from URL
+  if (articleUrl && (name.includes('"') || name.includes("'") || (name.includes(" ") && !name.includes(".")))) {
+    const domain = cleanSourceFromUrl(articleUrl);
+    if (domain) return domain;
+  }
+
   return name;
 }
 
@@ -231,16 +245,19 @@ function summarize(text: string): string {
 async function fetchRss(url: string, category: string): Promise<RawArticle[]> {
   try {
     const feed = await rssParser.parseURL(url);
-    const sourceName = cleanSourceName(feed.title || new URL(url).hostname);
-    return (feed.items || []).map((item) => ({
-      title: item.title || "Untitled",
-      url: item.link || url,
-      summary: summarize(item.contentSnippet || item.content || item.title || ""),
-      source: sourceName,
-      image_url: extractImageUrl(item),
-      category,
-      published_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
-    }));
+    return (feed.items || []).map((item) => {
+      const itemUrl = item.link || url;
+      const source = cleanSourceName(feed.title || new URL(url).hostname, itemUrl);
+      return {
+        title: item.title || "Untitled",
+        url: itemUrl,
+        summary: summarize(item.contentSnippet || item.content || item.title || ""),
+        source,
+        image_url: extractImageUrl(item),
+        category,
+        published_at: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+      };
+    });
   } catch {
     return [];
   }
