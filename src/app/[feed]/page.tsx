@@ -407,9 +407,10 @@ export default function FeedPage() {
 
         {/* Scrollable tabs — drag to reorder, X to remove */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
-          <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
+          <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
+          <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
           {allTabs.map((tab) => (
             <div
               key={tab.id}
