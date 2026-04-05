@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
   // Get all public, active feeds with their creator info
   const { data: feeds, error } = await supabase
     .from("feeds")
-    .select("id, name, slug, query_text, description, is_public, created_at, user_id, profiles!inner(name, email)")
+    .select("id, name, slug, query_text, description, is_public, views, created_at, user_id, profiles!inner(name, email)")
     .eq("is_public", true)
     .eq("is_active", true)
-    .order("created_at", { ascending: false });
+    .order("views", { ascending: false });
 
   if (error || !feeds) {
     return NextResponse.json({ feeds: [] });
@@ -57,13 +57,14 @@ export async function GET(req: NextRequest) {
       creator: profile?.name || profile?.email?.split("@")[0] || "Anonymous",
       isSystem: f.user_id === "9c313e5c-1468-467b-a797-6ceb9bd7d09b",
       followers: followerCounts.get(f.id) || 0,
+      views: (f as Record<string, unknown>).views as number || 0,
       createdAt: f.created_at,
     };
   });
 
-  // Sort
-  if (sort === "followers") {
-    result.sort((a, b) => b.followers - a.followers);
+  // Sort — default by views (most popular first)
+  if (sort === "views" || sort === "followers") {
+    result.sort((a, b) => b.views - a.views);
   } else if (sort === "newest") {
     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }

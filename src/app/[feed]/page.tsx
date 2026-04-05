@@ -291,7 +291,11 @@ export default function FeedPage() {
           setItems(d.items);
           setHasMore(d.hasMore || false);
           setNextCursor(d.nextCursor || null);
-          if (d.feed) setCommunityFeed(d.feed);
+          if (d.feed) {
+            setCommunityFeed(d.feed);
+            // Track view (fire and forget)
+            fetch(`/api/feeds/${d.feed.id}/view`, { method: "POST" }).catch(() => {});
+          }
         })
         .catch(() => setNotFound(true))
         .finally(() => setLoading(false));
@@ -436,15 +440,15 @@ export default function FeedPage() {
 
         {/* Right actions */}
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
+          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">Explore</Link>
           <button
             onClick={() => setShowNewFeed(true)}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"
+            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             <Plus className="h-3 w-3" />
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>
-          <Link href="/explore" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Explore</Link>
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
               <MoreVertical className="h-4 w-4 text-text-muted" />

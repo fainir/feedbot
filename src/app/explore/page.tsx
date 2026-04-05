@@ -119,6 +119,14 @@ export default function ExplorePage() {
               "Open source alternatives to SaaS",
               "Rust programming language news",
               "Space mission updates",
+              "TypeScript tips and tricks",
+              "Biotech and drug discovery",
+              "Self-driving cars and autonomous vehicles",
+              "Quantum computing research",
+              "No-code and low-code tools",
+              "Productivity hacks for developers",
+              "AI ethics and safety research",
+              "Web3 and decentralized apps",
             ].map((prompt) => (
               <button key={prompt} onClick={() => { setNewPrompt(prompt); setShowNewFeed(true); }} className="text-xs px-3 py-1.5 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 hover:bg-bg-hover/50 transition-all">{prompt}</button>
             ))}
