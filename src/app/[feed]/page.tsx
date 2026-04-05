@@ -61,12 +61,35 @@ function getGradient(title: string): string {
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
 }
 
+function cleanSourceDisplay(raw: string): string {
+  // Reddit feeds: extract subreddit name
+  if (/top scoring links|^r\/|\/r\//i.test(raw)) {
+    const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
+    if (match) return "r/" + match[1];
+    const colonMatch = raw.match(/top scoring links\s*:\s*(.+)/i);
+    if (colonMatch) return "r/" + colonMatch[1].trim();
+    return "Reddit";
+  }
+  // Known source mappings
+  const KNOWN: Record<string, string> = {
+    "Hacker News: Front Page": "Hacker News",
+    "Hacker News: Newest": "Hacker News",
+    "DEV Community": "DEV Community",
+  };
+  if (KNOWN[raw]) return KNOWN[raw];
+  // Strip after common separators
+  let name = raw.split(/\s+[-–]\s+|\s+\|\s+|\s+::\s+/)[0].trim();
+  if (name.length > 30) name = name.slice(0, 27) + "...";
+  return name;
+}
+
 function getSourceInfo(raw: string): { name: string; icon: string; color: string } {
   const s = raw.toLowerCase();
+  const cleaned = cleanSourceDisplay(raw);
   if (s.includes("hacker news") || s.includes("hnrss"))
     return { name: "Hacker News", icon: "https://news.ycombinator.com/favicon.ico", color: "bg-orange-500/10 text-orange-400" };
-  if (s.includes("reddit") || s.includes("everything science") || s.includes("the community for"))
-    return { name: raw.includes("/r/") ? "r/" + (raw.split("/r/")[1]?.split("/")[0]?.split("?")[0] || "reddit") : "Reddit", icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
+  if (s.includes("reddit") || s.startsWith("r/") || s.includes("everything science") || s.includes("the community for") || s.includes("top scoring links"))
+    return { name: cleaned, icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
   if (s.includes("medium"))
     return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-white/10 text-white" };
   if (s.includes("dev community") || s.includes("dev.to"))
@@ -81,9 +104,15 @@ function getSourceInfo(raw: string): { name: string; icon: string; color: string
     return { name: "Bloomberg", icon: "", color: "bg-blue-500/10 text-blue-400" };
   if (s.includes("entrepreneur"))
     return { name: "Entrepreneur", icon: "", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("phys.org"))
+    return { name: "Phys.org", icon: "", color: "bg-cyan-500/10 text-cyan-400" };
+  if (s.includes("nature"))
+    return { name: "Nature", icon: "", color: "bg-blue-500/10 text-blue-400" };
+  if (s.includes("sciencedaily"))
+    return { name: "ScienceDaily", icon: "", color: "bg-teal-500/10 text-teal-400" };
   if (s.includes("google news") || s.includes("- google") || s.includes("artificial intelligence") || s.includes("machine learning") || s.includes("big tech") || s.includes("startup funding") || s.includes("software engineering") || s.includes("scientific discoveries"))
     return { name: "News", icon: "", color: "bg-blue-500/10 text-blue-400" };
-  return { name: raw.length > 25 ? raw.slice(0, 22) + "..." : raw, icon: "", color: "bg-text/5 text-text-muted" };
+  return { name: cleaned, icon: "", color: "bg-text/5 text-text-muted" };
 }
 
 function cleanTitle(title: string): string {
@@ -323,11 +352,22 @@ export default function FeedPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold mb-2">404</h1>
-          <p className="text-text-muted mb-6">Feed not found</p>
-          <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Explore feeds</Link>
+      <div className="min-h-screen bg-bg text-text">
+        <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
+          <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
+            <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
+          </Link>
+          <div className="flex-1" />
+          <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
+            <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">Explore</Link>
+          </div>
+        </header>
+        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 2.75rem)" }}>
+          <div className="text-center">
+            <h1 className="text-6xl font-bold mb-2">404</h1>
+            <p className="text-text-muted mb-6">Feed not found</p>
+            <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Explore feeds</Link>
+          </div>
         </div>
       </div>
     );
@@ -451,7 +491,7 @@ export default function FeedPage() {
         </Link>
 
         {/* Scrollable tabs — drag to reorder, X to remove */}
-        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
+        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
@@ -514,7 +554,8 @@ export default function FeedPage() {
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+              <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+                {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
                 {mounted && (
                   <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -522,9 +563,9 @@ export default function FeedPage() {
                   </button>
                 )}
                 {!user && (
-                  <Link href="/login" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
+                  <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
                     <LogIn className="h-4 w-4" />
-                    Sign in
+                    Sign up / Sign in
                   </Link>
                 )}
                 {user && (
@@ -628,8 +669,14 @@ export default function FeedPage() {
         {hasMore && (
           <LoadMoreSentinel loading={loadingMore} onVisible={loadMore} />
         )}
-        {!hasMore && dedupedItems.length > 0 && (
+        {!hasMore && dedupedItems.length > 0 && dedupedItems.length >= 15 && (
           <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
+        )}
+        {!hasMore && dedupedItems.length > 0 && dedupedItems.length < 15 && (
+          <div className="text-center py-8">
+            <p className="text-sm text-text-muted mb-1">This feed is building up</p>
+            <p className="text-xs text-text-muted">New articles are added every 15 minutes. Check back soon for more.</p>
+          </div>
         )}
 
         {/* CTA */}

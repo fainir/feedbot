@@ -192,6 +192,34 @@ function extractImageUrl(item: RssParser.Item): string | null {
   return null;
 }
 
+function cleanSourceName(raw: string): string {
+  // Reddit feeds: extract subreddit name
+  if (/top scoring links|^r\/|\/r\//i.test(raw)) {
+    const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
+    if (match) return "r/" + match[1];
+    // "top scoring links : cybersecurity" → extract topic
+    const colonMatch = raw.match(/top scoring links\s*:\s*(.+)/i);
+    if (colonMatch) return "r/" + colonMatch[1].trim();
+    return "Reddit";
+  }
+
+  // Known source mappings
+  const KNOWN: Record<string, string> = {
+    "Hacker News: Front Page": "Hacker News",
+    "Hacker News: Newest": "Hacker News",
+    "DEV Community": "DEV Community",
+  };
+  if (KNOWN[raw]) return KNOWN[raw];
+
+  // Strip after common separators: " - ", " | ", " :: "
+  let name = raw.split(/\s+[-–]\s+|\s+\|\s+|\s+::\s+/)[0].trim();
+
+  // Truncate to 30 chars
+  if (name.length > 30) name = name.slice(0, 27) + "...";
+
+  return name;
+}
+
 function summarize(text: string): string {
   const clean = text.replace(/<[^>]+>/g, "").trim();
   if (clean.length <= 200) return clean;
@@ -203,7 +231,7 @@ function summarize(text: string): string {
 async function fetchRss(url: string, category: string): Promise<RawArticle[]> {
   try {
     const feed = await rssParser.parseURL(url);
-    const sourceName = feed.title || new URL(url).hostname;
+    const sourceName = cleanSourceName(feed.title || new URL(url).hostname);
     return (feed.items || []).map((item) => ({
       title: item.title || "Untitled",
       url: item.link || url,

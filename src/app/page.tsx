@@ -148,13 +148,31 @@ export default function ForYouPage() {
   }, [fetchFeed]);
 
   const dedupedItems = useMemo(() => {
-    const seen = new Set<string>();
-    return items.filter((item) => {
+    // URL dedup
+    const seenUrls = new Set<string>();
+    const urlDeduped = items.filter((item) => {
       const key = item.url.split("?")[0].split("#")[0];
-      if (seen.has(key)) return false;
-      seen.add(key);
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
       return true;
     });
+
+    // Story clustering — group by similar titles, keep best
+    const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
+    const clusters: typeof urlDeduped = [];
+    const clusterKeys = new Map<string, number>();
+    for (const item of urlDeduped) {
+      const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w)).slice(0, 5);
+      const key = words.join(" ");
+      if (key.length < 8) { clusters.push(item); continue; }
+      let matched = false;
+      for (const [ek, idx] of clusterKeys) {
+        const overlap = words.filter((w) => ek.includes(w)).length;
+        if (overlap >= 3) { matched = true; break; }
+      }
+      if (!matched) { clusterKeys.set(key, clusters.length); clusters.push(item); }
+    }
+    return clusters;
   }, [items]);
 
   const loadMore = () => {
@@ -210,9 +228,10 @@ export default function ForYouPage() {
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+              <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+                {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
                 {mounted && <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{theme === "dark" ? "Light mode" : "Dark mode"}</button>}
-                {!user && <Link href="/login" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign in</Link>}
+                {!user && <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign up / Sign in</Link>}
                 {user && <button onClick={() => { setShowEmailPrefs(true); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><Mail className="h-4 w-4" />Email digest</button>}
                 {user && <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><LogIn className="h-4 w-4" />Sign out</button>}
                 <div className="border-t border-border my-1" />
@@ -225,17 +244,25 @@ export default function ForYouPage() {
         </div>
       </header>
 
-      {/* Hero banner for guests */}
+      {/* Hero banner for guests — explains value prop + search */}
       {!user && !heroDismissed && (
         <div className="max-w-4xl mx-auto px-3 pt-3">
           <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
-            <p className="text-sm text-text-muted mb-4 max-w-lg">Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.</p>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-3.5 w-3.5" />Create your free feed</Link>
-              <button onClick={() => setShowNewFeed(true)} className="inline-flex items-center gap-1.5 border border-text/30 text-text px-4 py-2 rounded-full text-sm font-medium hover:bg-text hover:text-bg transition-all">Try it now</button>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic — AI finds the best articles, repos, videos, and discussions from across the web. Updated every 15 minutes.</p>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="What are you interested in? e.g. AI safety research, Rust programming..."
+                className="flex-1 bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50"
+                value={newPrompt}
+                onChange={(e) => setNewPrompt(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && newPrompt.trim()) setShowNewFeed(true); }}
+              />
+              <button onClick={() => { if (newPrompt.trim()) setShowNewFeed(true); }} className="bg-text text-bg px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
             </div>
+            <p className="text-[10px] text-text-muted">Free. No signup required to browse. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to save your feeds.</p>
           </div>
         </div>
       )}
@@ -244,8 +271,8 @@ export default function ForYouPage() {
       <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{enabledFeeds.size === FEEDS.length ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}</p>
+            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ {user ? "For You" : "Discover"}</h2>
+            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />

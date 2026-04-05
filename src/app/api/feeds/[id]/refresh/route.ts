@@ -70,6 +70,7 @@ export async function POST(
         title: item.title,
         summary: item.summary,
         source: item.source,
+        url: item.url,
       }));
       const plan = (feed as Record<string, unknown>).search_plan as import("@/lib/prompt-intelligence").SearchPlan | null;
       const preFiltered = preFilterArticles(feed.query_text, poolFormat, plan);

@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentArticles } = await supabase
     .from("article_pool")
-    .select("id, title, summary, source")
+    .select("id, title, summary, source, url")
     .gte("published_at", threeDaysAgo)
     .order("published_at", { ascending: false })
     .limit(1000);

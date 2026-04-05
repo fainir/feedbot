@@ -24,6 +24,7 @@ interface PoolArticle {
   title: string;
   summary: string;
   source: string;
+  url?: string;
 }
 
 interface ScoredArticle {
@@ -241,6 +242,50 @@ const SPAM_PATTERNS = [
 ];
 
 /**
+ * Reject URLs that are clearly not articles: homepages, index pages,
+ * feed endpoints, and paths too shallow to be individual articles.
+ */
+function isValidArticleUrl(url: string): boolean {
+  if (!url) return true; // no URL to validate — let other filters handle it
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+
+  const path = parsed.pathname.replace(/\/+$/, ""); // strip trailing slashes
+
+  // Homepage URLs (path is "/" or empty)
+  if (!path || path === "") return false;
+
+  // RSS/Atom feed index pages
+  if (/\/(feed|rss|atom)$/i.test(path)) return false;
+
+  // Wikipedia list/index/category pages
+  if (parsed.hostname.includes("wikipedia.org")) {
+    if (/\/(List_of|Category:)/i.test(path)) return false;
+  }
+
+  // Schedule/calendar listing pages — only reject shallow ones
+  // (deep paths like /events/2024/my-event are fine)
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length < 2 && /schedule|calendar/i.test(segments[0] || "")) return false;
+
+  // Too-shallow paths: "example.com/category" with no article slug
+  // Allow known single-segment patterns (e.g. reddit.com/r/..., short-url domains)
+  if (segments.length < 2) {
+    // Single segment that looks like a category, not an article
+    const seg = segments[0] || "";
+    // Allow segments that look like article slugs (contain hyphens or are very long)
+    if (seg.length < 40 && !seg.includes("-")) return false;
+  }
+
+  return true;
+}
+
+/**
  * Smart pre-filter using search plan. Removes obviously irrelevant articles
  * before sending to AI, reducing token cost by ~80%.
  */
@@ -266,6 +311,9 @@ export function preFilterArticles(
 
     // Spam/SEO filter — reject promotional content
     if (SPAM_PATTERNS.some((p) => p.test(text))) return false;
+
+    // URL validation — reject homepages, index pages, feed endpoints
+    if (article.url && !isValidArticleUrl(article.url)) return false;
 
     // Article quality signal — reject stubs with no substance
     const summaryLen = (article.summary || "").trim().length;
