@@ -410,7 +410,7 @@ export default function FeedPage() {
               onDragStart={() => handleDragStart(tab.id)}
               onDragOver={(e) => handleDragOver(e, tab.id)}
               onDragEnd={handleDragEnd}
-              className={`relative group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40" : ""}`}
+              className={`group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40" : ""}`}
             >
               <Link
                 href={`/${tab.id}`}
@@ -421,19 +421,22 @@ export default function FeedPage() {
               >
                 <span className="text-sm">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.name}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dontShowRemoveAgain) { removeTab(tab.id); }
+                    else { setShowRemoveConfirm(tab.id); }
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); if (dontShowRemoveAgain) { removeTab(tab.id); } else { setShowRemoveConfirm(tab.id); } } }}
+                  className="hidden group-hover:inline-flex ml-0.5 w-3.5 h-3.5 items-center justify-center rounded-sm hover:bg-text/10 transition-colors"
+                  aria-label={`Remove ${tab.name}`}
+                >
+                  <X className="h-2.5 w-2.5" />
+                </span>
               </Link>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (dontShowRemoveAgain) { removeTab(tab.id); }
-                  else { setShowRemoveConfirm(tab.id); }
-                }}
-                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-bg-card border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20 hover:border-red-500/50 z-10"
-                aria-label={`Remove ${tab.name}`}
-              >
-                <X className="h-2.5 w-2.5 text-text-muted" />
-              </button>
             </div>
           ))}
         </div>
