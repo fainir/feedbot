@@ -30,16 +30,37 @@ const FEEDS = [
 
 const TABS = FEEDS; // reuse for nav
 
+interface CommunityFeed {
+  id: string;
+  name: string;
+  description: string;
+  query_text: string;
+  creator: string;
+  isSystem: boolean;
+  followers: number;
+  createdAt: string;
+}
+
 export default function ExplorePage() {
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [newPrompt, setNewPrompt] = useState("");
+  const [makePublic, setMakePublic] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [communityFeeds, setCommunityFeeds] = useState<CommunityFeed[]>([]);
+  const [loadingCommunity, setLoadingCommunity] = useState(true);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { createClient().auth.getUser().then(({ data: { user } }) => setUser(user)); }, []);
+  useEffect(() => {
+    fetch("/api/public/community?sort=followers")
+      .then((r) => r.json())
+      .then((d) => setCommunityFeeds((d.feeds || []).filter((f: CommunityFeed) => !f.isSystem)))
+      .catch(() => {})
+      .finally(() => setLoadingCommunity(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-bg text-text">
@@ -135,6 +156,28 @@ export default function ExplorePage() {
           </button>
         </div>
 
+        {/* Community feeds */}
+        {communityFeeds.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Community feeds</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {communityFeeds.map((feed) => (
+                <Link key={feed.id} href={`/community/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
+                    <span className="text-[10px] text-text-muted bg-bg-hover px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{feed.followers} followers</span>
+                  </div>
+                  <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-2">{feed.description}</p>
+                  <p className="text-[10px] text-text-muted">by {feed.creator}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        {loadingCommunity && (
+          <div className="mt-10 text-center text-text-muted text-sm">Loading community feeds...</div>
+        )}
+
         {/* Community CTA */}
         <div className="mt-12 rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-6 sm:p-8 text-center">
           <h2 className="text-lg font-bold mb-2">Share your feeds with the world</h2>
@@ -160,10 +203,14 @@ export default function ExplorePage() {
               </div>
               <p className="text-sm text-text-muted mb-4 ml-10">Describe what you want to follow. AI will find the best content.</p>
               <textarea autoFocus placeholder="e.g. Latest React and Next.js tutorials, new CSS features" className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all placeholder:text-text-muted/50" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} />
+              <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                <input type="checkbox" checked={makePublic} onChange={(e) => setMakePublic(e.target.checked)} className="rounded border-border" />
+                <span className="text-xs text-text-muted">Make this feed public — others can discover and follow it</span>
+              </label>
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowNewFeed(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
                 {user ? (
-                  <button onClick={async () => { if (!newPrompt.trim()) return; try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } } catch {} window.location.href = "/dashboard"; }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
+                  <button onClick={async () => { if (!newPrompt.trim()) return; try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt, is_public: makePublic }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } } catch {} window.location.href = "/dashboard"; }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
                 ) : (
                   <Link href={`/login?signup=true${newPrompt ? `&prompt=${encodeURIComponent(newPrompt)}` : ""}`} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Sign up to create</Link>
                 )}

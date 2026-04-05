@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { name, query_text, description, schedule, notify_email, notify_push, notify_whatsapp } =
+  const { name, query_text, description, schedule, notify_email, notify_push, notify_whatsapp, is_public } =
     body as {
       name?: string;
       query_text?: string;
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       notify_email?: boolean;
       notify_push?: boolean;
       notify_whatsapp?: boolean;
+      is_public?: boolean;
     };
 
   if (!name || !query_text) {
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
       notify_push: notify_push ?? false,
       notify_whatsapp: notify_whatsapp ?? false,
       is_active: true,
+      is_public: is_public ?? false,
       last_refreshed_at: null,
       ...(searchPlan ? { search_plan: searchPlan } : {}),
     })
