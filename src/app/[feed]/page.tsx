@@ -128,6 +128,12 @@ export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [communityFeed, setCommunityFeed] = useState<{ id: string; name: string; description: string; creator: string; followers: number } | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [userFeeds, setUserFeeds] = useState<{ id: string; slug: string; name: string; icon: string }[]>([]);
+  const [tabOrder, setTabOrder] = useState<string[]>([]);
+  const [hiddenTabs, setHiddenTabs] = useState<Set<string>>(new Set());
+  const [draggedTab, setDraggedTab] = useState<string | null>(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState<string | null>(null);
+  const [dontShowRemoveAgain, setDontShowRemoveAgain] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -155,10 +161,33 @@ export default function FeedPage() {
     }
   }, [feedSlug]);
 
-  // Check auth state
+  // Check auth state + load user feeds
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        // Load user's custom feeds as tabs
+        fetch("/api/feeds").then((r) => r.json()).then((d) => {
+          const feeds = (d.feeds || []).map((f: { id: string; slug?: string; name: string }) => ({
+            id: f.slug || f.id,
+            slug: f.slug || f.id,
+            name: f.name.length > 20 ? f.name.slice(0, 18) + "..." : f.name,
+            icon: "📡",
+          }));
+          setUserFeeds(feeds);
+        }).catch(() => {});
+      }
+    });
+    // Load tab preferences from storage
+    try {
+      const saved = sessionStorage.getItem("mf_tab_order");
+      if (saved) setTabOrder(JSON.parse(saved));
+      const hidden = sessionStorage.getItem("mf_hidden_tabs");
+      if (hidden) setHiddenTabs(new Set(JSON.parse(hidden)));
+      const dontShow = localStorage.getItem("mf_dont_show_remove");
+      if (dontShow === "1") setDontShowRemoveAgain(true);
+    } catch {}
   }, []);
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
@@ -302,6 +331,60 @@ export default function FeedPage() {
 
   const displayName = activeTab?.name || communityFeed?.name || feedSlug;
 
+  // Build combined tab list: system tabs + user feeds, respecting order and hidden
+  const allTabs = useMemo(() => {
+    const systemTabs = TABS.map((t) => ({ id: t.id, name: t.name, icon: t.icon, isSystem: true }));
+    const custom = userFeeds.map((f) => ({ id: f.id, name: f.name, icon: f.icon, isSystem: false }));
+    const combined = [...systemTabs, ...custom];
+
+    // Apply custom ordering if set
+    if (tabOrder.length > 0) {
+      const orderMap = new Map(tabOrder.map((id, i) => [id, i]));
+      combined.sort((a, b) => {
+        const ai = orderMap.get(a.id) ?? 999;
+        const bi = orderMap.get(b.id) ?? 999;
+        return ai - bi;
+      });
+    }
+
+    // Filter hidden tabs
+    return combined.filter((t) => !hiddenTabs.has(t.id));
+  }, [userFeeds, tabOrder, hiddenTabs]);
+
+  const saveTabOrder = useCallback((newOrder: string[]) => {
+    setTabOrder(newOrder);
+    try { sessionStorage.setItem("mf_tab_order", JSON.stringify(newOrder)); } catch {}
+    // For signed-in users, also save to DB (future: user preferences table)
+  }, []);
+
+  const removeTab = useCallback((tabId: string) => {
+    const newHidden = new Set(hiddenTabs);
+    newHidden.add(tabId);
+    setHiddenTabs(newHidden);
+    try { sessionStorage.setItem("mf_hidden_tabs", JSON.stringify([...newHidden])); } catch {}
+    setShowRemoveConfirm(null);
+  }, [hiddenTabs]);
+
+  const handleDragStart = useCallback((tabId: string) => {
+    setDraggedTab(tabId);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedTab || draggedTab === targetId) return;
+    const currentOrder = allTabs.map((t) => t.id);
+    const fromIdx = currentOrder.indexOf(draggedTab);
+    const toIdx = currentOrder.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    currentOrder.splice(fromIdx, 1);
+    currentOrder.splice(toIdx, 0, draggedTab);
+    saveTabOrder(currentOrder);
+  }, [draggedTab, allTabs, saveTabOrder]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTab(null);
+  }, []);
+
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar: logo | tabs | actions */}
@@ -311,7 +394,7 @@ export default function FeedPage() {
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
 
-        {/* Scrollable tabs */}
+        {/* Scrollable tabs — drag to reorder, X to remove */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
@@ -319,18 +402,38 @@ export default function FeedPage() {
           <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
           </Link>
-          {TABS.map((tab) => (
-            <Link
+          {allTabs.map((tab) => (
+            <div
               key={tab.id}
-              href={`/${tab.id}`}
-              data-active={feedSlug === tab.id}
-              className={`px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
-                feedSlug === tab.id ? "border-text text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"
-              }`}
+              draggable
+              onDragStart={() => handleDragStart(tab.id)}
+              onDragOver={(e) => handleDragOver(e, tab.id)}
+              onDragEnd={handleDragEnd}
+              className={`relative group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40" : ""}`}
             >
-              <span className="text-sm">{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.name}</span>
-            </Link>
+              <Link
+                href={`/${tab.id}`}
+                data-active={feedSlug === tab.id}
+                className={`px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
+                  feedSlug === tab.id ? "border-text text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"
+                }`}
+              >
+                <span className="text-sm">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.name}</span>
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (dontShowRemoveAgain) { removeTab(tab.id); }
+                  else { setShowRemoveConfirm(tab.id); }
+                }}
+                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-bg-card border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20 hover:border-red-500/50 z-10"
+                aria-label={`Remove ${tab.name}`}
+              >
+                <X className="h-2.5 w-2.5 text-text-muted" />
+              </button>
+            </div>
           ))}
         </div>
 
@@ -344,9 +447,7 @@ export default function FeedPage() {
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>
-          {user ? (
-            <Link href="/dashboard" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Dashboard</Link>
-          ) : (
+          {!user && (
             <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign up</Link>
           )}
           <div className="relative">
@@ -510,6 +611,32 @@ export default function FeedPage() {
       </footer>
 
       {/* New Feed Modal */}
+      {/* Remove tab confirmation popup */}
+      {showRemoveConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowRemoveConfirm(null)}>
+          <div className="bg-bg border border-border rounded-2xl w-full max-w-sm shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold mb-2">Remove from tabs?</h3>
+            <p className="text-sm text-text-muted mb-4">This will remove the tab from your bar. You can find it again in Explore.</p>
+            <label className="flex items-center gap-2 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={dontShowRemoveAgain}
+                onChange={(e) => {
+                  setDontShowRemoveAgain(e.target.checked);
+                  try { localStorage.setItem("mf_dont_show_remove", e.target.checked ? "1" : "0"); } catch {}
+                }}
+                className="rounded border-border"
+              />
+              <span className="text-xs text-text-muted">Don&apos;t show this again</span>
+            </label>
+            <div className="flex gap-2">
+              <button onClick={() => setShowRemoveConfirm(null)} className="flex-1 py-2 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
+              <button onClick={() => removeTab(showRemoveConfirm)} className="flex-1 py-2 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors font-medium">Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNewFeed && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowNewFeed(false)}>
           <div className="bg-bg border border-border rounded-2xl w-full max-w-lg shadow-2xl" onClick={(e) => e.stopPropagation()}>
