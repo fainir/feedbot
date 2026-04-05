@@ -245,10 +245,14 @@ export function preFilterArticles(
     // Spam/SEO filter — reject promotional content
     if (SPAM_PATTERNS.some((p) => p.test(text))) return false;
 
-    // Language filter — reject non-Latin articles (non-English) for English feeds
+    // Language filter — reject non-English articles
     const title = article.title || "";
+    // Reject non-Latin scripts (Chinese, Arabic, Korean, etc.)
     const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'":\-]/g) || []).length / Math.max(title.length, 1);
     if (latinRatio < 0.6) return false;
+    // Reject common non-English Latin-script articles (Portuguese, Spanish, French, etc.)
+    const nonEnglishMarkers = /\b(introdução|guia definitivo|iniciantes|como|você|também|através|começar|explicado|para que|qué es|cómo|depuis|pourquoi|comment|tutoriel|memulai|pemrograman|dengan)\b/i;
+    if (nonEnglishMarkers.test(title)) return false;
 
     // Hard exclude
     if (excludeTerms.some((term) => text.includes(term))) return false;

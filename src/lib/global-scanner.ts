@@ -72,6 +72,7 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   // Gaming
   { url: "https://www.reddit.com/r/Games/top/.rss?t=day", category: "gaming" },
   { url: "https://www.reddit.com/r/gamedev/top/.rss?t=day", category: "gaming" },
+  { url: "https://news.google.com/rss/search?q=video+game+release+esports+gaming+industry&hl=en-US&gl=US&ceid=US:en", category: "gaming" },
 
   // Space
   { url: "https://www.reddit.com/r/space/top/.rss?t=day", category: "space" },
@@ -90,9 +91,13 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   { url: "https://www.reddit.com/r/RenewableEnergy/top/.rss?t=day", category: "climate" },
   { url: "https://news.google.com/rss/search?q=climate+change+renewable+energy+sustainability&hl=en-US&gl=US&ceid=US:en", category: "climate" },
   { url: "https://www.carbonbrief.org/feed/", category: "climate" },
+  { url: "https://www.reddit.com/r/environment/top/.rss?t=day", category: "climate" },
+  { url: "https://news.google.com/rss/search?q=solar+wind+energy+carbon+emissions+net+zero&hl=en-US&gl=US&ceid=US:en", category: "climate" },
 
   // Fintech
   { url: "https://www.reddit.com/r/fintech/top/.rss?t=day", category: "fintech" },
+  { url: "https://news.google.com/rss/search?q=fintech+digital+banking+neobank+payment+technology&hl=en-US&gl=US&ceid=US:en", category: "fintech" },
+  { url: "https://medium.com/feed/tag/fintech", category: "fintech" },
 
   // DevOps
   { url: "https://www.reddit.com/r/devops/top/.rss?t=day", category: "devops" },
@@ -213,8 +218,33 @@ async function fetchRss(url: string, category: string): Promise<RawArticle[]> {
   }
 }
 
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    // Strip tracking params (utm_*, source, ref, etc.)
+    const stripParams = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "source", "ref", "gi", "sk"];
+    for (const p of stripParams) u.searchParams.delete(p);
+    // Normalize Medium URLs: strip ?source= and #--- fragments
+    let clean = u.toString().split("#")[0];
+    if (clean.endsWith("/")) clean = clean.slice(0, -1);
+    return clean;
+  } catch {
+    return url;
+  }
+}
+
 async function insertToPool(articles: RawArticle[]): Promise<number> {
   if (articles.length === 0) return 0;
+
+  // Deduplicate by normalized URL before inserting
+  const seen = new Set<string>();
+  articles = articles.filter((a) => {
+    const norm = normalizeUrl(a.url);
+    if (seen.has(norm)) return false;
+    seen.add(norm);
+    a.url = norm;
+    return true;
+  });
 
   const supabase = getServiceClient();
   const rows = articles.map((a) => ({
