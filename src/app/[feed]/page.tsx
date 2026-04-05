@@ -396,6 +396,51 @@ export default function FeedPage() {
     setDraggedTab(null);
   }, []);
 
+  // Mobile touch DnD — long press to start, drag to reorder
+  const touchState = useRef<{ id: string; startX: number; timer: ReturnType<typeof setTimeout> | null }>({ id: "", startX: 0, timer: null });
+
+  const handleTouchStart = useCallback((tabId: string, x: number) => {
+    touchState.current.timer = setTimeout(() => {
+      touchState.current.id = tabId;
+      setDraggedTab(tabId);
+    }, 400); // 400ms long press
+    touchState.current.startX = x;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Cancel long press if moved too much
+    if (touchState.current.timer && !touchState.current.id) {
+      const dx = Math.abs(e.touches[0].clientX - touchState.current.startX);
+      if (dx > 10) { clearTimeout(touchState.current.timer); touchState.current.timer = null; }
+      return;
+    }
+    if (!touchState.current.id) return;
+    e.preventDefault();
+    // Find which tab element we're over
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const tabEl = el?.closest("[data-tab-id]") as HTMLElement | null;
+    if (tabEl) {
+      const targetId = tabEl.dataset.tabId!;
+      if (targetId !== touchState.current.id) {
+        const currentOrder = allTabs.map((t) => t.id);
+        const fromIdx = currentOrder.indexOf(touchState.current.id);
+        const toIdx = currentOrder.indexOf(targetId);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          currentOrder.splice(fromIdx, 1);
+          currentOrder.splice(toIdx, 0, touchState.current.id);
+          saveTabOrder(currentOrder);
+        }
+      }
+    }
+  }, [allTabs, saveTabOrder]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchState.current.timer) { clearTimeout(touchState.current.timer); touchState.current.timer = null; }
+    touchState.current.id = "";
+    setDraggedTab(null);
+  }, []);
+
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar: logo | tabs | actions */}
@@ -414,11 +459,15 @@ export default function FeedPage() {
           {allTabs.map((tab) => (
             <div
               key={tab.id}
+              data-tab-id={tab.id}
               draggable
               onDragStart={(e) => handleDragStart(e, tab.id, tab.name, tab.icon)}
               onDragOver={(e) => handleDragOver(e, tab.id)}
               onDragEnd={handleDragEnd}
-              className={`group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40" : ""}`}
+              onTouchStart={(e) => handleTouchStart(tab.id, e.touches[0].clientX)}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className={`group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40 scale-105" : ""} transition-transform`}
             >
               <Link
                 href={`/${tab.id}`}

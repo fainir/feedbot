@@ -12,9 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MyFeed — Your Internet, Curated",
+  title: "MyFeed — Your Internet, Curated by AI",
   description:
-    "Describe what you care about in plain English. MyFeed scans the entire internet and delivers a personalized, real-time feed. Free to start.",
+    "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
   keywords: [
     "AI feed aggregator",
     "personalized news",
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL("https://myfeed.space"),
   openGraph: {
-    title: "MyFeed — Your Internet, Curated",
+    title: "MyFeed — Your Internet, Curated by AI",
     description:
-      "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
+      "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
     url: "https://myfeed.space",
     siteName: "MyFeed",
     locale: "en_US",
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyFeed — Your Internet, Curated",
+    title: "MyFeed — Your Internet, Curated by AI",
     description:
-      "Describe what you care about. MyFeed scans the internet and delivers a personalized feed — no RSS links needed.",
+      "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
     images: ["https://myfeed.space/og.png"],
   },
   robots: {
