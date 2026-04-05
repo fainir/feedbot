@@ -257,7 +257,15 @@ export function preFilterArticles(
     // Hard exclude
     if (excludeTerms.some((term) => text.includes(term))) return false;
 
-    // Require at least 1 include term
-    return includeTerms.some((term) => text.includes(term));
+    // Count matching include terms
+    const matchCount = includeTerms.filter((term) => text.includes(term)).length;
+
+    // Generic sources (DEV, Medium) need stronger match — at least 2 terms
+    // Trusted sources (Nature, NASA, SpaceNews) pass with 1 term
+    const srcLower = (article.source || "").toLowerCase();
+    const isGenericSource = srcLower.includes("dev community") || srcLower.includes("medium") || srcLower.includes("google");
+    const minMatches = isGenericSource ? 2 : 1;
+
+    return matchCount >= minMatches;
   });
 }
