@@ -399,9 +399,6 @@ export default function FeedPage() {
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
-          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
-          </Link>
           {allTabs.map((tab) => (
             <div
               key={tab.id}
@@ -447,9 +444,7 @@ export default function FeedPage() {
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>
-          {!user && (
-            <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign up</Link>
-          )}
+          <Link href="/explore" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Explore</Link>
           <div className="relative">
             <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
               <MoreVertical className="h-4 w-4 text-text-muted" />

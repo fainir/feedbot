@@ -74,9 +74,6 @@ export default function ExplorePage() {
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
-          <Link href="/explore" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
-            <span className="text-sm">🔍</span><span className="hidden sm:inline">Explore</span>
-          </Link>
           {TABS.map((tab) => (
             <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
               <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
@@ -87,9 +84,7 @@ export default function ExplorePage() {
           <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">
             <Plus className="h-3 w-3" /><span className="hidden sm:inline">Create feed</span><span className="sm:hidden">New</span>
           </button>
-          {user ? (
-            <Link href="/dashboard" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Dashboard</Link>
-          ) : (
+          {!user && (
             <Link href="/login?signup=true" className="text-[11px] font-semibold bg-text text-bg px-3 py-1 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">Sign in</Link>
           )}
           <div className="relative">
@@ -108,12 +103,12 @@ export default function ExplorePage() {
       <main id="main-content" className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Explore Feeds</h1>
-          <p className="text-text-muted text-sm sm:text-base">18 curated feeds. Thousands of sources. Or create your own.</p>
+          <p className="text-text-muted text-sm sm:text-base">Public feeds from the community. Follow any feed to add it to your tabs.</p>
         </div>
 
-        {/* Trending / popular prompts */}
+        {/* Quick create prompts */}
         <div className="mb-8">
-          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Popular custom feeds</h2>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Create a feed about...</h2>
           <div className="flex flex-wrap gap-2">
             {[
               "AI tools launching this week",
@@ -121,12 +116,8 @@ export default function ExplorePage() {
               "React Server Components tutorials",
               "Indie hackers building in public",
               "Climate tech breakthroughs",
-              "Remote job postings for developers",
               "Open source alternatives to SaaS",
-              "AI art and creative coding",
               "Rust programming language news",
-              "Web3 gaming and metaverse",
-              "Mental health for developers",
               "Space mission updates",
             ].map((prompt) => (
               <button key={prompt} onClick={() => { setNewPrompt(prompt); setShowNewFeed(true); }} className="text-xs px-3 py-1.5 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 hover:bg-bg-hover/50 transition-all">{prompt}</button>
@@ -134,9 +125,10 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Feed grid */}
-        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Curated feeds</h2>
+        {/* Unified public feeds grid — curated + community together */}
+        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Public feeds</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* System feeds */}
           {FEEDS.map((feed) => (
             <Link key={feed.id} href={`/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
               <div className="flex items-center gap-3 mb-2">
@@ -144,6 +136,21 @@ export default function ExplorePage() {
                 <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors">{feed.name}</h3>
               </div>
               <p className="text-xs text-text-muted leading-relaxed">{feed.description}</p>
+            </Link>
+          ))}
+
+          {/* Community public feeds */}
+          {communityFeeds.map((feed) => (
+            <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">📡</span>
+                <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
+              </div>
+              <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-1">{feed.description}</p>
+              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                <span>by {feed.creator}</span>
+                <span>{feed.followers} followers</span>
+              </div>
             </Link>
           ))}
 
@@ -157,40 +164,13 @@ export default function ExplorePage() {
           </button>
         </div>
 
-        {/* Community feeds */}
-        {!loadingCommunity && (
-          <div className="mt-10">
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Community feeds</h2>
-            {communityFeeds.length === 0 && (
-              <div className="p-6 rounded-xl border border-dashed border-border text-center">
-                <p className="text-sm text-text-muted mb-2">No community feeds yet</p>
-                <p className="text-xs text-text-muted">Be the first! Create a feed and check "Make this feed public" to share it with everyone.</p>
-              </div>
-            )}
-            {communityFeeds.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {communityFeeds.map((feed) => (
-                  <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
-                      <span className="text-[10px] text-text-muted bg-bg-hover px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{feed.followers} followers</span>
-                    </div>
-                    <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-2">{feed.description}</p>
-                    <p className="text-[10px] text-text-muted">by {feed.creator}</p>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Community CTA */}
+        {/* CTA */}
         <div className="mt-12 rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-6 sm:p-8 text-center">
           <h2 className="text-lg font-bold mb-2">Share your feeds with the world</h2>
-          <p className="text-sm text-text-muted mb-4 max-w-md mx-auto">Create a feed, make it public, and anyone can subscribe. Build the feed you wish existed.</p>
+          <p className="text-sm text-text-muted mb-4 max-w-md mx-auto">Create a feed, make it public, and anyone can discover and follow it.</p>
           <div className="flex flex-wrap justify-center gap-3">
             {user ? (
-              <Link href="/dashboard" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-4 w-4" />Go to dashboard</Link>
+              <button onClick={() => setShowNewFeed(true)} className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-4 w-4" />Create a public feed</button>
             ) : (
               <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"><Sparkles className="h-4 w-4" />Create your free account</Link>
             )}
