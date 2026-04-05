@@ -252,15 +252,17 @@ export default function FeedPage() {
         .finally(() => setLoading(false));
     } else {
       // Try loading as a community feed by slug
-      fetchBySlug(feedSlug)
+      fetch(`/api/public/feed-by-slug?slug=${encodeURIComponent(feedSlug)}&limit=50`)
+        .then((r) => {
+          if (!r.ok) { setNotFound(true); setLoading(false); return; }
+          return r.json();
+        })
         .then((d) => {
-          if (d.error) { setNotFound(true); }
-          else {
-            setItems(d.items || []);
-            setHasMore(d.hasMore || false);
-            setNextCursor(d.nextCursor || null);
-            if (d.feed) setCommunityFeed(d.feed);
-          }
+          if (!d || !d.items) { setNotFound(true); return; }
+          setItems(d.items);
+          setHasMore(d.hasMore || false);
+          setNextCursor(d.nextCursor || null);
+          if (d.feed) setCommunityFeed(d.feed);
         })
         .catch(() => setNotFound(true))
         .finally(() => setLoading(false));

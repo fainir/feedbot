@@ -158,25 +158,30 @@ export default function ExplorePage() {
         </div>
 
         {/* Community feeds */}
-        {communityFeeds.length > 0 && (
+        {!loadingCommunity && (
           <div className="mt-10">
             <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Community feeds</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {communityFeeds.map((feed) => (
-                <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
-                    <span className="text-[10px] text-text-muted bg-bg-hover px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{feed.followers} followers</span>
-                  </div>
-                  <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-2">{feed.description}</p>
-                  <p className="text-[10px] text-text-muted">by {feed.creator}</p>
-                </Link>
-              ))}
-            </div>
+            {communityFeeds.length === 0 && (
+              <div className="p-6 rounded-xl border border-dashed border-border text-center">
+                <p className="text-sm text-text-muted mb-2">No community feeds yet</p>
+                <p className="text-xs text-text-muted">Be the first! Create a feed and check "Make this feed public" to share it with everyone.</p>
+              </div>
+            )}
+            {communityFeeds.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {communityFeeds.map((feed) => (
+                  <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
+                      <span className="text-[10px] text-text-muted bg-bg-hover px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{feed.followers} followers</span>
+                    </div>
+                    <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-2">{feed.description}</p>
+                    <p className="text-[10px] text-text-muted">by {feed.creator}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-        {loadingCommunity && (
-          <div className="mt-10 text-center text-text-muted text-sm">Loading community feeds...</div>
         )}
 
         {/* Community CTA */}
