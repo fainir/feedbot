@@ -125,20 +125,9 @@ export default function FeedPage() {
   const feedSlug = (params.feed as string) || "tech";
   const activeTab = TABS.find((t) => t.id === feedSlug);
 
-  // 404 for invalid slugs — render not-found instead of defaulting
-  if (!activeTab) {
-    return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold mb-2">404</h1>
-          <p className="text-text-muted mb-6">Feed not found</p>
-          <Link href="/tech" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Go to feeds</Link>
-        </div>
-      </div>
-    );
-  }
-
   const [items, setItems] = useState<FeedItem[]>([]);
+  const [communityFeed, setCommunityFeed] = useState<{ id: string; name: string; description: string; creator: string; followers: number } | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -243,15 +232,40 @@ export default function FeedPage() {
     return fetch(url).then((r) => r.json());
   }, []);
 
+  const fetchBySlug = useCallback((slug: string, cursor?: string) => {
+    const url = `/api/public/feed-by-slug?slug=${encodeURIComponent(slug)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
+    return fetch(url).then((r) => r.json());
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     setItems([]);
     setNextCursor(null);
-    fetchFeed(activeTab.query)
-      .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, [activeTab.query, fetchFeed]);
+    setCommunityFeed(null);
+    setNotFound(false);
+
+    if (activeTab) {
+      // System tab — use query-based API
+      fetchFeed(activeTab.query)
+        .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
+        .catch(() => setItems([]))
+        .finally(() => setLoading(false));
+    } else {
+      // Try loading as a community feed by slug
+      fetchBySlug(feedSlug)
+        .then((d) => {
+          if (d.error) { setNotFound(true); }
+          else {
+            setItems(d.items || []);
+            setHasMore(d.hasMore || false);
+            setNextCursor(d.nextCursor || null);
+            if (d.feed) setCommunityFeed(d.feed);
+          }
+        })
+        .catch(() => setNotFound(true))
+        .finally(() => setLoading(false));
+    }
+  }, [feedSlug, activeTab, fetchFeed, fetchBySlug]);
 
   const dedupedItems = useMemo(() => {
     const seen = new Set<string>();
@@ -266,10 +280,25 @@ export default function FeedPage() {
   const loadMore = () => {
     if (loadingMore || !hasMore || !nextCursor) return;
     setLoadingMore(true);
-    fetchFeed(activeTab.query, nextCursor)
+    const fetchMore = activeTab ? fetchFeed(activeTab.query, nextCursor) : fetchBySlug(feedSlug, nextCursor);
+    fetchMore
       .then((d) => { setItems((p) => [...p, ...(d.items || [])]); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
       .finally(() => setLoadingMore(false));
   };
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-6xl font-bold mb-2">404</h1>
+          <p className="text-text-muted mb-6">Feed not found</p>
+          <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Explore feeds</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const displayName = activeTab?.name || communityFeed?.name || feedSlug;
 
   return (
     <div className="min-h-screen bg-bg text-text">
@@ -356,11 +385,12 @@ export default function FeedPage() {
       <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab.icon} {activeTab.name}</h2>
-            <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{activeTab.query}</p>
+            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab?.icon || "📡"} {displayName}</h2>
+            <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{activeTab?.query || communityFeed?.description || ""}</p>
+            {communityFeed && <p className="text-[10px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
           </div>
           <button
-            onClick={() => { setShowCustomize(true); setNewPrompt(activeTab.query); }}
+            onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
             className="flex-shrink-0 flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors mt-0.5"
           >
             <Sparkles className="h-3 w-3" />

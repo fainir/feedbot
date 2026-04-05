@@ -33,6 +33,7 @@ const TABS = FEEDS; // reuse for nav
 interface CommunityFeed {
   id: string;
   name: string;
+  slug: string;
   description: string;
   query_text: string;
   creator: string;
@@ -162,7 +163,7 @@ export default function ExplorePage() {
             <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Community feeds</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {communityFeeds.map((feed) => (
-                <Link key={feed.id} href={`/community/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
+                <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
                     <span className="text-[10px] text-text-muted bg-bg-hover px-2 py-0.5 rounded-full flex-shrink-0 ml-2">{feed.followers} followers</span>

@@ -88,6 +88,19 @@ export async function POST(request: NextRequest) {
     ? schedule
     : allowedSchedules[0];
 
+  // Generate URL-safe slug from name
+  const baseSlug = name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").slice(0, 50);
+  let feedSlug = baseSlug;
+  // Check for conflicts with existing slugs
+  const { data: existingSlug } = await serviceClient
+    .from("feeds")
+    .select("id")
+    .eq("slug", baseSlug)
+    .maybeSingle();
+  if (existingSlug) {
+    feedSlug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+  }
+
   // Generate search plan upfront so the cron job can use it immediately
   let searchPlan = null;
   try {
@@ -109,6 +122,7 @@ export async function POST(request: NextRequest) {
       notify_whatsapp: notify_whatsapp ?? false,
       is_active: true,
       is_public: is_public ?? false,
+      slug: feedSlug,
       last_refreshed_at: null,
       ...(searchPlan ? { search_plan: searchPlan } : {}),
     })

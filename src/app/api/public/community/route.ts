@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   // Get all public, active feeds with their creator info
   const { data: feeds, error } = await supabase
     .from("feeds")
-    .select("id, name, query_text, description, is_public, created_at, user_id, profiles!inner(name, email)")
+    .select("id, name, slug, query_text, description, is_public, created_at, user_id, profiles!inner(name, email)")
     .eq("is_public", true)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
     return {
       id: f.id,
       name: f.name,
+      slug: f.slug || f.id,
       description: f.description || f.query_text,
       query_text: f.query_text,
       creator: profile?.name || profile?.email?.split("@")[0] || "Anonymous",
