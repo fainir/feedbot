@@ -210,6 +210,11 @@ export default function FeedPage() {
     return fetch(url).then((r) => r.json());
   }, []);
 
+  const fetchBySlug = useCallback((slug: string, cursor?: string) => {
+    const url = `/api/public/feed-by-slug?slug=${encodeURIComponent(slug)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
+    return fetch(url).then((r) => r.json());
+  }, []);
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     setNewArticlesAvailable(0);
@@ -222,11 +227,6 @@ export default function FeedPage() {
       .catch(() => setItems([]))
       .finally(() => { setLoading(false); setRefreshing(false); });
   }, [activeTab, feedSlug, fetchFeed, fetchBySlug]);
-
-  const fetchBySlug = useCallback((slug: string, cursor?: string) => {
-    const url = `/api/public/feed-by-slug?slug=${encodeURIComponent(slug)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
-    return fetch(url).then((r) => r.json());
-  }, []);
 
   useEffect(() => {
     setLoading(true);
