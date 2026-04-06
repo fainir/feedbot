@@ -53,6 +53,7 @@ export default function ExplorePage() {
   const [communityFeeds, setCommunityFeeds] = useState<CommunityFeed[]>([]);
   const [loadingCommunity, setLoadingCommunity] = useState(true);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"default" | "popular" | "newest">("default");
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { createClient().auth.getUser().then(({ data: { user } }) => setUser(user)); }, []);
@@ -137,6 +138,13 @@ export default function ExplorePage() {
         {/* Unified public feeds grid — curated + community together */}
         <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Public feeds</h2>
         <input type="text" placeholder="Search feeds..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-bg-hover border border-border rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-text/50" aria-label="Search feeds" />
+        <div className="flex items-center gap-2 mb-4">
+          {(["default", "popular", "newest"] as const).map((s) => (
+            <button key={s} onClick={() => setSort(s)} className={`text-xs px-3 py-1 rounded-full ${sort === s ? "bg-text text-bg" : "border border-border text-text-muted hover:text-text"}`}>
+              {s === "default" ? "All" : s === "popular" ? "Most popular" : "Newest"}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* System feeds */}
           {FEEDS.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (
@@ -146,22 +154,46 @@ export default function ExplorePage() {
                 <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors">{feed.name}</h3>
               </div>
               <p className="text-xs text-text-muted leading-relaxed">{feed.description}</p>
+              <p className="text-[10px] text-text-muted mt-2">Curated · Updated every 15 min</p>
             </Link>
           ))}
 
           {/* Community public feeds */}
-          {communityFeeds.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (
-            <Link key={feed.id} href={`/${feed.slug || feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl">📡</span>
-                <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
-              </div>
-              <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-1">{feed.description}</p>
-              <div className="flex items-center gap-2 text-[10px] text-text-muted">
-                <span>by {feed.creator}</span>
-                <span>{feed.followers} followers</span>
-              </div>
-            </Link>
+          {communityFeeds
+            .filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase()))
+            .sort((a, b) => {
+              if (sort === "popular") return b.followers - a.followers;
+              if (sort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              return 0;
+            })
+            .map((feed) => (
+            <div key={feed.id} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all relative">
+              <Link href={`/${feed.slug || feed.id}`} className="block">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl">📡</span>
+                  <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors truncate">{feed.name}</h3>
+                </div>
+                <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-1">{feed.description}</p>
+                <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                  <span>by {feed.creator}</span>
+                  <span>{feed.followers} followers</span>
+                </div>
+              </Link>
+              {user && (
+                <button
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await fetch(`/api/feeds/${feed.id}/follow`, { method: "POST" });
+                      setCommunityFeeds((prev) => prev.map((f) => f.id === feed.id ? { ...f, followers: f.followers + 1 } : f));
+                    } catch {}
+                  }}
+                  className="absolute top-3 right-3 text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-colors"
+                >
+                  + Follow
+                </button>
+              )}
+            </div>
           ))}
 
           {/* Create custom feed card */}

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
+import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, timeAgo } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -18,29 +19,6 @@ interface FeedItem {
   source: string;
   image_url?: string;
   publishedAt: string;
-}
-
-// ─── Helpers ───
-
-function cleanSummary(text: string): string {
-  return text
-    .replace(/Continue reading on [^»]+»/g, "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/^(submitted by \/u\/\w+\s*\[link\]\s*\[comments\])/i, "")
-    .replace(/Article URL: https?:\/\/\S+/g, "")
-    .replace(/Comments URL: https?:\/\/\S+/g, "")
-    .replace(/Points: \d+ # Comments: \d+/g, "")
-    .trim();
-}
-
-function timeAgo(dateStr: string): string {
-  const s = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // Gradient fallback for articles without cover images
@@ -59,66 +37,6 @@ function getGradient(title: string): string {
   let hash = 0;
   for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
-
-function cleanSourceDisplay(raw: string): string {
-  // Reddit feeds: extract subreddit name
-  if (/top scoring links|^r\/|\/r\//i.test(raw)) {
-    const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
-    if (match) return "r/" + match[1];
-    const colonMatch = raw.match(/top scoring links\s*:\s*(.+)/i);
-    if (colonMatch) return "r/" + colonMatch[1].trim();
-    return "Reddit";
-  }
-  // Known source mappings
-  const KNOWN: Record<string, string> = {
-    "Hacker News: Front Page": "Hacker News",
-    "Hacker News: Newest": "Hacker News",
-    "DEV Community": "DEV Community",
-  };
-  if (KNOWN[raw]) return KNOWN[raw];
-  // Strip after common separators
-  let name = raw.split(/\s+[-–]\s+|\s+\|\s+|\s+::\s+/)[0].trim();
-  if (name.length > 30) name = name.slice(0, 27) + "...";
-  return name;
-}
-
-function getSourceInfo(raw: string): { name: string; icon: string; color: string } {
-  const s = raw.toLowerCase();
-  const cleaned = cleanSourceDisplay(raw);
-  if (s.includes("hacker news") || s.includes("hnrss"))
-    return { name: "Hacker News", icon: "https://news.ycombinator.com/favicon.ico", color: "bg-orange-500/10 text-orange-400" };
-  if (s.includes("reddit") || s.startsWith("r/") || s.includes("everything science") || s.includes("the community for") || s.includes("top scoring links"))
-    return { name: cleaned, icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
-  if (s.includes("medium"))
-    return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-white/10 text-white" };
-  if (s.includes("dev community") || s.includes("dev.to"))
-    return { name: "DEV", icon: "https://dev.to/favicon.ico", color: "bg-indigo-500/10 text-indigo-400" };
-  if (s.includes("ars technica"))
-    return { name: "Ars Technica", icon: "https://cdn.arstechnica.net/favicon.ico", color: "bg-red-500/10 text-red-400" };
-  if (s.includes("the verge"))
-    return { name: "The Verge", icon: "https://www.theverge.com/favicon.ico", color: "bg-purple-500/10 text-purple-400" };
-  if (s.includes("techcrunch"))
-    return { name: "TechCrunch", icon: "https://techcrunch.com/favicon.ico", color: "bg-green-500/10 text-green-400" };
-  if (s.includes("bloomberg"))
-    return { name: "Bloomberg", icon: "", color: "bg-blue-500/10 text-blue-400" };
-  if (s.includes("entrepreneur"))
-    return { name: "Entrepreneur", icon: "", color: "bg-red-500/10 text-red-400" };
-  if (s.includes("phys.org"))
-    return { name: "Phys.org", icon: "", color: "bg-cyan-500/10 text-cyan-400" };
-  if (s.includes("nature"))
-    return { name: "Nature", icon: "", color: "bg-blue-500/10 text-blue-400" };
-  if (s.includes("sciencedaily"))
-    return { name: "ScienceDaily", icon: "", color: "bg-teal-500/10 text-teal-400" };
-  if (s.includes("google news") || s.includes("- google") || s.includes("artificial intelligence") || s.includes("machine learning") || s.includes("big tech") || s.includes("startup funding") || s.includes("software engineering") || s.includes("scientific discoveries"))
-    return { name: "News", icon: "", color: "bg-blue-500/10 text-blue-400" };
-  return { name: cleaned, icon: "", color: "bg-text/5 text-text-muted" };
-}
-
-function cleanTitle(title: string): string {
-  return title
-    .replace(/\s*[-–|]\s*(Google News|Bloomberg\.com|Bioengineer\.org|Pulse 2\.0|technologymagazine\.com|Yahoo Finance|ADWEEK|TradingView|SpaceNews|Entrepreneur|Washington Technology|Sports Video Group|Stock Titan|Physics World|Focus2Move|KIMT|E3-Magazin|Global Design News|Community Impact \| News|Ocean News & Technology|EMJ|Professional Carwash Magazine|EquiManagement|Black PR Wire|carwash\.com|The Cannata Report -).*$/i, "")
-    .trim();
 }
 
 const TABS = [
@@ -177,6 +95,7 @@ export default function FeedPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -291,6 +210,19 @@ export default function FeedPage() {
     return fetch(url).then((r) => r.json());
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    setNewArticlesAvailable(0);
+    setLoading(true);
+    setItems([]);
+    setNextCursor(null);
+    const fetcher = activeTab ? fetchFeed(activeTab.query) : fetchBySlug(feedSlug);
+    fetcher
+      .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
+      .catch(() => setItems([]))
+      .finally(() => { setLoading(false); setRefreshing(false); });
+  }, [activeTab, feedSlug, fetchFeed, fetchBySlug]);
+
   const fetchBySlug = useCallback((slug: string, cursor?: string) => {
     const url = `/api/public/feed-by-slug?slug=${encodeURIComponent(slug)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
     return fetch(url).then((r) => r.json());
@@ -393,6 +325,16 @@ export default function FeedPage() {
   }
 
   const displayName = activeTab?.name || communityFeed?.name || feedSlug;
+
+  const handleShareFeed = useCallback(async () => {
+    const url = `https://myfeed.space/${feedSlug}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: `${displayName} — MyFeed`, url }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied!", "success");
+    }
+  }, [feedSlug, displayName, toast]);
 
   // Build combined tab list: system tabs + user feeds, respecting order and hidden
   const allTabs = useMemo(() => {
@@ -587,6 +529,12 @@ export default function FeedPage() {
                   </Link>
                 )}
                 {user && (
+                  <Link href="/bookmarks" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
+                    <Bookmark className="h-4 w-4" />
+                    Bookmarks
+                  </Link>
+                )}
+                {user && (
                   <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
                     <LogIn className="h-4 w-4" />
                     Sign out
@@ -607,26 +555,41 @@ export default function FeedPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab?.icon || "📡"} {displayName}</h2>
-            <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">{activeTab?.query || communityFeed?.description || ""}</p>
+            <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">
+              {activeTab?.query || communityFeed?.description || ""}
+              {!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}
+            </p>
             {communityFeed && <p className="text-[10px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
           </div>
-          <button
-            onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
-            className="flex-shrink-0 flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors mt-0.5"
-          >
-            <Sparkles className="h-3 w-3" />
-            Customize
-          </button>
+          <div className="flex-shrink-0 flex items-center gap-1 mt-0.5">
+            <button onClick={handleRefresh} className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Refresh feed" disabled={refreshing}>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+            <button onClick={handleShareFeed} className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Share feed">
+              <Share2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
+              className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors"
+            >
+              <Sparkles className="h-3 w-3" />
+              Customize
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Feed */}
-      <main id="main-content" className="max-w-4xl mx-auto px-3 pb-6">
-        {newArticlesAvailable > 0 && (
-          <button onClick={() => { setNewArticlesAvailable(0); setLoading(true); setItems([]); setNextCursor(null); if (activeTab) { fetchFeed(activeTab.query).then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); } }} className="sticky top-12 z-40 mx-auto block bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold shadow-lg hover:opacity-90 transition-opacity mt-2">
+      {/* Fixed new articles toast */}
+      {newArticlesAvailable > 0 && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
+          <button onClick={handleRefresh} className="bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold shadow-lg hover:opacity-90 transition-all">
             {newArticlesAvailable} new {newArticlesAvailable === 1 ? "article" : "articles"} — tap to refresh
           </button>
-        )}
+        </div>
+      )}
+
+      {/* Feed */}
+      <main id="main-content" className="max-w-4xl mx-auto px-3 pb-6">
         {loading ? (
           <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">

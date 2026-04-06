@@ -7,6 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
+import { cleanSummary, cleanTitle, getSourceInfo, timeAgo } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -48,19 +49,6 @@ const FEED_NAME_MAP: Record<string, string> = {
   data: "Data", mobile: "Mobile", marketing: "Marketing",
 };
 
-function cleanSummary(text: string): string {
-  return text.replace(/Continue reading on [^»]+»/g, "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").replace(/^(submitted by \/u\/\w+\s*\[link\]\s*\[comments\])/i, "").replace(/Article URL: https?:\/\/\S+/g, "").replace(/Comments URL: https?:\/\/\S+/g, "").replace(/Points: \d+ # Comments: \d+/g, "").trim();
-}
-
-function timeAgo(dateStr: string): string {
-  const s = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 const GRADIENTS = [
   "from-blue-900/40 to-blue-800/20",
   "from-purple-900/40 to-purple-800/20",
@@ -76,22 +64,6 @@ function getGradient(title: string): string {
   let hash = 0;
   for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
-
-function cleanTitle(title: string): string {
-  return title.replace(/\s*[-–|]\s*(Google News|Bloomberg\.com|Bioengineer\.org|Pulse 2\.0|technologymagazine\.com|Yahoo Finance|ADWEEK|TradingView|SpaceNews|Entrepreneur|Washington Technology|Sports Video Group|Stock Titan|Physics World|Focus2Move|KIMT|E3-Magazin|Global Design News|Community Impact \| News|Ocean News & Technology|EMJ|Professional Carwash Magazine|EquiManagement|Black PR Wire|carwash\.com|The Cannata Report -).*$/i, "").trim();
-}
-
-function getSourceInfo(raw: string): { name: string; icon: string; color: string } {
-  const s = raw.toLowerCase();
-  if (s.includes("hacker news") || s.includes("hnrss")) return { name: "Hacker News", icon: "https://news.ycombinator.com/favicon.ico", color: "bg-orange-500/10 text-orange-400" };
-  if (s.includes("reddit") || s.includes("everything science") || s.includes("the community for")) return { name: raw.includes("/r/") ? "r/" + (raw.split("/r/")[1]?.split("/")[0]?.split("?")[0] || "reddit") : "Reddit", icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
-  if (s.includes("medium")) return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-white/10 text-white" };
-  if (s.includes("dev community") || s.includes("dev.to")) return { name: "DEV", icon: "https://dev.to/favicon.ico", color: "bg-indigo-500/10 text-indigo-400" };
-  if (s.includes("ars technica")) return { name: "Ars Technica", icon: "https://cdn.arstechnica.net/favicon.ico", color: "bg-red-500/10 text-red-400" };
-  if (s.includes("the verge")) return { name: "The Verge", icon: "https://www.theverge.com/favicon.ico", color: "bg-purple-500/10 text-purple-400" };
-  if (s.includes("techcrunch")) return { name: "TechCrunch", icon: "https://techcrunch.com/favicon.ico", color: "bg-green-500/10 text-green-400" };
-  return { name: raw.length > 25 ? raw.slice(0, 22) + "..." : raw, icon: "", color: "bg-text/5 text-text-muted" };
 }
 
 const DEFAULT_ENABLED = new Set(FEEDS.map((f) => f.id));
@@ -249,6 +221,7 @@ export default function ForYouPage() {
                 {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
                 {mounted && <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{theme === "dark" ? "Light mode" : "Dark mode"}</button>}
                 {!user && <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign up / Sign in</Link>}
+                {user && <Link href="/bookmarks" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><Bookmark className="h-4 w-4" />Bookmarks</Link>}
                 {user && <button onClick={() => { setShowEmailPrefs(true); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><Mail className="h-4 w-4" />Email digest</button>}
                 {user && <button onClick={async () => { const supabase = createClient(); await supabase.auth.signOut(); setUser(null); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><LogIn className="h-4 w-4" />Sign out</button>}
                 <div className="border-t border-border my-1" />
@@ -289,7 +262,7 @@ export default function ForYouPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ {user ? "For You" : "Discover"}</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` · From ${sc} sources` : ""; })()}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -354,7 +327,6 @@ export default function ForYouPage() {
                           {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
-                        <span className="text-[10px] text-text-muted/70">via {(() => { try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.source; } })()}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>
                       </div>
                       <h2 className="font-semibold text-text leading-snug text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
