@@ -195,6 +195,21 @@ export default function ForYouPage() {
     if (navigator.share) { try { await navigator.share({ title: item.title, url: item.url }); } catch {} } else { await navigator.clipboard.writeText(item.url); }
   }, []);
 
+  const handleHeroSubmit = useCallback(() => {
+    const prompt = newPrompt.trim();
+    if (!prompt) {
+      setShowNewFeed(true);
+      return;
+    }
+
+    if (user) {
+      setShowNewFeed(true);
+      return;
+    }
+
+    window.location.href = `/login?signup=true&prompt=${encodeURIComponent(prompt)}`;
+  }, [newPrompt, user]);
+
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar — fixed so it never scrolls away */}
@@ -253,18 +268,17 @@ export default function ForYouPage() {
                 className="min-w-0 w-full bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50 sm:flex-1"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && newPrompt.trim()) setShowNewFeed(true); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleHeroSubmit(); }}
               />
               <button
-                onClick={() => { if (newPrompt.trim()) setShowNewFeed(true); }}
+                onClick={handleHeroSubmit}
                 className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-3 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto sm:py-2.5"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span className="sm:hidden">Create feed</span>
-                <span className="hidden sm:inline">Create feed</span>
+                <span>{user ? "Create feed" : "Sign up to create"}</span>
               </button>
             </div>
-            <p className="text-[10px] text-text-muted">Free. No signup required to browse. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to save your feeds.</p>
+            <p className="text-[10px] text-text-muted">Browse without signing up. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to create and save your feeds.</p>
           </div>
         </div>
       )}
