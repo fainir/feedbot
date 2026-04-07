@@ -501,7 +501,7 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-60 transition-all hover:opacity-100 focus-visible:opacity-100 ${
+                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-all pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
                   feedSlug === tab.id
                     ? "text-text/70 hover:bg-text/10 hover:text-text"
                     : "text-text-muted hover:bg-bg-hover hover:text-text"
