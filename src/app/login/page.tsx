@@ -21,7 +21,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error") === "auth" ? "Authentication failed. Please check your login details." : searchParams.get("error_description") || searchParams.get("error") || null);
   const [message, setMessage] = useState<string | null>(null);
   const pendingPrompt = searchParams.get("prompt");
 
@@ -95,10 +95,21 @@ function LoginContent() {
       ? `${window.location.origin}/auth/callback?prompt=${encodeURIComponent(pendingPrompt)}`
       : `${window.location.origin}/auth/callback`;
 
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: redirectUrl },
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      },
     });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    }
   }
 
   return (

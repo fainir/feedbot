@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-hover: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --done: #3fb950;
+  --active: #58a6ff;
+  --blocked: #f85149;
+  --pending: #484f58;
+  --milestone: #bc8cff;
+  --today: #d29922;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Header */
+.header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.header .meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 4px;
+}
+.controls button {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+}
+.controls button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.controls button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Legend */
+.legend {
+  padding: 10px 28px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.legend-diamond {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+}
+.legend-dot.done, .legend-diamond.done { background: var(--done); }
+.legend-dot.active { background: var(--active); }
+.legend-dot.blocked { background: var(--blocked); }
+.legend-dot.pending { background: var(--pending); }
+.legend-diamond.milestone { background: var(--milestone); }
+
+/* Timeline container */
+.timeline-wrap {
+  overflow-x: auto;
+  padding: 20px 28px 40px;
+}
+.timeline {
+  position: relative;
+  min-width: 100%;
+}
+
+/* Date header row */
+.date-header {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 5;
+}
+.date-cell {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px 0;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.date-cell.today {
+  color: var(--today);
+  font-weight: 700;
+}
+
+/* Task rows */
+.task-row {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  position: relative;
+}
+.task-label {
+  width: 200px;
+  min-width: 200px;
+  font-size: 13px;
+  font-weight: 500;
+  padding-right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.task-track {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+.task-bar {
+  position: absolute;
+  height: 22px;
+  top: 9px;
+  border-radius: 4px;
+  min-width: 6px;
+  transition: opacity .15s;
+}
+.task-bar:hover {
+  opacity: 0.85;
+  outline: 2px solid rgba(255,255,255,0.2);
+}
+.task-bar.done { background: var(--done); }
+.task-bar.active { background: var(--active); }
+.task-bar.blocked { background: var(--blocked); }
+.task-bar.pending { background: var(--pending); }
+
+/* Milestones */
+.milestone-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 13px;
+  transform: rotate(45deg);
+  background: var(--milestone);
+  z-index: 2;
+  cursor: default;
+}
+.milestone-marker:hover {
+  outline: 2px solid rgba(255,255,255,0.3);
+}
+
+/* Today line */
+.today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--today);
+  z-index: 3;
+  pointer-events: none;
+}
+.today-line::after {
+  content: 'TODAY';
+  position: absolute;
+  top: -18px;
+  left: -16px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--today);
+  letter-spacing: 0.5px;
+}
+
+/* Dependencies */
+.dep-svg {
+  position: absolute;
+  top: 0;
+  left: 200px;
+  pointer-events: none;
+  z-index: 1;
+}
+.dep-arrow {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.5;
+}
+.dep-arrowhead {
+  fill: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Phase header */
+.phase-row {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+.phase-label {
+  width: 200px;
+  min-width: 200px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Tooltip */
+.tooltip {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  max-width: 260px;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.tooltip.visible { display: block; }
+.tooltip strong { display: block; margin-bottom: 4px; font-size: 13px; }
+.tooltip .tt-dates { color: var(--text-muted); margin-top: 4px; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .task-label, .phase-label { width: 120px; min-width: 120px; font-size: 11px; }
+  .header { padding: 16px; }
+  .timeline-wrap { padding: 12px 16px 30px; }
+}
+
+/* Print */
+@media print {
+  body { background: #fff; color: #1a1a1a; }
+  .task-bar.done { background: #22863a; }
+  .task-bar.active { background: #0366d6; }
+  .task-bar.blocked { background: #d73a49; }
+  .task-bar.pending { background: #959da5; }
+  .controls { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TIMELINE_DATA_START -->
+<script id="timeline-data" type="application/json">
+{
+  "project": "MyFeed",
+  "updatedAt": "2026-04-03T15:30:00Z",
+  "phases": [
+    {
+      "name": "Core Product",
+      "tasks": [
+        { "id": "t1", "title": "RSS scanner", "start": "2026-03-28", "end": "2026-03-30", "status": "done" },
+        { "id": "t2", "title": "AI scoring", "start": "2026-03-28", "end": "2026-03-31", "status": "done" },
+        { "id": "t3", "title": "Article pool", "start": "2026-03-29", "end": "2026-04-01", "status": "done", "dependsOn": ["t1"] },
+        { "id": "t4", "title": "Feed creation", "start": "2026-03-30", "end": "2026-04-01", "status": "done", "dependsOn": ["t2", "t3"] },
+        { "id": "t5", "title": "Prompt intelligence", "start": "2026-03-31", "end": "2026-04-02", "status": "done", "dependsOn": ["t4"] }
+      ]
+    },
+    {
+      "name": "User Experience",
+      "tasks": [
+        { "id": "t6", "title": "18 public tabs", "start": "2026-03-30", "end": "2026-04-01", "status": "done" },
+        { "id": "t7", "title": "Dark theme", "start": "2026-03-31", "end": "2026-04-01", "status": "done" },
+        { "id": "t8", "title": "Reactions", "start": "2026-04-01", "end": "2026-04-02", "status": "done", "dependsOn": ["t6"] },
+        { "id": "t9", "title": "Bookmarks", "start": "2026-04-01", "end": "2026-04-02", "status": "done", "dependsOn": ["t6"] },
+        { "id": "t10", "title": "Infinite scroll", "start": "2026-04-02", "end": "2026-04-03", "status": "done", "dependsOn": ["t8"] },
+        { "id": "t11", "title": "Layout tuning", "start": "2026-04-02", "end": "2026-04-03", "status": "done", "dependsOn": ["t7"] }
+      ]
+    },
+    {
+      "name": "Infrastructure",
+      "tasks": [
+        { "id": "t12", "title": "Railway deployment", "start": "2026-03-29", "end": "2026-03-31", "status": "done" },
+        { "id": "t13", "title": "Auto-cron", "start": "2026-03-31", "end": "2026-04-01", "status": "done", "dependsOn": ["t12"] },
+        { "id": "t14", "title": "SSL setup", "start": "2026-04-01", "end": "2026-04-02", "status": "done", "dependsOn": ["t12"] },
+        { "id": "t15", "title": "Domain setup", "start": "2026-04-01", "end": "2026-04-02", "status": "done", "dependsOn": ["t14"] }
+      ]
+    },
+    {
+      "name": "Revenue Pipeline",
+      "tasks": [
+        { "id": "t16", "title": "Lemon Squeezy integration", "start": "2026-04-03", "end": "2026-04-06", "status": "active", "dependsOn": ["t5", "t15"] },
+        { "id": "t17", "title": "Pricing page", "start": "2026-04-04", "end": "2026-04-07", "status": "active", "dependsOn": ["t16"] },
+        { "id": "t18", "title": "Checkout flow", "start": "2026-04-06", "end": "2026-04-09", "status": "active", "dependsOn": ["t16"] },
+        { "id": "t19", "title": "Webhook testing", "start": "2026-04-08", "end": "2026-04-10", "status": "active", "dependsOn": ["t18"] }
+      ]
+    },
+    {
+      "name": "Growth & Analytics",
+      "tasks": [
+        { "id": "t20", "title": "GA4 setup", "start": "2026-04-05", "end": "2026-04-07", "status": "pending" },
+        { "id": "t21", "title": "Mixpanel events", "start": "2026-04-06", "end": "2026-04-09", "status": "pending", "dependsOn": ["t20"] },
+        { "id": "t22", "title": "Email digests", "start": "2026-04-08", "end": "2026-04-12", "status": "pending" },
+        { "id": "t23", "title": "Landing page polish", "start": "2026-04-10", "end": "2026-04-13", "status": "pending" },
+        { "id": "t24", "title": "SEO", "start": "2026-04-12", "end": "2026-04-15", "status": "pending", "dependsOn": ["t23"] }
+      ]
+    },
+    {
+      "name": "Scale & Polish",
+      "tasks": [
+        { "id": "t25", "title": "PWA", "start": "2026-04-12", "end": "2026-04-16", "status": "pending" },
+        { "id": "t26", "title": "Additional auth", "start": "2026-04-14", "end": "2026-04-18", "status": "pending" },
+        { "id": "t27", "title": "Feed sharing", "start": "2026-04-16", "end": "2026-04-22", "status": "pending", "dependsOn": ["t25"] },
+        { "id": "t28", "title": "Dashboard cleanup", "start": "2026-04-20", "end": "2026-04-26", "status": "pending" },
+        { "id": "t29", "title": "Legal pages", "start": "2026-04-25", "end": "2026-04-30", "status": "pending" }
+      ]
+    }
+  ],
+  "milestones": [
+    { "title": "MVP Launch", "date": "2026-04-02", "status": "done" },
+    { "title": "First Paying Customer", "date": "2026-04-10", "status": "pending" },
+    { "title": "100 Users", "date": "2026-04-20", "status": "pending" },
+    { "title": "$500 MRR", "date": "2026-05-15", "status": "pending" }
+  ]
+}
+</script>
+<!-- TIMELINE_DATA_END -->
+
+<div class="header">
+  <div>
+    <h1 id="project-name"></h1>
+    <div class="meta" id="updated-at"></div>
+  </div>
+  <div class="controls">
+    <button type="button" data-zoom="day">Day</button>
+    <button type="button" data-zoom="week" class="active">Week</button>
+    <button type="button" data-zoom="month">Month</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot done"></div>Done</div>
+  <div class="legend-item"><div class="legend-dot active"></div>Active</div>
+  <div class="legend-item"><div class="legend-dot blocked"></div>Blocked</div>
+  <div class="legend-item"><div class="legend-dot pending"></div>Pending</div>
+  <div class="legend-item"><div class="legend-diamond milestone"></div>Milestone</div>
+</div>
+
+<div class="timeline-wrap">
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <strong id="tt-title"></strong>
+  <div id="tt-status"></div>
+  <div class="tt-dates" id="tt-dates"></div>
+</div>
+
+<script>
+(function() {
+  var data = JSON.parse(document.getElementById('timeline-data').textContent);
+  document.getElementById('project-name').textContent = data.project || 'Project Timeline';
+  document.getElementById('updated-at').textContent = 'Updated ' + new Date(data.updatedAt).toLocaleString();
+
+  var zoomConfig = { day: 40, week: 18, month: 5 };
+  var currentZoom = 'week';
+
+  // Collect all dates
+  function parseDate(s) { return new Date(s + 'T00:00:00'); }
+  function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+  function formatDate(d) {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  var allDates = [];
+  (data.phases || []).forEach(function(p) {
+    (p.tasks || []).forEach(function(t) {
+      allDates.push(parseDate(t.start));
+      allDates.push(parseDate(t.end));
+    });
+  });
+  (data.milestones || []).forEach(function(m) { allDates.push(parseDate(m.date)); });
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  allDates.push(today);
+
+  var minDate = new Date(Math.min.apply(null, allDates));
+  var maxDate = new Date(Math.max.apply(null, allDates));
+  minDate.setDate(minDate.getDate() - 2);
+  maxDate.setDate(maxDate.getDate() + 3);
+  var totalDays = daysBetween(minDate, maxDate) + 1;
+
+  // Build task map for dependencies
+  var taskMap = {};
+  var taskIndex = 0;
+  (data.phases || []).forEach(function(p) {
+    taskIndex++; // phase row
+    (p.tasks || []).forEach(function(t) {
+      taskMap[t.id] = { task: t, rowIndex: taskIndex };
+      taskIndex++;
+    });
+  });
+
+  function render() {
+    var cellWidth = zoomConfig[currentZoom];
+    var labelWidth = 200;
+    var trackWidth = totalDays * cellWidth;
+    var el = document.getElementById('timeline');
+    el.innerHTML = '';
+
+    // Date header
+    var headerHtml = '<div class="date-header" style="padding-left:' + labelWidth + 'px">';
+    for (var d = 0; d < totalDays; d++) {
+      var dt = new Date(minDate);
+      dt.setDate(dt.getDate() + d);
+      var isToday = dt.getTime() === today.getTime();
+      var label = '';
+      if (currentZoom === 'day') {
+        label = formatDate(dt);
+      } else if (currentZoom === 'week' && dt.getDay() === 1) {
+        label = formatDate(dt);
+      } else if (currentZoom === 'month' && dt.getDate() === 1) {
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        label = months[dt.getMonth()] + ' ' + dt.getFullYear();
+      }
+      headerHtml += '<div class="date-cell' + (isToday ? ' today' : '') + '" style="width:' + cellWidth + 'px">' + label + '</div>';
+    }
+    headerHtml += '</div>';
+    el.innerHTML += headerHtml;
+
+    // Rows container
+    var rowsHtml = '<div class="rows" style="position:relative">';
+    var rowIdx = 0;
+
+    (data.phases || []).forEach(function(phase) {
+      rowsHtml += '<div class="phase-row"><div class="phase-label">' + phase.name + '</div></div>';
+      rowIdx++;
+
+      (phase.tasks || []).forEach(function(t) {
+        var startDay = daysBetween(minDate, parseDate(t.start));
+        var duration = daysBetween(parseDate(t.start), parseDate(t.end));
+        var left = startDay * cellWidth;
+        var width = Math.max(duration * cellWidth, 6);
+
+        rowsHtml += '<div class="task-row">';
+        rowsHtml += '<div class="task-label" title="' + t.title + '">' + t.title + '</div>';
+        rowsHtml += '<div class="task-track" style="width:' + trackWidth + 'px">';
+        rowsHtml += '<div class="task-bar ' + t.status + '" style="left:' + left + 'px;width:' + width + 'px" data-title="' + t.title + '" data-status="' + t.status + '" data-start="' + t.start + '" data-end="' + t.end + '"></div>';
+        rowsHtml += '</div></div>';
+        rowIdx++;
+      });
+    });
+
+    // Today line
+    var todayOffset = daysBetween(minDate, today) * cellWidth;
+    rowsHtml += '<div class="today-line" style="left:' + (labelWidth + todayOffset) + 'px"></div>';
+
+    // Milestones
+    (data.milestones || []).forEach(function(m) {
+      var mDay = daysBetween(minDate, parseDate(m.date));
+      var mLeft = labelWidth + mDay * cellWidth - 7;
+      rowsHtml += '<div class="milestone-marker" style="left:' + mLeft + 'px;top:0" data-title="' + m.title + '" data-date="' + m.date + '" data-status="' + m.status + '"></div>';
+    });
+
+    // Dependency arrows (SVG)
+    var svgHeight = rowIdx * 40 + 50;
+    var depSvg = '<svg class="dep-svg" width="' + trackWidth + '" height="' + svgHeight + '">';
+    var defs = '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon class="dep-arrowhead" points="0 0, 8 3, 0 6"/></marker></defs>';
+    depSvg += defs;
+
+    (data.phases || []).forEach(function(phase) {
+      (phase.tasks || []).forEach(function(t) {
+        if (!t.dependsOn) return;
+        var toInfo = taskMap[t.id];
+        if (!toInfo) return;
+        t.dependsOn.forEach(function(depId) {
+          var fromInfo = taskMap[depId];
+          if (!fromInfo) return;
+          var fromEnd = daysBetween(minDate, parseDate(fromInfo.task.end));
+          var toStart = daysBetween(minDate, parseDate(toInfo.task.start));
+          var x1 = fromEnd * cellWidth;
+          var y1 = fromInfo.rowIndex * 40 + 20;
+          var x2 = toStart * cellWidth;
+          var y2 = toInfo.rowIndex * 40 + 20;
+          var mx = (x1 + x2) / 2;
+          depSvg += '<path class="dep-arrow" d="M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2 + '" marker-end="url(#arrowhead)"/>';
+        });
+      });
+    });
+    depSvg += '</svg>';
+    rowsHtml += depSvg;
+    rowsHtml += '</div>';
+    el.innerHTML += rowsHtml;
+  }
+
+  // Zoom controls
+  document.querySelectorAll('.controls button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelector('.controls .active').classList.remove('active');
+      btn.classList.add('active');
+      currentZoom = btn.dataset.zoom;
+      render();
+    });
+  });
+
+  // Tooltip
+  var tooltip = document.getElementById('tooltip');
+  document.addEventListener('mouseover', function(e) {
+    var bar = e.target.closest('.task-bar');
+    var ms = e.target.closest('.milestone-marker');
+    if (bar) {
+      document.getElementById('tt-title').textContent = bar.dataset.title;
+      document.getElementById('tt-status').textContent = 'Status: ' + bar.dataset.status;
+      document.getElementById('tt-dates').textContent = bar.dataset.start + ' \u2192 ' + bar.dataset.end;
+      tooltip.classList.add('visible');
+    } else if (ms) {
+      document.getElementById('tt-title').textContent = '\u25C6 ' + ms.dataset.title;
+      document.getElementById('tt-status').textContent = 'Milestone \u2014 ' + ms.dataset.status;
+      document.getElementById('tt-dates').textContent = ms.dataset.date;
+      tooltip.classList.add('visible');
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (tooltip.classList.contains('visible')) {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

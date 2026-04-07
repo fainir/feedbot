@@ -1,8 +1,8 @@
-# Feedbot Metrics (2026-04-02)
+# Feedbot Metrics (2026-04-03)
 
 ## Users: 3
 ## Feeds: 10
-## Articles: 326
+## Articles: 350+ (growing ~50/day)
 ## Build time: 81 seconds
 ## Uptime: since deploy today
 

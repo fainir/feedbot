@@ -1,5 +1,5 @@
 # MyFeed — Project State
-**Updated**: 2026-04-03
+**Updated**: 2026-04-05
 
 ## What This Is
 AI-powered feed aggregator SaaS. Users describe what they care about in plain English, AI curates content from thousands of sources.
@@ -8,55 +8,80 @@ AI-powered feed aggregator SaaS. Users describe what they care about in plain En
 - **Frontend**: Next.js 15.5 (App Router), Tailwind CSS 4, dark theme
 - **Backend**: Next.js API routes, Supabase (Postgres + Auth)
 - **AI**: Claude Haiku for article scoring + search plan generation
-- **Hosting**: Railway (feedbot service)
-- **Domain**: myfeed.space (root + www, SSL via Let's Encrypt)
-- **Payments**: Lemon Squeezy (code exists, not wired — user said skip for now)
-- **Email**: Resend (code ready, needs RESEND_API_KEY on Railway)
-- **Analytics**: Google Analytics (NEXT_PUBLIC_GA_ID) + Mixpanel (NEXT_PUBLIC_MIXPANEL_TOKEN) — code deployed, needs env vars
+- **Content**: 54 RSS sources + Brave Search API (free tier)
+- **Hosting**: Railway (feedbot service, standalone output)
+- **Domain**: myfeed.space (root + www, SSL)
+- **Payments**: Lemon Squeezy (code exists, not wired)
+- **Email**: Resend (code ready, needs RESEND_API_KEY)
+- **Analytics**: GA + Mixpanel (code deployed, needs env vars)
 
-## Current Phase: MVP LIVE — Post-QA
-- Site is live at https://myfeed.space
-- 18 public feed tabs with AI-curated content
-- Auto-cron every 15 min (instrumentation hook)
-- Signup/login working (email + Google OAuth)
-- Custom feed creation with AI search plans
-- Reactions + bookmarks persisted to DB
-- Per-feed SEO metadata + OG images
-- Structured data (JSON-LD)
-- Analytics integration (GA + Mixpanel)
-- Email digest system ready (needs RESEND_API_KEY)
+## Current Phase: Feed Quality + Public Feeds
+- Site live at https://myfeed.space
+- 18 public feed tabs + slug-based custom public feeds
+- Unified tab bar: For You → feed tabs → user custom feeds
+- Drag-and-drop tab reorder, X to remove tabs
+- Explore page with all public feeds
+- Auto-cron every 15 min (direct function calls, no HTTP)
+- Public feeds: any user can publish, others discover via Explore
 
 ## Key Architecture
-- **Article Pool**: shared table, scanned from 23+ RSS sources globally
-- **Prompt Intelligence**: AI generates search plans per feed (cached in DB)
-- **Targeted Scanner**: per-feed scanning using AI-generated queries
-- **AI Scorer**: Claude Haiku scores articles 0-100, threshold 70+
-- **Source Boost**: HN/Ars Technica/TechCrunch get +15-20 bonus
-- **Auto-cron**: Next.js instrumentation hook runs scan+match+digest every 15min
+- **Article Pool**: shared table, scanned from 54 RSS sources + Brave Search
+- **Prompt Intelligence**: AI generates search plans with scoring_criteria per feed
+- **Pre-filter**: keyword matching (2-match minimum for generic sources) + spam filter + language filter
+- **AI Scorer**: Claude Haiku scores 0-100 with per-feed scoring criteria, threshold 70+
+- **Source Boost**: Nature/NASA +15, HN +20, Ars Technica +15, etc.
+- **Display Layer**: freshness decay, story clustering, source diversity cap (40%)
+- **User Feedback**: reactions (like/dislike) influence scoring
+- **Cron**: direct function calls in instrumentation.ts (no HTTP proxy)
+- **Public Feeds**: is_public flag, slug URLs, feed_followers table, view tracking
 
 ## HARD RULES (from user)
 - Platform: Railway (NEVER Vercel)
-- Payments: Lemon Squeezy (NEVER Stripe) — but skip payments for now
+- Payments: Lemon Squeezy (NEVER Stripe) — skip for now
 - Domain: myfeed.space (root, no www)
-- Default tab: AI & ML (first)
+- No Dashboard page — everything in tab bar
+- Explore = button on right, not a tab
 
-## What's Done (this session)
-- [x] Email digest system (migration, cron route, instrumentation hook)
-- [x] SEO: per-feed meta titles, OG images, structured data, metadataBase fix
-- [x] Analytics: GA + Mixpanel with event tracking (signup, login, create_feed, share)
-- [x] Article card improvements (gradient fallbacks, better RSS image extraction)
-- [x] UX audit: signup→prompt→feed flow verified on desktop + mobile
-- [x] CSP headers updated (removed Stripe, added GA/Mixpanel)
-- [x] Feed quality audit (QA agent)
+## What's Done (Apr 4-5 session)
+- [x] Brave Search API integration
+- [x] Pipeline optimization (batch, summary, scoring, cost -85%)
+- [x] Feed quality overhaul (Science 32%→87%, Health 0%→83%)
+- [x] 17 new RSS sources for thin categories
+- [x] Domain-specific search plans for all 18 feeds
+- [x] Spam/SEO filter, language filter, dedup improvements
+- [x] Freshness decay, story clustering, source diversity
+- [x] Public feeds feature (is_public, slugs, follow, explore)
+- [x] UX refactor (tab bar DnD, remove tabs, no dashboard)
+- [x] Cron reliability fix (direct calls, no HTTP proxy)
+- [x] View tracking (saved, not displayed)
 
 ## Known Issues
-- Some system feeds have old unscored articles (pre-AI-scoring era)
-- Science tab has ~60% off-topic contamination (will improve as new scored articles replace old)
-- RESEND_API_KEY not set on Railway (email digests disabled)
-- GA + Mixpanel tokens not set on Railway (analytics collecting nothing)
+- Climate, Health, Gaming feeds still thin — growing via cron
+- Mobile DnD not working (HTML5 DnD is desktop only)
 
-## Env Vars Needed on Railway
-- NEXT_PUBLIC_GA_ID (Google Analytics measurement ID)
-- NEXT_PUBLIC_MIXPANEL_TOKEN (Mixpanel project token)
-- RESEND_API_KEY (for email digests)
-- BRAVE_SEARCH_API_KEY (optional, for extra coverage)
+## Env Vars on Railway (ALL SET)
+- ANTHROPIC_API_KEY ✅
+- BRAVE_SEARCH_API_KEY ✅
+- CRON_SECRET ✅
+- NEXT_PUBLIC_APP_URL ✅
+- NEXT_PUBLIC_GA_ID ✅ (G-48QCPWF8KD)
+- NEXT_PUBLIC_MIXPANEL_TOKEN ✅
+- NEXT_PUBLIC_SUPABASE_ANON_KEY ✅
+- NEXT_PUBLIC_SUPABASE_URL ✅
+- SUPABASE_SERVICE_ROLE_KEY ✅
+- RESEND_API_KEY ✅
+- NODE_ENV ✅
+- PORT ✅
+- RAILWAY_PUBLIC_DOMAIN ✅
+
+## Production QA (2026-04-06) — ALL PASS
+- Homepage: For You feed with 12+ sources, articles loading
+- AI & ML: Relevant articles with cover images
+- Science: Quality Phys.org content
+- Gaming: Growing (was thin, now has content)
+- Explore: Prompt chips, search, 3-column grid
+- Contact: Form + Resend email delivery
+- Privacy / Terms: Complete legal pages
+- Menu: User email, dark mode, digest, sign out, legal links
+- Console: 1 CORB warning only (browser-level, not a bug)
+- Tab bar: Scrollable, all feeds clickable

@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --surface-hover: #1c2128;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --p0: #f85149;
+        --p1: #d29922;
+        --p2: #e3b341;
+        --p3: #3fb950;
+        --done: #3fb950;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      /* Header */
+      .header {
+        padding: 20px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .header-left h1 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .header-left .meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      /* Progress bar */
+      .progress-wrap {
+        flex: 1 1 300px;
+        max-width: 480px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--done));
+        border-radius: 4px;
+        transition: width 0.4s ease;
+      }
+      .progress-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      /* Filters */
+      .filters {
+        padding: 12px 28px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+      }
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .filter-group select {
+        font-family: inherit;
+        font-size: 13px;
+        padding: 5px 10px;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        outline: none;
+      }
+      .filter-group select:focus {
+        border-color: var(--accent);
+      }
+
+      /* Board */
+      .board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        min-height: calc(100vh - 140px);
+      }
+      .column {
+        border-right: 1px solid var(--border);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .column:last-child {
+        border-right: none;
+      }
+      .column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--border);
+      }
+      .column-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+      }
+      .column-count {
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--border);
+        color: var(--text-muted);
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+      .column[data-status="done"] .column-header {
+        border-bottom-color: var(--done);
+      }
+      .column[data-status="in_progress"] .column-header {
+        border-bottom-color: var(--accent);
+      }
+      .column[data-status="in_review"] .column-header {
+        border-bottom-color: #bc8cff;
+      }
+      .column[data-status="backlog"] .column-header {
+        border-bottom-color: var(--text-muted);
+      }
+
+      /* Cards */
+      .cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 14px;
+        cursor: default;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .card:hover {
+        border-color: var(--accent);
+        background: var(--surface-hover);
+      }
+      .card-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+      .priority-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .sprint-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--done);
+        letter-spacing: 0.3px;
+      }
+      .priority-badge.p0 {
+        background: var(--p0);
+        color: #fff;
+      }
+      .priority-badge.p1 {
+        background: var(--p1);
+        color: #1a1a1a;
+      }
+      .priority-badge.p2 {
+        background: var(--p2);
+        color: #1a1a1a;
+      }
+      .priority-badge.p3 {
+        background: var(--p3);
+        color: #1a1a1a;
+      }
+
+      .card-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .card-assignee {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .card-assignee::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+      }
+      .card-date {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-left: auto;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: rgba(88, 166, 255, 0.12);
+        color: var(--accent);
+      }
+
+      /* Empty state */
+      .empty {
+        color: var(--text-muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 24px 8px;
+        opacity: 0.6;
+      }
+
+      /* Responsive */
+      @media (max-width: 960px) {
+        .board {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .column {
+          border-bottom: 1px solid var(--border);
+        }
+      }
+      @media (max-width: 560px) {
+        .board {
+          grid-template-columns: 1fr;
+        }
+        .header {
+          padding: 16px;
+        }
+        .filters {
+          padding: 10px 16px;
+        }
+        .column {
+          padding: 12px;
+        }
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: #fff;
+          color: #1a1a1a;
+        }
+        .card {
+          border: 1px solid #ccc;
+          background: #f9f9f9;
+          break-inside: avoid;
+        }
+        .column {
+          border-right: 1px solid #ccc;
+        }
+        .filters {
+          display: none;
+        }
+        .tag {
+          background: #e0e0e0;
+          color: #333;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- BOARD_DATA_START -->
+    <script id="board-data" type="application/json">
+      {
+  "project": "MyFeed — Release Checklist",
+  "updatedAt": "2026-04-04T16:00:00Z",
+  "sprints": [
+    {
+      "id": "mvp",
+      "name": "MVP",
+      "goal": "Ship revenue-ready MVP",
+      "status": "active"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "rel-1",
+      "title": "Add Sign In button to nav for guests (currently invisible)",
+      "status": "backlog",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "ux"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-2",
+      "title": "Fix Create Feed guest flow — redirect to /login instead of silent auto-signup",
+      "status": "backlog",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "auth"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-3",
+      "title": "Add og:image meta tag for social sharing (1200x630)",
+      "status": "backlog",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "seo",
+        "frontend"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-4",
+      "title": "Redirect /sign-in to /login (currently shows Feed not found)",
+      "status": "backlog",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-5",
+      "title": "Tighten content filter — block ELeVen-style garbage + CVE dumps from For You",
+      "status": "backlog",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "backend",
+        "ai"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-6",
+      "title": "Add sign-out option to three-dot menu for logged-in users on public pages",
+      "status": "backlog",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "auth"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-7",
+      "title": "Add end-of-feed indicator (You are all caught up)",
+      "status": "backlog",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "ux"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "rel-8",
+      "title": "Add back-to-home link in dashboard nav",
+      "status": "backlog",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-2",
+      "title": "Set RESEND_API_KEY on Railway, verify email digest delivery",
+      "status": "backlog",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "email",
+        "config"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "mvp-3",
+      "title": "Test full signup → prompt → custom feed → redirect on production",
+      "status": "done",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "qa"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "mvp-4",
+      "title": "Fix infinite scroll (feed stops at 50 articles, no load-more)",
+      "status": "done",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "api"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-5",
+      "title": "Fix PWA manifest icon 404 (icon-192.png missing)",
+      "status": "done",
+      "priority": "P0",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "pwa"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-7",
+      "title": "Guest action button feedback (toast: 'Sign up to save preferences')",
+      "status": "done",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "ux"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-8",
+      "title": "Fix inconsistent Sign In button (nav → signup, menu → login)",
+      "status": "done",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "ux"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-9",
+      "title": "Content quality filter (block non-English, garbage titles in For You)",
+      "status": "done",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "ai",
+        "backend"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-10",
+      "title": "Dark mode image treatment (white images jarring on dark bg)",
+      "status": "done",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "ux"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "mvp-11",
+      "title": "Set GA4 + Mixpanel env vars on Railway, verify tracking",
+      "status": "backlog",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "analytics",
+        "config"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "mvp-12",
+      "title": "Article OG image fetching + gradient fallbacks",
+      "status": "done",
+      "priority": "P1",
+      "sprint": "mvp",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "api"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "post-1",
+      "title": "Account deletion endpoint + UI",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "backend",
+        "frontend"
+      ],
+      "createdAt": "2026-04-04"
+    },
+    {
+      "id": "post-3",
+      "title": "Polish landing page — hero, social proof, CTA",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "post-4",
+      "title": "Additional auth providers (GitHub, Twitter)",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "auth"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "post-5",
+      "title": "Legal pages — privacy policy, terms of service",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "content"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "post-6",
+      "title": "Branded email digest templates",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "email"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "post-7",
+      "title": "Feed sharing social OG cards",
+      "status": "backlog",
+      "priority": "P2",
+      "assignee": "",
+      "skillTags": [
+        "frontend",
+        "seo"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "d1",
+      "title": "18 public feed tabs with AI scoring",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-03-28"
+    },
+    {
+      "id": "d2",
+      "title": "Signup/login (email + Google OAuth)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "auth"
+      ],
+      "createdAt": "2026-03-25"
+    },
+    {
+      "id": "d3",
+      "title": "Custom feed creation with prompt passthrough",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "ai"
+      ],
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "d4",
+      "title": "AI search plan generation (cached)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "ai"
+      ],
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "d5",
+      "title": "Global RSS scanner (23+ sources)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "backend"
+      ],
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "d6",
+      "title": "AI scoring pipeline (Claude Haiku)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "ai"
+      ],
+      "createdAt": "2026-03-27"
+    },
+    {
+      "id": "d7",
+      "title": "Auto-cron every 15min",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "backend"
+      ],
+      "createdAt": "2026-03-28"
+    },
+    {
+      "id": "d8",
+      "title": "Reactions + bookmarks",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-03-29"
+    },
+    {
+      "id": "d9",
+      "title": "SEO metadata + OG images + JSON-LD",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "seo"
+      ],
+      "createdAt": "2026-03-30"
+    },
+    {
+      "id": "d10",
+      "title": "Dark theme responsive UI",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "frontend"
+      ],
+      "createdAt": "2026-03-30"
+    },
+    {
+      "id": "d11",
+      "title": "Railway deployment (myfeed.space)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "devops"
+      ],
+      "createdAt": "2026-04-01"
+    },
+    {
+      "id": "d12",
+      "title": "Feed quality audit (articles fresh, sources working)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "qa"
+      ],
+      "createdAt": "2026-04-03"
+    },
+    {
+      "id": "d13",
+      "title": "Security hardening (CSP, HSTS, rate limiting, SSRF protection)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "security"
+      ],
+      "createdAt": "2026-04-02"
+    },
+    {
+      "id": "d14",
+      "title": "413 unit tests (API routes, security, accessibility)",
+      "status": "done",
+      "priority": "",
+      "assignee": "",
+      "skillTags": [
+        "testing"
+      ],
+      "createdAt": "2026-04-02"
+    }
+  ]
+}</script>
+    <!-- BOARD_DATA_END -->
+
+    <div class="header">
+      <div class="header-left">
+        <h1 id="project-name"></h1>
+        <div class="meta" id="updated-at"></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label"></span>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filter-priority">Priority</label>
+        <select id="filter-priority">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filter-assignee">Assignee</label>
+        <select id="filter-assignee">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filter-tag">Tag</label>
+        <select id="filter-tag">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filter-sprint">Sprint</label>
+        <select id="filter-sprint">
+          <option value="">All</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="column" data-status="backlog">
+        <div class="column-header">
+          <span class="column-title">Backlog</span>
+          <span class="column-count" data-count="backlog">0</span>
+        </div>
+        <div class="cards" id="col-backlog"></div>
+      </div>
+      <div class="column" data-status="in_progress">
+        <div class="column-header">
+          <span class="column-title">In Progress</span>
+          <span class="column-count" data-count="in_progress">0</span>
+        </div>
+        <div class="cards" id="col-in_progress"></div>
+      </div>
+      <div class="column" data-status="in_review">
+        <div class="column-header">
+          <span class="column-title">In Review</span>
+          <span class="column-count" data-count="in_review">0</span>
+        </div>
+        <div class="cards" id="col-in_review"></div>
+      </div>
+      <div class="column" data-status="done">
+        <div class="column-header">
+          <span class="column-title">Done</span>
+          <span class="column-count" data-count="done">0</span>
+        </div>
+        <div class="cards" id="col-done"></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var data = JSON.parse(
+          document.getElementById("board-data").textContent,
+        );
+        var tasks = data.tasks || [];
+        var sprints = data.sprints || [];
+        var sprintMap = {};
+        sprints.forEach(function (s) {
+          sprintMap[s.id] = s;
+        });
+
+        document.getElementById("project-name").textContent =
+          data.project || "Project Board";
+        document.getElementById("updated-at").textContent =
+          "Updated " + new Date(data.updatedAt).toLocaleString();
+
+        // Build filter options
+        var priorities = [],
+          assignees = [],
+          allTags = [],
+          sprintIds = [];
+        tasks.forEach(function (t) {
+          if (t.priority && priorities.indexOf(t.priority) === -1)
+            priorities.push(t.priority);
+          if (t.assignee && assignees.indexOf(t.assignee) === -1)
+            assignees.push(t.assignee);
+          if (t.sprint && sprintIds.indexOf(t.sprint) === -1)
+            sprintIds.push(t.sprint);
+          (t.skillTags || []).forEach(function (tag) {
+            if (allTags.indexOf(tag) === -1) allTags.push(tag);
+          });
+        });
+        priorities.sort();
+        assignees.sort();
+        allTags.sort();
+
+        var pSel = document.getElementById("filter-priority");
+        var aSel = document.getElementById("filter-assignee");
+        var tSel = document.getElementById("filter-tag");
+        var sSel = document.getElementById("filter-sprint");
+        priorities.forEach(function (p) {
+          pSel.innerHTML += '<option value="' + p + '">' + p + "</option>";
+        });
+        assignees.forEach(function (a) {
+          aSel.innerHTML += '<option value="' + a + '">' + a + "</option>";
+        });
+        allTags.forEach(function (t) {
+          tSel.innerHTML += '<option value="' + t + '">' + t + "</option>";
+        });
+        sprintIds.forEach(function (id) {
+          var name = sprintMap[id] ? sprintMap[id].name : id;
+          sSel.innerHTML += '<option value="' + id + '">' + name + "</option>";
+        });
+
+        function priorityClass(p) {
+          return (p || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        }
+
+        function renderCard(t) {
+          var tags = (t.skillTags || [])
+            .map(function (tag) {
+              return '<span class="tag">' + tag + "</span>";
+            })
+            .join("");
+          var sprintName =
+            t.sprint && sprintMap[t.sprint] ? sprintMap[t.sprint].name : "";
+          var sprintBadge = sprintName
+            ? '<span class="sprint-badge">' + sprintName + "</span>"
+            : "";
+          return (
+            '<div class="card" data-priority="' +
+            (t.priority || "") +
+            '" data-assignee="' +
+            (t.assignee || "") +
+            '" data-tags="' +
+            (t.skillTags || []).join(",") +
+            '">' +
+            '<div class="card-top">' +
+            '<span class="card-title">' +
+            (t.title || "Untitled") +
+            "</span>" +
+            (t.priority
+              ? '<span class="priority-badge ' +
+                priorityClass(t.priority) +
+                '">' +
+                t.priority +
+                "</span>"
+              : "") +
+            "</div>" +
+            (tags || sprintBadge
+              ? '<div class="tags">' + sprintBadge + tags + "</div>"
+              : "") +
+            '<div class="card-meta">' +
+            (t.assignee
+              ? '<span class="card-assignee">' + t.assignee + "</span>"
+              : "") +
+            (t.createdAt
+              ? '<span class="card-date">' + t.createdAt + "</span>"
+              : "") +
+            "</div>" +
+            "</div>"
+          );
+        }
+
+        function render() {
+          var fp = pSel.value;
+          var fa = aSel.value;
+          var ft = tSel.value;
+          var fs = sSel.value;
+
+          var columns = {
+            backlog: [],
+            in_progress: [],
+            in_review: [],
+            done: [],
+          };
+          var doneCount = 0;
+          var totalCount = 0;
+
+          tasks.forEach(function (t) {
+            if (fp && t.priority !== fp) return;
+            if (fa && t.assignee !== fa) return;
+            if (ft && (t.skillTags || []).indexOf(ft) === -1) return;
+            if (fs && t.sprint !== fs) return;
+
+            var status = (t.status || "backlog")
+              .toLowerCase()
+              .replace(/[\s-]+/g, "_");
+            if (!columns[status]) status = "backlog";
+            columns[status].push(t);
+            totalCount++;
+            if (status === "done") doneCount++;
+          });
+
+          Object.keys(columns).forEach(function (key) {
+            var el = document.getElementById("col-" + key);
+            if (columns[key].length === 0) {
+              el.innerHTML = '<div class="empty">No tasks</div>';
+            } else {
+              el.innerHTML = columns[key].map(renderCard).join("");
+            }
+            var counter = document.querySelector('[data-count="' + key + '"]');
+            if (counter) counter.textContent = columns[key].length;
+          });
+
+          var pct =
+            totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+          document.getElementById("progress-fill").style.width = pct + "%";
+          document.getElementById("progress-label").textContent =
+            doneCount + "/" + totalCount + " done (" + pct + "%)";
+        }
+
+        pSel.addEventListener("change", render);
+        aSel.addEventListener("change", render);
+        tSel.addEventListener("change", render);
+        sSel.addEventListener("change", render);
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
