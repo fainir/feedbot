@@ -90,6 +90,12 @@ export default function ForYouPage() {
     if (typeof window !== "undefined") return localStorage.getItem("myfeed-hero-dismissed") === "1";
     return false;
   });
+  const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try { const saved = localStorage.getItem("myfeed-hidden-feeds"); if (saved) return new Set(JSON.parse(saved)); } catch {}
+    }
+    return new Set();
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -222,10 +228,13 @@ export default function ForYouPage() {
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
           <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
-          {FEEDS.map((tab) => (
-            <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-              <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
-            </Link>
+          {FEEDS.filter(f => !hiddenFeeds.has(f.id)).map((tab) => (
+            <div key={tab.id} className="group flex shrink-0 items-center border-b-2 border-transparent text-text-muted hover:bg-bg-hover hover:text-text py-3 pl-2.5 pr-1 transition-colors">
+              <Link href={`/${tab.id}`} className="flex items-center gap-1 text-xs font-medium whitespace-nowrap">
+                <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
+              </Link>
+              <button type="button" onClick={() => setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; })} className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 text-text-muted hover:bg-bg-hover hover:text-text transition-all" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5" /></button>
+            </div>
           ))}
         </div>
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
