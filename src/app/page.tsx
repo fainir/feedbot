@@ -194,7 +194,7 @@ export default function ForYouPage() {
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar */}
-      <header className="sticky top-0 z-50 bg-bg border-b border-border flex items-center h-11">
+      <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
@@ -236,7 +236,7 @@ export default function ForYouPage() {
 
       {/* Hero banner for guests — explains value prop + search */}
       {!user && !heroDismissed && (
-        <div className="px-3 sm:px-6 pt-3">
+        <div className="max-w-4xl mx-auto px-3 pt-3">
           <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
@@ -258,7 +258,7 @@ export default function ForYouPage() {
       )}
 
       {/* Feed header with filter toggle */}
-      <div className="px-3 sm:px-6 pt-3 pb-1">
+      <div className="max-w-4xl mx-auto px-3 pt-3 pb-1">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ {user ? "For You" : "Discover"}</h2>
@@ -293,7 +293,7 @@ export default function ForYouPage() {
       </div>
 
       {/* Feed content */}
-      <main id="main-content" className="px-3 sm:px-6 pb-6">
+      <main id="main-content" className="max-w-4xl mx-auto px-3 pb-6">
         {loading ? (
           <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
@@ -361,7 +361,7 @@ export default function ForYouPage() {
       </main>
 
       <footer className="border-t border-border py-6 mt-8">
-        <div className="px-3 sm:px-6 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
+        <div className="max-w-4xl mx-auto px-3 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
           <span>MyFeed &copy; {new Date().getFullYear()}</span>
           <Link href="/privacy" className="hover:text-text transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-text transition-colors">Terms</Link>

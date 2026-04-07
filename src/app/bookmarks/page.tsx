@@ -98,7 +98,7 @@ export default function BookmarksPage() {
         </div>
       </header>
 
-      <main id="main-content" className="px-3 sm:px-6 py-6">
+      <main id="main-content" className="max-w-4xl mx-auto px-3 py-6">
         <div className="flex items-center gap-2 mb-6">
           <Bookmark className="h-5 w-5 text-text" />
           <h1 className="text-lg font-bold">Bookmarks</h1>
