@@ -622,7 +622,7 @@ export default function FeedPage() {
           <div className="text-center py-16">
             <Globe className="h-10 w-10 text-text-muted mx-auto mb-3 opacity-50" />
             <p className="text-text-muted font-medium">Scanning the internet...</p>
-            <p className="text-xs text-text-muted mt-1">Content refreshes automatically every 15 minutes</p>
+            <p className="text-xs text-text-muted mt-1">Content updates continuously</p>
           </div>
         ) : (
           <div className="space-y-4 pt-2">
@@ -678,7 +678,7 @@ export default function FeedPage() {
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length < 15 && (
           <div className="text-center py-8">
             <p className="text-sm text-text-muted mb-1">This feed is building up</p>
-            <p className="text-xs text-text-muted">New articles are added every 15 minutes. Check back soon for more.</p>
+            <p className="text-xs text-text-muted">New articles are added continuously. Check back soon for more.</p>
           </div>
         )}
 

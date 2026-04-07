@@ -155,7 +155,7 @@ export default function ExplorePage() {
                 <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors">{feed.name}</h3>
               </div>
               <p className="text-xs text-text-muted leading-relaxed">{feed.description}</p>
-              <p className="text-[10px] text-text-muted mt-2">Curated · Updated every 15 min</p>
+              <p className="text-[10px] text-text-muted mt-2">Curated · Updated continuously</p>
             </Link>
           ))}
 

@@ -103,7 +103,7 @@ export default async function Image({ params }: { params: Promise<{ feed: string
             fontSize: "18px",
           }}
         >
-          <span>Updated every 15 min</span>
+          <span>Updated continuously</span>
           <span>&#183;</span>
           <span>myfeed.space/{feed}</span>
         </div>
