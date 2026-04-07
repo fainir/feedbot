@@ -474,14 +474,17 @@ export default function FeedPage() {
               onTouchStart={(e) => handleTouchStart(tab.id, e.touches[0].clientX)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className={`group flex-shrink-0 ${draggedTab === tab.id ? "opacity-40 scale-105" : ""} transition-transform`}
+              className={`group flex shrink-0 items-center border-b-2 py-3 pl-2.5 pr-1 text-xs font-medium transition-all ${
+                feedSlug === tab.id
+                  ? "border-text text-text"
+                  : "border-transparent text-text-muted hover:bg-bg-hover hover:text-text"
+              } ${draggedTab === tab.id ? "opacity-40 scale-105" : ""}`}
             >
               <Link
                 href={`/${tab.id}`}
                 data-active={feedSlug === tab.id}
-                className={`px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
-                  feedSlug === tab.id ? "border-text text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"
-                }`}
+                draggable={false}
+                className="flex items-center gap-1 whitespace-nowrap"
               >
                 <span className="text-sm">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.name}</span>
@@ -494,7 +497,13 @@ export default function FeedPage() {
                   if (dontShowRemoveAgain) { removeTab(tab.id); }
                   else { setShowRemoveConfirm(tab.id); }
                 }}
-                className="hidden group-hover:inline-flex ml-0.5 w-3.5 h-3.5 items-center justify-center rounded-sm hover:bg-text/10 transition-colors"
+                onPointerDown={(e) => e.stopPropagation()}
+                draggable={false}
+                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-all pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
+                  feedSlug === tab.id
+                    ? "text-text/70 hover:bg-text/10 hover:text-text"
+                    : "text-text-muted hover:bg-bg-hover hover:text-text"
+                }`}
                 aria-label={`Remove ${tab.name}`}
               >
                 <X className="h-2.5 w-2.5" />

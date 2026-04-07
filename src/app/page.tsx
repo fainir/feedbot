@@ -245,7 +245,7 @@ export default function ForYouPage() {
           <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
-            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic — AI finds the best articles, repos, videos, and discussions from across the web. Updated every 15 minutes.</p>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic — AI finds the best articles, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
@@ -309,7 +309,7 @@ export default function ForYouPage() {
         ) : dedupedItems.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-text-muted font-medium">No articles yet</p>
-            <p className="text-xs text-text-muted mt-1">Content refreshes every 15 minutes</p>
+            <p className="text-xs text-text-muted mt-1">Fresh picks keep rolling in automatically</p>
           </div>
         ) : (
           <div className="space-y-4 pt-2">

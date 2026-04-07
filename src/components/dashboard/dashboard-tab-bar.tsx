@@ -78,58 +78,66 @@ export function DashboardTabBar({
     <>
       <div ref={tabListRef} role="tablist" className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-border pb-2" aria-label="Feed tabs">
         {tabs.map((tab) => (
-          <button
+          <div
             key={tab.id}
-            role="tab"
-            data-tab-id={tab.id}
-            tabIndex={activeTabId === tab.id ? 0 : -1}
-            aria-selected={activeTabId === tab.id}
-            onClick={() => onSetActiveTab(tab.id)}
-            onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
-            draggable={tab.id !== "all"}
-            onDragStart={() => onDragStart(tab.id)}
-            onDragOver={(e) => { e.preventDefault(); }}
-            onDrop={() => onDrop(tab.id)}
-            onDragEnd={onDragEnd}
-            className={`group relative flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`group flex shrink-0 items-center rounded-lg transition-colors ${
               activeTabId === tab.id
                 ? "bg-primary text-white"
                 : "text-text-muted hover:bg-surface hover:text-text"
             } ${dragTabId === tab.id ? "opacity-50" : ""}`}
           >
-            {tab.name}
-            {!tab.loading && tab.items.length > 0 && tab.id !== "all" && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
-                activeTabId === tab.id ? "bg-white/20" : "bg-border text-text-muted"
-              }`}>
-                {tab.items.length}
-              </span>
-            )}
-            {tab.id === "all" && allItems.length > 0 && !tabs.some((t) => t.loading) && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
-                activeTabId === "all" ? "bg-white/20" : "bg-border text-text-muted"
-              }`}>
-                {allItems.length}
-              </span>
-            )}
-            {tab.loading && (
-              <RefreshCw className="h-3 w-3 animate-spin" />
-            )}
+            <button
+              role="tab"
+              data-tab-id={tab.id}
+              tabIndex={activeTabId === tab.id ? 0 : -1}
+              aria-selected={activeTabId === tab.id}
+              onClick={() => onSetActiveTab(tab.id)}
+              onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+              draggable={tab.id !== "all"}
+              onDragStart={() => onDragStart(tab.id)}
+              onDragOver={(e) => { e.preventDefault(); }}
+              onDrop={() => onDrop(tab.id)}
+              onDragEnd={onDragEnd}
+              className="flex items-center gap-2 rounded-l-lg py-2 pl-4 pr-1 text-sm font-medium"
+            >
+              {tab.name}
+              {!tab.loading && tab.items.length > 0 && tab.id !== "all" && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                  activeTabId === tab.id ? "bg-white/20" : "bg-border text-text-muted"
+                }`}>
+                  {tab.items.length}
+                </span>
+              )}
+              {tab.id === "all" && allItems.length > 0 && !tabs.some((t) => t.loading) && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                  activeTabId === "all" ? "bg-white/20" : "bg-border text-text-muted"
+                }`}>
+                  {allItems.length}
+                </span>
+              )}
+              {tab.loading && (
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              )}
+            </button>
             {tab.id !== "all" && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDeleteTab(tab.id);
                 }}
-                className={`ml-1 rounded p-0.5 hover:bg-white/20 ${
-                  activeTabId === tab.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                } transition-opacity`}
+                draggable={false}
+                className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-all pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
+                  activeTabId === tab.id
+                    ? "text-white/80 hover:bg-white/20 hover:text-white"
+                    : "text-text-muted hover:bg-bg-hover hover:text-text"
+                }`}
               >
                 <X className="h-3 w-3" aria-hidden="true" />
                 <span className="sr-only">Delete {tab.name} tab</span>
               </button>
             )}
-          </button>
+          </div>
         ))}
         <button
           role="tab"
