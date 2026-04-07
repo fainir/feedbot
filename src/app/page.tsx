@@ -92,7 +92,11 @@ export default function ForYouPage() {
   });
   const { toast } = useToast();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    window.scrollTo(0, 0);
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();

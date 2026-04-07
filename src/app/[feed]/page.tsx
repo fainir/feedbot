@@ -99,7 +99,11 @@ export default function FeedPage() {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    window.scrollTo(0, 0);
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  }, []);
 
   // Scroll active tab into view on mount
   useEffect(() => {
