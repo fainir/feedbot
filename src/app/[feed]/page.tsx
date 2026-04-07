@@ -551,7 +551,7 @@ export default function FeedPage() {
       </header>
 
       {/* Feed header */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-3 pb-1">
+      <div className="px-4 sm:px-8 lg:px-16 xl:px-32 pt-3 pb-1">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab?.icon || "📡"} {displayName}</h2>
@@ -589,7 +589,7 @@ export default function FeedPage() {
       )}
 
       {/* Feed */}
-      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-8 pb-6">
+      <main id="main-content" className="px-4 sm:px-8 lg:px-16 xl:px-32 pb-6">
         {loading ? (
           <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
@@ -694,7 +694,7 @@ export default function FeedPage() {
       </main>
 
       <footer className="border-t border-border py-6 mt-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
+        <div className="px-4 sm:px-8 lg:px-16 xl:px-32 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
           <span>MyFeed &copy; {new Date().getFullYear()}</span>
           <Link href="/privacy" className="hover:text-text transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-text transition-colors">Terms</Link>
