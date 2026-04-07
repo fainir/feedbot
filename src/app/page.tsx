@@ -246,16 +246,23 @@ export default function ForYouPage() {
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
             <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic — AI finds the best articles, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
-            <div className="flex gap-2 mb-3">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
                 placeholder="What are you interested in? e.g. AI safety research, Rust programming..."
-                className="flex-1 bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50"
+                className="min-w-0 w-full bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50 sm:flex-1"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && newPrompt.trim()) setShowNewFeed(true); }}
               />
-              <button onClick={() => { if (newPrompt.trim()) setShowNewFeed(true); }} className="bg-text text-bg px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
+              <button
+                onClick={() => { if (newPrompt.trim()) setShowNewFeed(true); }}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-3 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto sm:py-2.5"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="sm:hidden">Create feed</span>
+                <span className="hidden sm:inline">Create feed</span>
+              </button>
             </div>
             <p className="text-[10px] text-text-muted">Free. No signup required to browse. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to save your feeds.</p>
           </div>
