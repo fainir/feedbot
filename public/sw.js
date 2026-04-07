@@ -1,13 +1,11 @@
 // FeedBot Service Worker — Offline support & caching
-const CACHE_NAME = "feedbot-v1";
+const CACHE_NAME = "feedbot-v2";
 const OFFLINE_URL = "/offline";
 
 // Assets to cache on install
 const PRECACHE_URLS = [
   "/",
-  "/dashboard",
   "/login",
-  "/offline",
 ];
 
 // Install — cache core assets
