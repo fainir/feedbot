@@ -13,9 +13,7 @@
   --color-border: #2f3336;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* scroll-behavior: smooth removed — causes janky scrolling and blank frames */
 
 /* Hide scrollbar for horizontal tab scroller */
 .scrollbar-hide {
