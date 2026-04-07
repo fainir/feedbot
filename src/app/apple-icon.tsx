@@ -15,10 +15,10 @@ export default function AppleIcon() {
           justifyContent: "center",
           background: "#e7e9ea",
           color: "#000000",
-          borderRadius: "40px",
-          fontSize: 78,
+          borderRadius: "44px",
+          fontSize: 102,
           fontWeight: 900,
-          letterSpacing: "-0.08em",
+          letterSpacing: "-0.12em",
           lineHeight: 1,
         }}
       >
