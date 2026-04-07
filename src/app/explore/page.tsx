@@ -67,8 +67,8 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Single top bar */}
-      <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
+      {/* Single top bar — fixed */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border flex items-center h-11">
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
@@ -100,6 +100,7 @@ export default function ExplorePage() {
           </div>
         </div>
       </header>
+      <div className="h-11" />
 
       {/* Explore content */}
       <main id="main-content" className="max-w-5xl mx-auto px-4 py-8">

@@ -308,7 +308,7 @@ export default function FeedPage() {
   if (notFound) {
     return (
       <div className="min-h-screen bg-bg text-text">
-        <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border flex items-center h-11">
           <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
             <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
           </Link>
@@ -317,6 +317,7 @@ export default function FeedPage() {
             <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">Explore</Link>
           </div>
         </header>
+        <div className="h-11" />
         <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 2.75rem)" }}>
           <div className="text-center">
             <h1 className="text-6xl font-bold mb-2">404</h1>
@@ -448,8 +449,8 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Single top bar: logo | tabs | actions */}
-      <header className="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border flex items-center h-11">
+      {/* Single top bar — fixed so it never scrolls away */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border flex items-center h-11">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
@@ -553,6 +554,7 @@ export default function FeedPage() {
           </div>
         </div>
       </header>
+      <div className="h-11" /> {/* Spacer for fixed header */}
 
       {/* Feed header */}
       <div className="w-full px-3 pt-3 pb-1">
