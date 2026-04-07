@@ -80,7 +80,7 @@ export function DashboardTabBar({
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`group flex shrink-0 items-center rounded-lg transition-colors ${
+            className={`group flex shrink-0 cursor-grab select-none items-center rounded-lg transition-colors active:cursor-grabbing ${
               activeTabId === tab.id
                 ? "bg-primary text-white"
                 : "text-text-muted hover:bg-surface hover:text-text"
@@ -127,7 +127,7 @@ export function DashboardTabBar({
                   onDeleteTab(tab.id);
                 }}
                 draggable={false}
-                className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-all pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
+                className={`mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-60 transition-all hover:opacity-100 focus-visible:opacity-100 ${
                   activeTabId === tab.id
                     ? "text-white/80 hover:bg-white/20 hover:text-white"
                     : "text-text-muted hover:bg-bg-hover hover:text-text"

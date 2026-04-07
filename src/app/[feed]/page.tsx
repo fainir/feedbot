@@ -377,6 +377,8 @@ export default function FeedPage() {
 
   const handleDragStart = useCallback((e: React.DragEvent, tabId: string, tabName: string, tabIcon: string) => {
     setDraggedTab(tabId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", tabId);
     // Create a clean drag image that looks like the tab
     const ghost = document.createElement("div");
     ghost.textContent = `${tabIcon} ${tabName}`;
@@ -474,7 +476,7 @@ export default function FeedPage() {
               onTouchStart={(e) => handleTouchStart(tab.id, e.touches[0].clientX)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className={`group flex shrink-0 items-center border-b-2 py-3 pl-2.5 pr-1 text-xs font-medium transition-all ${
+              className={`group flex shrink-0 cursor-grab select-none items-center border-b-2 py-3 pl-2.5 pr-1 text-xs font-medium transition-all active:cursor-grabbing ${
                 feedSlug === tab.id
                   ? "border-text text-text"
                   : "border-transparent text-text-muted hover:bg-bg-hover hover:text-text"
@@ -499,7 +501,7 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 transition-all pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
+                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-60 transition-all hover:opacity-100 focus-visible:opacity-100 ${
                   feedSlug === tab.id
                     ? "text-text/70 hover:bg-text/10 hover:text-text"
                     : "text-text-muted hover:bg-bg-hover hover:text-text"
