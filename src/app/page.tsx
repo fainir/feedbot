@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Compass } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -238,7 +238,7 @@ export default function ForYouPage() {
           ))}
         </div>
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
-          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Compass className="h-3 w-3" />Explore</Link>
+          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3 w-3" />Explore</Link>
           <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">
             <Plus className="h-3 w-3" /><span className="hidden sm:inline">Create feed</span><span className="sm:hidden">New</span>
           </button>
