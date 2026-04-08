@@ -39,6 +39,13 @@ const FEEDS = [
   { id: "data", name: "Data", icon: "📊" },
   { id: "mobile", name: "Mobile", icon: "📱" },
   { id: "marketing", name: "Marketing", icon: "📣" },
+  { id: "productivity", name: "Productivity", icon: "⏱️" },
+  { id: "robotics", name: "Robotics", icon: "🤖" },
+  { id: "energy", name: "Energy", icon: "⚡" },
+  { id: "biotech", name: "Biotech", icon: "🧬" },
+  { id: "ev", name: "EVs", icon: "🚗" },
+  { id: "remote-work", name: "Remote Work", icon: "🏠" },
+  { id: "open-source", name: "Open Source", icon: "🐙" },
 ];
 
 // Feed name mapping (matches TAB_MAP in API)
@@ -47,6 +54,8 @@ const FEED_NAME_MAP: Record<string, string> = {
   crypto: "Crypto", design: "Design", security: "Security", gaming: "Gaming", business: "Business",
   space: "Space", health: "Health", climate: "Climate", fintech: "Fintech", devops: "DevOps",
   data: "Data", mobile: "Mobile", marketing: "Marketing",
+  productivity: "Productivity", robotics: "Robotics", energy: "Energy",
+  biotech: "Biotech", ev: "EVs", "remote-work": "Remote Work", "open-source": "Open Source",
 };
 
 const GRADIENTS = [

@@ -26,6 +26,13 @@ const FEEDS = [
   { id: "data", name: "Data", icon: "📊", description: "Data science, analytics, big data, data engineering, visualization" },
   { id: "mobile", name: "Mobile", icon: "📱", description: "iOS, Android, React Native, Flutter, mobile UX, app trends" },
   { id: "marketing", name: "Marketing", icon: "📣", description: "SEO, content marketing, growth hacking, social media, email" },
+  { id: "productivity", name: "Productivity", icon: "⏱️", description: "Productivity tools, time management, workflow automation, note-taking" },
+  { id: "robotics", name: "Robotics", icon: "🤖", description: "Humanoid robots, industrial automation, drones, embodied AI" },
+  { id: "energy", name: "Energy", icon: "⚡", description: "Solar, battery storage, nuclear fusion, grid modernization, clean energy" },
+  { id: "biotech", name: "Biotech", icon: "🧬", description: "Gene therapy, CRISPR, drug discovery, synthetic biology, longevity" },
+  { id: "ev", name: "EVs", icon: "🚗", description: "Electric vehicles, Tesla, EV charging, autonomous driving, batteries" },
+  { id: "remote-work", name: "Remote Work", icon: "🏠", description: "Distributed teams, async tools, digital nomad, hybrid work" },
+  { id: "open-source", name: "Open Source", icon: "🐙", description: "GitHub trending, FOSS, Linux, open source alternatives, community projects" },
 ];
 
 const TABS = FEEDS; // reuse for nav

@@ -58,6 +58,13 @@ const TABS = [
   { id: "data", name: "Data", icon: "📊", query: "data science, analytics, big data, data engineering, SQL databases, data visualization, business intelligence" },
   { id: "mobile", name: "Mobile", icon: "📱", query: "mobile app development, iOS Android, React Native Flutter, mobile UX, app store trends, Swift Kotlin" },
   { id: "marketing", name: "Marketing", icon: "📣", query: "digital marketing, SEO, content marketing, growth hacking, social media marketing, email marketing, conversion optimization" },
+  { id: "productivity", name: "Productivity", icon: "⏱️", query: "productivity tools, time management, note-taking apps, workflow automation, personal knowledge management, second brain" },
+  { id: "robotics", name: "Robotics", icon: "🤖", query: "robotics, humanoid robots, Boston Dynamics, industrial automation, robot learning, embodied AI, drones" },
+  { id: "energy", name: "Energy", icon: "⚡", query: "energy technology, solar power, battery storage, nuclear fusion, grid modernization, energy transition, clean energy" },
+  { id: "biotech", name: "Biotech", icon: "🧬", query: "biotechnology, gene therapy, CRISPR, drug discovery, synthetic biology, longevity research, bioinformatics" },
+  { id: "ev", name: "EVs", icon: "🚗", query: "electric vehicles, Tesla, EV charging, autonomous driving, battery technology, EV startups, self-driving cars" },
+  { id: "remote-work", name: "Remote Work", icon: "🏠", query: "remote work, distributed teams, async communication, digital nomad, work from home tools, hybrid work, remote collaboration" },
+  { id: "open-source", name: "Open Source", icon: "🐙", query: "open source projects, GitHub trending, open source contributions, FOSS, Linux, open source alternatives, community-driven software" },
 ];
 
 const PROMPT_EXAMPLES = [
