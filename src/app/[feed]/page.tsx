@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Compass } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -314,7 +314,7 @@ export default function FeedPage() {
           </Link>
           <div className="flex-1" />
           <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
-            <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">Explore</Link>
+            <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Compass className="h-3 w-3" />Explore</Link>
           </div>
         </header>
         <div className="h-11" />
@@ -322,7 +322,7 @@ export default function FeedPage() {
           <div className="text-center">
             <h1 className="text-6xl font-bold mb-2">404</h1>
             <p className="text-text-muted mb-6">Feed not found</p>
-            <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Explore feeds</Link>
+            <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity flex items-center gap-1.5 mx-auto w-fit"><Compass className="h-4 w-4" />Explore feeds</Link>
           </div>
         </div>
       </div>
@@ -516,7 +516,7 @@ export default function FeedPage() {
 
         {/* Right actions */}
         <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 border-l border-border">
-          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap">Explore</Link>
+          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Compass className="h-3 w-3" />Explore</Link>
           <button
             onClick={() => setShowNewFeed(true)}
             className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"

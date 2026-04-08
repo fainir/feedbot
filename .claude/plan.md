@@ -5,6 +5,7 @@
 - [x] Add text labels to like/dislike buttons (S)
 - [x] White header bar in light mode (S)
 - [x] Favicon — dark bg, bold white letters (S)
+- [x] Add Compass icon to Explore button (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
