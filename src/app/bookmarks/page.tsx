@@ -140,7 +140,7 @@ export default function BookmarksPage() {
               const summary = cleanSummary(item.summary || "");
               const hasImage = !!item.image_url;
               return (
-                <article key={bm.id} className={`group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200${!hasImage ? " border-l-4 border-l-text/10" : ""}`}>
+                <article key={bm.id} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-sm transition-all duration-200">
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {hasImage && (
                       <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
