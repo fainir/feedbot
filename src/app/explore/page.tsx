@@ -234,7 +234,7 @@ export default function ExplorePage() {
               <textarea autoFocus placeholder="e.g. Latest React and Next.js tutorials, new CSS features" className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all placeholder:text-text-muted/50" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} />
               <label className="flex items-center gap-2 mt-3 cursor-pointer">
                 <input type="checkbox" checked={makePublic} onChange={(e) => setMakePublic(e.target.checked)} className="rounded border-border" />
-                <span className="text-xs text-text-muted">Make this feed public — others can discover and follow it</span>
+                <span className="text-xs text-text-muted">Make this feed public - others can discover and follow it</span>
               </label>
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowNewFeed(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>

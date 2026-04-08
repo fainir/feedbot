@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — MyFeed",
+  title: "Privacy Policy - MyFeed",
   description: "How MyFeed collects, uses, and protects your data.",
 };
 

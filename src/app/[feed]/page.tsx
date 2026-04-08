@@ -334,7 +334,7 @@ export default function FeedPage() {
   const handleShareFeed = useCallback(async () => {
     const url = `https://myfeed.space/${feedSlug}`;
     if (navigator.share) {
-      try { await navigator.share({ title: `${displayName} — MyFeed`, url }); } catch {}
+      try { await navigator.share({ title: `${displayName} - MyFeed`, url }); } catch {}
     } else {
       await navigator.clipboard.writeText(url);
       toast("Link copied!", "success");
@@ -600,7 +600,7 @@ export default function FeedPage() {
       {newArticlesAvailable > 0 && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
           <button onClick={handleRefresh} className="bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold shadow-lg hover:opacity-90 transition-all">
-            {newArticlesAvailable} new {newArticlesAvailable === 1 ? "article" : "articles"} — tap to refresh
+            {newArticlesAvailable} new {newArticlesAvailable === 1 ? "article" : "articles"} - tap to refresh
           </button>
         </div>
       )}

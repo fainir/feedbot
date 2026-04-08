@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Dashboard — MyFeed",
+  title: "Dashboard - MyFeed",
   description: "Your personalized feeds, all in one place.",
   robots: { index: false, follow: false },
 };

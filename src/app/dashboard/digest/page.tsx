@@ -58,7 +58,7 @@ export default function DigestPage() {
   const today = new Date();
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - 7);
-  const dateRange = `${weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} — ${today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+  const dateRange = `${weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
@@ -150,7 +150,7 @@ export default function DigestPage() {
         {/* Email Footer */}
         <div className="border-t border-border px-6 py-3">
           <p className="text-center text-xs text-text-muted">
-            Powered by MyFeed — Your Internet, Curated by AI
+            Powered by MyFeed - Your Internet, Curated by AI
           </p>
         </div>
       </div>

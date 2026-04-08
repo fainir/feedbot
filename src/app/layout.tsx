@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MyFeed — Your Internet, Curated by AI",
+  title: "MyFeed - Your Internet, Curated by AI",
   description:
     "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
   keywords: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL("https://myfeed.space"),
   openGraph: {
-    title: "MyFeed — Your Internet, Curated by AI",
+    title: "MyFeed - Your Internet, Curated by AI",
     description:
       "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
     url: "https://myfeed.space",
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
         url: "https://myfeed.space/og.png",
         width: 1200,
         height: 630,
-        alt: "MyFeed — Your Internet, Curated by AI",
+        alt: "MyFeed - Your Internet, Curated by AI",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyFeed — Your Internet, Curated by AI",
+    title: "MyFeed - Your Internet, Curated by AI",
     description:
       "Describe what you care about in plain English. MyFeed scans thousands of sources and delivers only what matters to you.",
     images: ["https://myfeed.space/og.png"],

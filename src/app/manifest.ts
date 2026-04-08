@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MyFeed — Your Internet, Curated by AI",
+    name: "MyFeed - Your Internet, Curated by AI",
     short_name: "MyFeed",
     description:
       "Describe what you care about. Get a personalized feed from across the internet.",

@@ -41,7 +41,7 @@ const STEPS: Step[] = [
     title: "Master keyboard shortcuts",
     description: "MyFeed is built for speed. Press '?' to see all shortcuts. Use J/K to navigate items, O to open, R to read inline, M to mark as read.",
     action: "Press ? for shortcuts",
-    tip: "Use Cmd+K to open the command palette — the fastest way to do anything.",
+    tip: "Use Cmd+K to open the command palette - the fastest way to do anything.",
   },
   {
     icon: Bell,

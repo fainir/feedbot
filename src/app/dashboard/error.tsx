@@ -21,7 +21,7 @@ export default function DashboardError({
       </div>
       <h2 className="mb-2 text-xl font-bold text-text">Something went wrong</h2>
       <p className="mb-6 max-w-md text-center text-sm text-text-muted">
-        The dashboard encountered an unexpected error. Your data is safe — try refreshing.
+        The dashboard encountered an unexpected error. Your data is safe - try refreshing.
       </p>
       <button
         onClick={reset}

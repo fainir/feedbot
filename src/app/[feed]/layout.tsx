@@ -31,10 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tab = TABS[feed];
 
   if (!tab) {
-    return { title: "Feed Not Found — MyFeed" };
+    return { title: "Feed Not Found - MyFeed" };
   }
 
-  const title = `${tab.name} News Feed — MyFeed`;
+  const title = `${tab.name} News Feed - MyFeed`;
   const description = tab.description;
   const url = `https://myfeed.space/${feed}`;
 
