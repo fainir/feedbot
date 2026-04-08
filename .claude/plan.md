@@ -8,6 +8,7 @@
 - [x] Add Compass icon to Explore button (S)
 - [x] Change Explore icon from Compass to Search (S)
 - [x] Add more public feeds (M)
+- [x] Restructure feeds — 15 default tabs, 100+ on Explore (L)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

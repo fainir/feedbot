@@ -31,31 +31,18 @@ const FEEDS = [
   { id: "security", name: "Security", icon: "🔒" },
   { id: "gaming", name: "Gaming", icon: "🎮" },
   { id: "business", name: "Business", icon: "📈" },
-  { id: "space", name: "Space", icon: "🚀" },
+  { id: "space", name: "Space", icon: "🪐" },
   { id: "health", name: "Health", icon: "🏥" },
-  { id: "climate", name: "Climate", icon: "🌍" },
-  { id: "fintech", name: "Fintech", icon: "💳" },
-  { id: "devops", name: "DevOps", icon: "🔧" },
-  { id: "data", name: "Data", icon: "📊" },
-  { id: "mobile", name: "Mobile", icon: "📱" },
-  { id: "marketing", name: "Marketing", icon: "📣" },
-  { id: "productivity", name: "Productivity", icon: "⏱️" },
-  { id: "robotics", name: "Robotics", icon: "🤖" },
-  { id: "energy", name: "Energy", icon: "⚡" },
-  { id: "biotech", name: "Biotech", icon: "🧬" },
-  { id: "ev", name: "EVs", icon: "🚗" },
-  { id: "remote-work", name: "Remote Work", icon: "🏠" },
   { id: "open-source", name: "Open Source", icon: "🐙" },
+  { id: "robotics", name: "Robotics", icon: "🦾" },
+  { id: "energy", name: "Energy", icon: "⚡" },
 ];
 
 // Feed name mapping (matches TAB_MAP in API)
 const FEED_NAME_MAP: Record<string, string> = {
   ai: "AI & ML", tech: "Tech News", startups: "Startups", dev: "Dev", science: "Science",
   crypto: "Crypto", design: "Design", security: "Security", gaming: "Gaming", business: "Business",
-  space: "Space", health: "Health", climate: "Climate", fintech: "Fintech", devops: "DevOps",
-  data: "Data", mobile: "Mobile", marketing: "Marketing",
-  productivity: "Productivity", robotics: "Robotics", energy: "Energy",
-  biotech: "Biotech", ev: "EVs", "remote-work": "Remote Work", "open-source": "Open Source",
+  space: "Space", health: "Health", "open-source": "Open Source", robotics: "Robotics", energy: "Energy",
 };
 
 const GRADIENTS = [

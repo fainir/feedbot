@@ -39,7 +39,8 @@ function getGradient(title: string): string {
   return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
 }
 
-const TABS = [
+// All system feeds — any of these can be loaded by slug
+const ALL_SYSTEM_FEEDS = [
   { id: "ai", name: "AI & ML", icon: "🤖", query: "artificial intelligence breakthroughs, LLM models, AI startups, machine learning research, GPT Claude Gemini, AI tools and products" },
   { id: "tech", name: "Tech", icon: "💻", query: "tech industry news, product launches, big tech companies, gadgets, consumer technology, tech business" },
   { id: "startups", name: "Startups", icon: "🚀", query: "startup funding rounds, venture capital deals, Y Combinator, new startup launches, founder stories, seed series A B funding" },
@@ -50,8 +51,11 @@ const TABS = [
   { id: "security", name: "Security", icon: "🔒", query: "cybersecurity, data breaches, zero-day exploits, infosec tools, penetration testing, security research" },
   { id: "gaming", name: "Gaming", icon: "🎮", query: "video games, game releases, gaming industry news, esports, game development, indie games" },
   { id: "business", name: "Business", icon: "📈", query: "business strategy, leadership, management, entrepreneurship, market trends, corporate news" },
-  { id: "space", name: "Space", icon: "🚀", query: "SpaceX launches, NASA missions, Mars exploration, James Webb telescope, space industry, rocket launches, satellites" },
+  { id: "space", name: "Space", icon: "🪐", query: "SpaceX launches, NASA missions, Mars exploration, James Webb telescope, space industry, rocket launches, satellites" },
   { id: "health", name: "Health", icon: "🏥", query: "health research, medical breakthroughs, mental health, nutrition science, fitness studies, biotech news" },
+  { id: "open-source", name: "Open Source", icon: "🐙", query: "open source projects, GitHub trending, open source contributions, FOSS, Linux, open source alternatives, community-driven software" },
+  { id: "robotics", name: "Robotics", icon: "🦾", query: "robotics, humanoid robots, Boston Dynamics, industrial automation, robot learning, embodied AI, drones" },
+  { id: "energy", name: "Energy", icon: "⚡", query: "energy technology, solar power, battery storage, nuclear fusion, grid modernization, energy transition, clean energy" },
   { id: "climate", name: "Climate", icon: "🌍", query: "climate change, renewable energy, solar wind power, sustainability, carbon emissions, green technology, electric vehicles" },
   { id: "fintech", name: "Fintech", icon: "💳", query: "fintech news, digital banking, payment technology, neobanks, financial APIs, open banking, insurtech" },
   { id: "devops", name: "DevOps", icon: "🔧", query: "DevOps, cloud infrastructure, Kubernetes Docker, CI CD pipelines, AWS Azure GCP, platform engineering, SRE" },
@@ -59,13 +63,14 @@ const TABS = [
   { id: "mobile", name: "Mobile", icon: "📱", query: "mobile app development, iOS Android, React Native Flutter, mobile UX, app store trends, Swift Kotlin" },
   { id: "marketing", name: "Marketing", icon: "📣", query: "digital marketing, SEO, content marketing, growth hacking, social media marketing, email marketing, conversion optimization" },
   { id: "productivity", name: "Productivity", icon: "⏱️", query: "productivity tools, time management, note-taking apps, workflow automation, personal knowledge management, second brain" },
-  { id: "robotics", name: "Robotics", icon: "🤖", query: "robotics, humanoid robots, Boston Dynamics, industrial automation, robot learning, embodied AI, drones" },
-  { id: "energy", name: "Energy", icon: "⚡", query: "energy technology, solar power, battery storage, nuclear fusion, grid modernization, energy transition, clean energy" },
   { id: "biotech", name: "Biotech", icon: "🧬", query: "biotechnology, gene therapy, CRISPR, drug discovery, synthetic biology, longevity research, bioinformatics" },
   { id: "ev", name: "EVs", icon: "🚗", query: "electric vehicles, Tesla, EV charging, autonomous driving, battery technology, EV startups, self-driving cars" },
   { id: "remote-work", name: "Remote Work", icon: "🏠", query: "remote work, distributed teams, async communication, digital nomad, work from home tools, hybrid work, remote collaboration" },
-  { id: "open-source", name: "Open Source", icon: "🐙", query: "open source projects, GitHub trending, open source contributions, FOSS, Linux, open source alternatives, community-driven software" },
 ];
+
+// Default 15 tabs shown in tab bar
+const DEFAULT_TAB_IDS = new Set(["ai","tech","startups","dev","science","crypto","design","security","gaming","business","space","health","open-source","robotics","energy"]);
+const TABS = ALL_SYSTEM_FEEDS.filter(f => DEFAULT_TAB_IDS.has(f.id));
 
 const PROMPT_EXAMPLES = [
   "Latest React and Next.js tutorials, new CSS features",
@@ -77,7 +82,7 @@ const PROMPT_EXAMPLES = [
 export default function FeedPage() {
   const params = useParams();
   const feedSlug = (params.feed as string) || "tech";
-  const activeTab = TABS.find((t) => t.id === feedSlug);
+  const activeTab = ALL_SYSTEM_FEEDS.find((t) => t.id === feedSlug);
 
   const [items, setItems] = useState<FeedItem[]>([]);
   const [newArticlesAvailable, setNewArticlesAvailable] = useState(0);
