@@ -26,12 +26,12 @@
 
 /* Light mode — clean white like X.com light */
 html.light {
-  --color-bg: #ffffff;
-  --color-bg-card: #f7f9f9;
-  --color-bg-hover: #eff3f4;
+  --color-bg: #f0f2f5;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #e4e6eb;
   --color-text: #0f1419;
   --color-text-muted: #536471;
-  --color-border: #eff3f4;
+  --color-border: #dddfe2;
 }
 
 body {

@@ -1,5 +1,8 @@
 # FeedBot — Company Plan
 
+## Active
+- [x] Light mode color fix — gray page bg, white card bg (S)
+
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
 
