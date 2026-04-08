@@ -296,7 +296,7 @@ export default function ForYouPage() {
       <div className="max-w-2xl mx-auto px-4 pt-3 pb-1">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ {user ? "For You" : "Discover"}</h2>
+            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
             <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
