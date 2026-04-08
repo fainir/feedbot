@@ -308,7 +308,7 @@ export default function FeedPage() {
   if (notFound) {
     return (
       <div className="min-h-screen bg-bg text-text">
-        <header className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border flex items-center h-11">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
           <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
             <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
           </Link>
@@ -452,7 +452,7 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar — fixed so it never scrolls away */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border flex items-center h-11">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
