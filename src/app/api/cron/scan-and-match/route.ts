@@ -195,6 +195,7 @@ async function categorizeArticleBatch(
         format: {
           type: "json_schema",
           name: "categorized_articles",
+          strict: true,
           schema: {
             type: "object",
             properties: {
@@ -207,10 +208,12 @@ async function categorizeArticleBatch(
                     c: { type: "array", items: { type: "string" } },
                   },
                   required: ["i", "c"],
+                  additionalProperties: false,
                 },
               },
             },
             required: ["items"],
+            additionalProperties: false,
           },
         },
       },
@@ -266,6 +269,7 @@ async function matchArticlesToFeeds(
         format: {
           type: "json_schema",
           name: "article_matches",
+          strict: true,
           schema: {
             type: "object",
             properties: {
@@ -279,10 +283,12 @@ async function matchArticlesToFeeds(
                     s: { type: "number" },
                   },
                   required: ["a", "f", "s"],
+                  additionalProperties: false,
                 },
               },
             },
             required: ["matches"],
+            additionalProperties: false,
           },
         },
       },
