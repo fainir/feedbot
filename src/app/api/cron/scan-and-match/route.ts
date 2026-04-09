@@ -28,7 +28,7 @@ function getClient(): Anthropic | null {
   return _client;
 }
 
-const AI_MODEL = "claude-sonnet-4-6-20250514";
+const AI_MODEL = "claude-sonnet-4-5-20250514";
 const AI_TIMEOUT = 30_000; // 30s per call
 
 // ── Category system ──

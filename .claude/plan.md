@@ -21,6 +21,7 @@
 - [x] Add Brave Video Search to get YouTube content into feeds (M)
 - [x] Rewrite pipeline: scan-all → 2-pass AI classify (Sonnet 4.6) → multi-feed insert (XL)
 - [x] Add 100+ RSS sources across all categories (L)
+- [x] Fix AI model ID for classification pipeline (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
