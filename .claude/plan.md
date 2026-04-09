@@ -18,6 +18,7 @@
 - [x] Match divider styles — For You divider and Explore left divider same style (S)
 - [x] X button on right side of tab, not overlay center (S)
 - [x] Reduce action button padding + video embed support (M)
+- [x] Add Brave Video Search to get YouTube content into feeds (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

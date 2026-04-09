@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
-import { scanGlobal, scanForPlan, scanBrave } from "@/lib/global-scanner";
+import { scanGlobal, scanForPlan, scanBrave, scanBraveVideos } from "@/lib/global-scanner";
 import { scoreArticles, preFilterArticles, type FeedbackHint } from "@/lib/ai-matcher";
 import { generateSearchPlan, type SearchPlan } from "@/lib/prompt-intelligence";
 
@@ -138,6 +138,9 @@ export async function GET(request: NextRequest) {
       const braveResult = await scanBrave();
       results.phase1_scan.brave = braveResult;
     }
+    // Also search for videos
+    const videoResult = await scanBraveVideos();
+    results.phase1_scan.videos = videoResult;
   } catch {
     // Brave is optional
   }

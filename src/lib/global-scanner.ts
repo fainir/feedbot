@@ -451,3 +451,58 @@ export async function scanBrave(queries?: string[]): Promise<{ scanned: number; 
 
   return { scanned: totalScanned, added: totalAdded };
 }
+
+// Search Brave Videos API for YouTube content
+export async function scanBraveVideos(queries?: string[]): Promise<{ scanned: number; added: number }> {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  if (!apiKey) return { scanned: 0, added: 0 };
+
+  const defaultQueries = [
+    "AI technology explained",
+    "startup pitch funding",
+    "programming tutorial",
+    "science documentary",
+    "tech review 2026",
+    "cybersecurity explained",
+    "space exploration news",
+    "design process",
+    "game development devlog",
+    "robotics demo",
+  ];
+
+  const searchQueries = queries || defaultQueries;
+  let totalScanned = 0;
+  let totalAdded = 0;
+
+  for (const q of searchQueries) {
+    try {
+      const res = await fetch(
+        `https://api.search.brave.com/res/v1/videos/search?q=${encodeURIComponent(q)}&count=10&freshness=pm`,
+        { headers: { Accept: "application/json", "X-Subscription-Token": apiKey } }
+      );
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const results = data.results || [];
+      totalScanned += results.length;
+
+      const articles: RawArticle[] = results
+        .filter((r: { url: string }) => r.url?.includes("youtube.com") || r.url?.includes("youtu.be"))
+        .map((r: { title: string; description: string; url: string; thumbnail?: { src: string } }) => ({
+          title: r.title,
+          url: r.url,
+          summary: r.description || "",
+          source: "YouTube",
+          image_url: r.thumbnail?.src || null,
+          category: "video",
+          published_at: new Date().toISOString(),
+        }));
+
+      totalAdded += await insertToPool(articles);
+    } catch {
+      // continue
+    }
+  }
+
+  return { scanned: totalScanned, added: totalAdded };
+}
