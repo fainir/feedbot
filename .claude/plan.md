@@ -17,6 +17,7 @@
 - [x] Tighter tabs — X overlays on hover instead of taking space (S)
 - [x] Match divider styles — For You divider and Explore left divider same style (S)
 - [x] X button on right side of tab, not overlay center (S)
+- [x] Reduce action button padding + video embed support (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

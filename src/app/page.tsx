@@ -368,10 +368,17 @@ export default function ForYouPage() {
               const title = cleanTitle(item.title);
               const summary = cleanSummary(item.summary);
               const hasImage = !!item.image_url;
+              const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+              const ytId = ytMatch?.[1];
               return (
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-sm transition-all duration-200">
+                  {ytId ? (
+                    <div className="w-full aspect-video">
+                      <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
+                    </div>
+                  ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-                    {hasImage && (
+                    {!ytId && hasImage && (
                       <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       </div>
@@ -388,14 +395,14 @@ export default function ForYouPage() {
                       {summary && summary !== title && summary.length > 10 && (
                         <p className="text-sm text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{summary}</p>
                       )}
-                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
-                        <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`min-h-[44px] px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /><span className="hidden sm:inline">More</span></button>
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`min-h-[44px] px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">Less</span></button>
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40">
+                        <div className="flex items-center gap-0.5">
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /><span className="hidden sm:inline">More</span></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">Less</span></button>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}</button>
-                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="min-h-[44px] min-w-[44px] p-2.5 rounded-lg text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center justify-center gap-1 transition-all" aria-label="Share"><Share2 className="h-4 w-4" /></button>
+                        <div className="flex items-center gap-0.5">
+                          <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`p-1.5 rounded-md text-xs flex items-center justify-center transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
+                          <button onClick={(e) => { e.preventDefault(); handleShare(item); }} className="p-1.5 rounded-md text-xs text-text-muted hover:text-text hover:bg-bg-hover flex items-center justify-center transition-all" aria-label="Share"><Share2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
                     </div>
