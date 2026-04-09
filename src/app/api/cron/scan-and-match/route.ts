@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos } from "@/lib/global-scanner";
 
@@ -19,17 +19,16 @@ function isAuthorized(request: NextRequest): boolean {
   }
 }
 
-// ── Anthropic client (lazy getter — safe for build time) ──
+// ── OpenAI client (lazy getter — safe for build time) ──
 
-let _client: Anthropic | null = null;
-function getClient(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _client: OpenAI | null = null;
+function getClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) return null;
+  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return _client;
 }
 
-const AI_MODEL = "claude-haiku-4-5-20251001";
-const AI_TIMEOUT = 30_000; // 30s per call
+const AI_MODEL = "gpt-5-nano";
 
 // ── Category system ──
 
@@ -188,39 +187,47 @@ async function categorizeArticleBatch(
     })
     .join("\n");
 
-  const prompt = `Categorize each article into one or more categories.
-
-Categories:
-${categoryDesc}
-
-Articles:
-${articleList}
-
-Return JSON array: [{"i":0,"c":["tech","science"]},{"i":1,"c":["business"]}]
-Only return the JSON, nothing else.`;
-
   try {
-    const response = await client.messages.create({
+    const response = await client.responses.create({
       model: AI_MODEL,
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
+      input: `Categorize each article into one or more categories.\n\nCategories:\n${categoryDesc}\n\nArticles:\n${articleList}`,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "categorized_articles",
+          schema: {
+            type: "object",
+            properties: {
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    i: { type: "number" },
+                    c: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["i", "c"],
+                },
+              },
+            },
+            required: ["items"],
+          },
+        },
+      },
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-    console.log(`[Pass1] Raw response (${text.length} chars):`, text.slice(0, 200));
-    const parsed = safeParseJson<CategorizedArticle[]>(text);
-    if (!parsed || !Array.isArray(parsed)) {
-      console.error("[Pass1] Failed to parse JSON from:", text.slice(0, 300));
-      return [];
-    }
+    const text = response.output_text;
+    console.log(`[Pass1] Response (${text.length} chars):`, text.slice(0, 200));
+    const parsed = safeParseJson<{ items: CategorizedArticle[] }>(text);
+    if (!parsed?.items || !Array.isArray(parsed.items)) return [];
 
-    const validated = parsed.filter(
+    const validated = parsed.items.filter(
       (entry) =>
         typeof entry.i === "number" &&
         Array.isArray(entry.c) &&
         entry.c.every((c: string) => c in CATEGORIES)
     );
-    console.log(`[Pass1] Parsed ${parsed.length} entries, ${validated.length} valid`);
+    console.log(`[Pass1] ${parsed.items.length} entries, ${validated.length} valid`);
     return validated;
   } catch (err) {
     console.error("Pass 1 categorization failed:", err);
@@ -251,32 +258,43 @@ async function matchArticlesToFeeds(
     })
     .join("\n");
 
-  const prompt = `Score how relevant each article is to each feed (0-100). Only return pairs scoring 70+.
-
-Feeds:
-${feedList}
-
-Articles:
-${articleList}
-
-Return JSON: [{"a":0,"f":"feed-uuid","s":85},{"a":0,"f":"other-uuid","s":72}]
-Only return matches with score >= 70. An article can match 0-10 feeds.
-Only return the JSON, nothing else.`;
-
   try {
-    const response = await client.messages.create({
+    const response = await client.responses.create({
       model: AI_MODEL,
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+      input: `Score how relevant each article is to each feed (0-100). Only return pairs scoring 70+.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nAn article can match 0-10 feeds. Be selective.`,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "article_matches",
+          schema: {
+            type: "object",
+            properties: {
+              matches: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    a: { type: "number" },
+                    f: { type: "string" },
+                    s: { type: "number" },
+                  },
+                  required: ["a", "f", "s"],
+                },
+              },
+            },
+            required: ["matches"],
+          },
+        },
+      },
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-    const parsed = safeParseJson<MatchResult[]>(text);
-    if (!parsed || !Array.isArray(parsed)) return [];
+    const text = response.output_text;
+    const parsed = safeParseJson<{ matches: MatchResult[] }>(text);
+    if (!parsed?.matches || !Array.isArray(parsed.matches)) return [];
 
     // Map A-indices back to article pool IDs and validate
     const validFeedIds = new Set(feeds.map((f) => f.id));
-    return parsed
+    return parsed.matches
       .filter(
         (m) =>
           typeof m.a === "number" &&
@@ -396,7 +414,7 @@ export async function GET(request: NextRequest) {
   // ════════════════════════════════════════════════════════════════
 
   if (!getClient()) {
-    console.warn("No Anthropic API key — skipping AI classification");
+    console.warn("No OpenAI API key — skipping AI classification");
     return NextResponse.json({ ...results, warning: "No AI key, scan-only mode" });
   }
 

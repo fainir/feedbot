@@ -23,6 +23,7 @@
 - [x] Add 100+ RSS sources across all categories (L)
 - [x] Fix AI model ID for classification pipeline (S)
 - [x] Switch to Haiku (confirmed working on this API key) + add debug logging (S)
+- [x] Switch classification pipeline from Haiku to GPT-5 Nano (M)
 - [x] Add YouTube channel RSS feeds + remove Brave rotation limits (M)
 
 ## Vision
