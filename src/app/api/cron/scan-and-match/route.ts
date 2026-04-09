@@ -28,7 +28,7 @@ function getClient(): Anthropic | null {
   return _client;
 }
 
-const AI_MODEL = "claude-sonnet-4-5-20250514";
+const AI_MODEL = "claude-haiku-4-5-20251001";
 const AI_TIMEOUT = 30_000; // 30s per call
 
 // ── Category system ──
@@ -207,16 +207,21 @@ Only return the JSON, nothing else.`;
     });
 
     const text = response.content[0].type === "text" ? response.content[0].text : "";
+    console.log(`[Pass1] Raw response (${text.length} chars):`, text.slice(0, 200));
     const parsed = safeParseJson<CategorizedArticle[]>(text);
-    if (!parsed || !Array.isArray(parsed)) return [];
+    if (!parsed || !Array.isArray(parsed)) {
+      console.error("[Pass1] Failed to parse JSON from:", text.slice(0, 300));
+      return [];
+    }
 
-    // Validate: ensure each entry has valid categories
-    return parsed.filter(
+    const validated = parsed.filter(
       (entry) =>
         typeof entry.i === "number" &&
         Array.isArray(entry.c) &&
         entry.c.every((c: string) => c in CATEGORIES)
     );
+    console.log(`[Pass1] Parsed ${parsed.length} entries, ${validated.length} valid`);
+    return validated;
   } catch (err) {
     console.error("Pass 1 categorization failed:", err);
     return [];
