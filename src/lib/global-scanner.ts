@@ -21,72 +21,209 @@ interface RawArticle {
 }
 
 // ─── TIER 1: High-quality curated sources (always scanned) ───
-// These cover 80% of prompts for tech/business/science audience
+// These cover all major content categories our feeds serve.
 const GLOBAL_SOURCES: { url: string; category: string }[] = [
-  // Tech — top publications
+  // ── Tech — top publications ──
   { url: "https://hnrss.org/frontpage", category: "technology" },
   { url: "https://feeds.arstechnica.com/arstechnica/index", category: "technology" },
   { url: "https://www.reddit.com/r/technology/top/.rss?t=day", category: "technology" },
   { url: "https://www.theverge.com/rss/index.xml", category: "technology" },
 
-  // AI & ML — focused sources
+  // ── AI & ML ──
   { url: "https://www.reddit.com/r/MachineLearning/top/.rss?t=day", category: "ai" },
   { url: "https://www.reddit.com/r/artificial/top/.rss?t=day", category: "ai" },
   { url: "https://medium.com/feed/tag/artificial-intelligence", category: "ai" },
   { url: "https://dev.to/feed/tag/ai", category: "ai" },
 
-  // Startups & Business
+  // ── Startups ──
   { url: "https://news.google.com/rss/search?q=startup+funding+round&hl=en-US&gl=US&ceid=US:en", category: "startups" },
   { url: "https://www.reddit.com/r/startups/top/.rss?t=day", category: "startups" },
   { url: "https://hnrss.org/newest?q=funding+startup+launch", category: "startups" },
 
-  // Programming & Dev
+  // ── Programming & Dev ──
   { url: "https://www.reddit.com/r/programming/top/.rss?t=day", category: "programming" },
   { url: "https://dev.to/feed", category: "programming" },
   { url: "https://medium.com/feed/tag/programming", category: "programming" },
   { url: "https://hnrss.org/newest?q=programming+developer+tool", category: "programming" },
+  { url: "https://medium.com/feed/tag/software-engineering", category: "programming" },
+  { url: "https://medium.com/feed/tag/web-development", category: "programming" },
+  { url: "https://medium.com/feed/tag/python-programming", category: "programming" },
+  { url: "https://medium.com/feed/tag/machine-learning", category: "ai" },
+  { url: "https://www.reddit.com/r/typescript/top/.rss?t=day", category: "programming" },
+  { url: "https://www.reddit.com/r/rust/top/.rss?t=day", category: "programming" },
+  { url: "https://www.reddit.com/r/golang/top/.rss?t=day", category: "programming" },
+  { url: "https://dev.to/feed/tag/typescript", category: "programming" },
+  { url: "https://dev.to/feed/tag/rust", category: "programming" },
+  { url: "https://dev.to/feed/tag/golang", category: "programming" },
 
-  // Science
+  // ── Science ──
   { url: "https://www.reddit.com/r/science/top/.rss?t=day", category: "science" },
   { url: "https://news.google.com/rss/search?q=scientific+discovery+research+breakthrough&hl=en-US&gl=US&ceid=US:en", category: "science" },
   { url: "https://www.nature.com/nature.rss", category: "science" },
   { url: "https://www.sciencedaily.com/rss/all.xml", category: "science" },
   { url: "https://phys.org/rss-feed/", category: "science" },
 
-  // Business & Finance
+  // ── Business & Finance ──
   { url: "https://www.reddit.com/r/business/top/.rss?t=day", category: "business" },
   { url: "https://news.google.com/rss/search?q=business+economy+market&hl=en-US&gl=US&ceid=US:en", category: "business" },
+  { url: "https://feeds.bloomberg.com/markets/news.rss", category: "business" },
+  { url: "https://www.forbes.com/innovation/feed2", category: "business" },
+  { url: "https://www.businessinsider.com/rss", category: "business" },
+  { url: "https://feeds.reuters.com/reuters/businessNews", category: "business" },
+  { url: "https://www.ft.com/rss/home", category: "business" },
+  { url: "https://www.reddit.com/r/personalfinance/top/.rss?t=day", category: "business" },
+  { url: "https://www.reddit.com/r/economics/top/.rss?t=day", category: "business" },
+  { url: "https://medium.com/feed/tag/economics", category: "business" },
+  { url: "https://news.google.com/rss/search?q=stock+market+investing+wall+street&hl=en-US&gl=US&ceid=US:en", category: "business" },
 
-  // Crypto
-  { url: "https://www.reddit.com/r/CryptoCurrency/top/.rss?t=day", category: "crypto" },
-  { url: "https://medium.com/feed/tag/cryptocurrency", category: "crypto" },
+  // ── World News ──
+  { url: "https://feeds.bbci.co.uk/news/rss.xml", category: "news" },
+  { url: "http://rss.cnn.com/rss/edition.rss", category: "news" },
+  { url: "https://www.aljazeera.com/xml/rss/all.xml", category: "news" },
+  { url: "https://feeds.reuters.com/reuters/topNews", category: "news" },
+  { url: "https://rss.app/feeds/v1.1/apnews.com.rss", category: "news" },
+  { url: "https://feeds.npr.org/1001/rss.xml", category: "news" },
+  { url: "https://www.theguardian.com/world/rss", category: "news" },
+  { url: "https://www.reddit.com/r/worldnews/top/.rss?t=day", category: "news" },
 
-  // Design
+  // ── Sports ──
+  { url: "https://www.espn.com/espn/rss/news", category: "sports" },
+  { url: "https://feeds.bbci.co.uk/sport/rss.xml", category: "sports" },
+  { url: "https://bleacherreport.com/articles/feed", category: "sports" },
+  { url: "https://theathletic.com/feed/", category: "sports" },
+  { url: "https://news.google.com/rss/search?q=sports+news+results&hl=en-US&gl=US&ceid=US:en", category: "sports" },
+  { url: "https://medium.com/feed/tag/sports", category: "sports" },
+
+  // ── Creative & Design ──
   { url: "https://www.reddit.com/r/design/top/.rss?t=day", category: "design" },
   { url: "https://medium.com/feed/tag/ux-design", category: "design" },
+  { url: "https://dribbble.com/stories.rss", category: "design" },
+  { url: "https://www.creativebloq.com/feed", category: "design" },
+  { url: "https://www.smashingmagazine.com/feed/", category: "design" },
+  { url: "https://css-tricks.com/feed/", category: "design" },
+  { url: "https://dev.to/feed/tag/design", category: "design" },
+  { url: "https://medium.com/feed/tag/animation", category: "design" },
 
-  // Security
-  { url: "https://www.reddit.com/r/netsec/top/.rss?t=day", category: "security" },
-  { url: "https://medium.com/feed/tag/cybersecurity", category: "security" },
+  // ── Music ──
+  { url: "https://pitchfork.com/feed/feed-news/rss", category: "music" },
+  { url: "https://www.nme.com/feed", category: "music" },
+  { url: "https://www.billboard.com/feed/", category: "music" },
+  { url: "https://www.reddit.com/r/music/top/.rss?t=day", category: "music" },
+  { url: "https://medium.com/feed/tag/music", category: "music" },
+  { url: "https://news.google.com/rss/search?q=music+album+release&hl=en-US&gl=US&ceid=US:en", category: "music" },
 
-  // Gaming
+  // ── Film & TV ──
+  { url: "https://variety.com/feed/", category: "entertainment" },
+  { url: "https://deadline.com/feed/", category: "entertainment" },
+  { url: "https://www.hollywoodreporter.com/feed/", category: "entertainment" },
+  { url: "https://www.indiewire.com/feed/", category: "entertainment" },
+  { url: "https://www.reddit.com/r/movies/top/.rss?t=day", category: "entertainment" },
+  { url: "https://medium.com/feed/tag/film", category: "entertainment" },
+  { url: "https://news.google.com/rss/search?q=movie+review+film&hl=en-US&gl=US&ceid=US:en", category: "entertainment" },
+
+  // ── Gaming (expanded) ──
   { url: "https://www.reddit.com/r/Games/top/.rss?t=day", category: "gaming" },
   { url: "https://www.reddit.com/r/gamedev/top/.rss?t=day", category: "gaming" },
   { url: "https://news.google.com/rss/search?q=video+game+release+esports+gaming+industry&hl=en-US&gl=US&ceid=US:en", category: "gaming" },
+  { url: "https://feeds.ign.com/ign/all", category: "gaming" },
+  { url: "https://kotaku.com/rss", category: "gaming" },
+  { url: "https://www.pcgamer.com/rss/", category: "gaming" },
+  { url: "https://www.gamespot.com/feeds/mashup/", category: "gaming" },
+  { url: "https://www.rockpapershotgun.com/feed", category: "gaming" },
+  { url: "https://www.reddit.com/r/anime/top/.rss?t=day", category: "gaming" },
 
-  // Space
+  // ── Cooking & Food ──
+  { url: "https://www.seriouseats.com/feeds/atom", category: "food" },
+  { url: "https://www.bonappetit.com/feed/rss", category: "food" },
+  { url: "https://www.foodnetwork.com/fn-dish/feed", category: "food" },
+  { url: "https://www.eater.com/rss/index.xml", category: "food" },
+  { url: "https://www.reddit.com/r/cooking/top/.rss?t=day", category: "food" },
+  { url: "https://medium.com/feed/tag/cooking", category: "food" },
+  { url: "https://news.google.com/rss/search?q=cooking+recipe+food&hl=en-US&gl=US&ceid=US:en", category: "food" },
+
+  // ── Health & Fitness ──
+  { url: "https://www.reddit.com/r/Health/top/.rss?t=day", category: "health" },
+  { url: "https://medium.com/feed/tag/health", category: "health" },
+  { url: "https://www.statnews.com/feed/", category: "health" },
+  { url: "https://news.google.com/rss/search?q=medical+research+health+breakthrough&hl=en-US&gl=US&ceid=US:en", category: "health" },
+  { url: "https://www.webmd.com/rss/default.xml", category: "health" },
+  { url: "https://www.healthline.com/rss", category: "health" },
+  { url: "https://www.runnersworld.com/rss/all.xml/", category: "health" },
+  { url: "https://www.reddit.com/r/fitness/top/.rss?t=day", category: "health" },
+  { url: "https://medium.com/feed/tag/fitness", category: "health" },
+  { url: "https://news.google.com/rss/search?q=fitness+workout+exercise&hl=en-US&gl=US&ceid=US:en", category: "health" },
+  { url: "https://www.reddit.com/r/longevity/top/.rss?t=day", category: "health" },
+
+  // ── Travel ──
+  { url: "https://www.lonelyplanet.com/feed.xml", category: "travel" },
+  { url: "https://www.travelandleisure.com/feeds/all", category: "travel" },
+  { url: "https://www.nomadicmatt.com/feed/", category: "travel" },
+  { url: "https://www.reddit.com/r/travel/top/.rss?t=day", category: "travel" },
+  { url: "https://medium.com/feed/tag/travel", category: "travel" },
+  { url: "https://news.google.com/rss/search?q=travel+destination&hl=en-US&gl=US&ceid=US:en", category: "travel" },
+
+  // ── Photography ──
+  { url: "https://petapixel.com/feed/", category: "photography" },
+  { url: "https://www.dpreview.com/feeds/news.xml", category: "photography" },
+  { url: "https://fstoppers.com/rss.xml", category: "photography" },
+  { url: "https://www.reddit.com/r/photography/top/.rss?t=day", category: "photography" },
+  { url: "https://medium.com/feed/tag/photography", category: "photography" },
+  { url: "https://news.google.com/rss/search?q=photography+tips&hl=en-US&gl=US&ceid=US:en", category: "photography" },
+
+  // ── Lifestyle & Productivity ──
+  { url: "https://lifehacker.com/feed/rss", category: "lifestyle" },
+  { url: "https://zenhabits.net/feed/", category: "lifestyle" },
+  { url: "https://medium.com/feed/tag/productivity", category: "lifestyle" },
+  { url: "https://medium.com/feed/tag/writing", category: "lifestyle" },
+  { url: "https://medium.com/feed/tag/psychology", category: "lifestyle" },
+
+  // ── Robotics & EVs ──
+  { url: "https://spectrum.ieee.org/feeds/feed.rss", category: "robotics" },
+  { url: "https://electrek.co/feed/", category: "robotics" },
+  { url: "https://insideevs.com/rss/", category: "robotics" },
+  { url: "https://www.therobotreport.com/feed/", category: "robotics" },
+  { url: "https://www.reddit.com/r/robotics/top/.rss?t=day", category: "robotics" },
+  { url: "https://www.reddit.com/r/electricvehicles/top/.rss?t=day", category: "robotics" },
+
+  // ── Crypto (expanded) ──
+  { url: "https://www.reddit.com/r/CryptoCurrency/top/.rss?t=day", category: "crypto" },
+  { url: "https://medium.com/feed/tag/cryptocurrency", category: "crypto" },
+  { url: "https://www.coindesk.com/arc/outboundfeeds/rss/", category: "crypto" },
+  { url: "https://decrypt.co/feed", category: "crypto" },
+  { url: "https://www.theblock.co/rss.xml", category: "crypto" },
+
+  // ── Open Source ──
+  { url: "https://opensource.com/feed", category: "opensource" },
+  { url: "https://itsfoss.com/feed/", category: "opensource" },
+  { url: "https://www.reddit.com/r/linux/top/.rss?t=day", category: "opensource" },
+  { url: "https://dev.to/feed/tag/opensource", category: "opensource" },
+  { url: "https://dev.to/feed/tag/linux", category: "opensource" },
+
+  // ── Education ──
+  { url: "https://www.edsurge.com/feeds/articles", category: "education" },
+  { url: "https://www.insidehighered.com/rss/all", category: "education" },
+  { url: "https://www.reddit.com/r/education/top/.rss?t=day", category: "education" },
+  { url: "https://medium.com/feed/tag/education", category: "education" },
+
+  // ── Books & Literature ──
+  { url: "https://lithub.com/feed/", category: "books" },
+  { url: "https://bookriot.com/feed/", category: "books" },
+  { url: "https://www.theparisreview.org/feed/", category: "books" },
+  { url: "https://www.reddit.com/r/books/top/.rss?t=day", category: "books" },
+  { url: "https://medium.com/feed/tag/books", category: "books" },
+  { url: "https://news.google.com/rss/search?q=book+review+bestseller&hl=en-US&gl=US&ceid=US:en", category: "books" },
+
+  // ── Security ──
+  { url: "https://www.reddit.com/r/netsec/top/.rss?t=day", category: "security" },
+  { url: "https://medium.com/feed/tag/cybersecurity", category: "security" },
+
+  // ── Space ──
   { url: "https://www.reddit.com/r/space/top/.rss?t=day", category: "space" },
   { url: "https://www.nasa.gov/feed/", category: "space" },
   { url: "https://spacenews.com/feed/", category: "space" },
   { url: "https://www.space.com/feeds/all", category: "space" },
 
-  // Health
-  { url: "https://www.reddit.com/r/Health/top/.rss?t=day", category: "health" },
-  { url: "https://medium.com/feed/tag/health", category: "health" },
-  { url: "https://www.statnews.com/feed/", category: "health" },
-  { url: "https://news.google.com/rss/search?q=medical+research+health+breakthrough&hl=en-US&gl=US&ceid=US:en", category: "health" },
-
-  // Climate
+  // ── Climate ──
   { url: "https://www.reddit.com/r/climate/top/.rss?t=day", category: "climate" },
   { url: "https://www.reddit.com/r/RenewableEnergy/top/.rss?t=day", category: "climate" },
   { url: "https://news.google.com/rss/search?q=climate+change+renewable+energy+sustainability&hl=en-US&gl=US&ceid=US:en", category: "climate" },
@@ -94,49 +231,131 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   { url: "https://www.reddit.com/r/environment/top/.rss?t=day", category: "climate" },
   { url: "https://news.google.com/rss/search?q=solar+wind+energy+carbon+emissions+net+zero&hl=en-US&gl=US&ceid=US:en", category: "climate" },
 
-  // Fintech
+  // ── Fintech ──
   { url: "https://www.reddit.com/r/fintech/top/.rss?t=day", category: "fintech" },
   { url: "https://news.google.com/rss/search?q=fintech+digital+banking+neobank+payment+technology&hl=en-US&gl=US&ceid=US:en", category: "fintech" },
   { url: "https://medium.com/feed/tag/fintech", category: "fintech" },
 
-  // DevOps
+  // ── DevOps ──
   { url: "https://www.reddit.com/r/devops/top/.rss?t=day", category: "devops" },
 
-  // Data Science
+  // ── Data Science ──
   { url: "https://www.reddit.com/r/datascience/top/.rss?t=day", category: "data" },
   { url: "https://medium.com/feed/tag/data-science", category: "data" },
 
-  // Mobile
+  // ── Mobile ──
   { url: "https://www.reddit.com/r/iOSProgramming/top/.rss?t=day", category: "mobile" },
   { url: "https://www.reddit.com/r/androiddev/top/.rss?t=day", category: "mobile" },
 
-  // Marketing
+  // ── Marketing ──
   { url: "https://www.reddit.com/r/digital_marketing/top/.rss?t=day", category: "marketing" },
   { url: "https://medium.com/feed/tag/marketing", category: "marketing" },
 
-  // Software Engineering (broader)
-  { url: "https://medium.com/feed/tag/software-engineering", category: "programming" },
-  { url: "https://medium.com/feed/tag/web-development", category: "programming" },
-  { url: "https://medium.com/feed/tag/python-programming", category: "programming" },
-  { url: "https://medium.com/feed/tag/machine-learning", category: "ai" },
+  // ── DIY & Maker ──
+  { url: "https://www.reddit.com/r/DIY/top/.rss?t=day", category: "lifestyle" },
+  { url: "https://www.reddit.com/r/3Dprinting/top/.rss?t=day", category: "technology" },
+  { url: "https://www.reddit.com/r/gardening/top/.rss?t=day", category: "lifestyle" },
+  { url: "https://www.reddit.com/r/nocode/top/.rss?t=day", category: "technology" },
+
+  // ── Anime ──
+  { url: "https://news.google.com/rss/search?q=anime+manga+release&hl=en-US&gl=US&ceid=US:en", category: "entertainment" },
 ];
 
 // ─── Source quality weights ───
 // Used to boost/penalize articles from known sources
 const SOURCE_QUALITY: Record<string, number> = {
+  // Tech
   "news.ycombinator.com": 20,
   "arstechnica.com": 15,
   "theverge.com": 15,
   "wired.com": 15,
   "techcrunch.com": 15,
+  // Science
   "nature.com": 15,
   "sciencedaily.com": 12,
   "phys.org": 12,
+  // Space
   "nasa.gov": 15,
   "spacenews.com": 12,
   "space.com": 10,
+  // Health
   "statnews.com": 15,
+  "webmd.com": 10,
+  "healthline.com": 10,
+  "runnersworld.com": 10,
+  // Climate
   "carbonbrief.org": 12,
+  // Business & Finance
+  "bloomberg.com": 18,
+  "forbes.com": 12,
+  "businessinsider.com": 10,
+  "reuters.com": 18,
+  "ft.com": 18,
+  // World News
+  "bbc.co.uk": 18,
+  "cnn.com": 12,
+  "aljazeera.com": 15,
+  "npr.org": 15,
+  "theguardian.com": 15,
+  "apnews.com": 15,
+  // Sports
+  "espn.com": 15,
+  "theathletic.com": 15,
+  "bleacherreport.com": 10,
+  // Design
+  "dribbble.com": 12,
+  "smashingmagazine.com": 15,
+  "css-tricks.com": 12,
+  "creativebloq.com": 10,
+  // Music
+  "pitchfork.com": 15,
+  "nme.com": 10,
+  "billboard.com": 12,
+  // Film & TV
+  "variety.com": 15,
+  "deadline.com": 15,
+  "hollywoodreporter.com": 15,
+  "indiewire.com": 12,
+  // Gaming
+  "ign.com": 12,
+  "kotaku.com": 10,
+  "pcgamer.com": 12,
+  "gamespot.com": 10,
+  "rockpapershotgun.com": 12,
+  // Food
+  "seriouseats.com": 15,
+  "bonappetit.com": 12,
+  "eater.com": 12,
+  // Travel
+  "lonelyplanet.com": 15,
+  "nomadicmatt.com": 10,
+  // Photography
+  "petapixel.com": 15,
+  "dpreview.com": 12,
+  "fstoppers.com": 10,
+  // Lifestyle
+  "lifehacker.com": 10,
+  "zenhabits.net": 10,
+  // Robotics & EVs
+  "spectrum.ieee.org": 18,
+  "electrek.co": 12,
+  "insideevs.com": 10,
+  "therobotreport.com": 12,
+  // Crypto
+  "coindesk.com": 12,
+  "decrypt.co": 10,
+  "theblock.co": 12,
+  // Open Source
+  "opensource.com": 10,
+  "itsfoss.com": 10,
+  // Education
+  "edsurge.com": 12,
+  "insidehighered.com": 12,
+  // Books
+  "lithub.com": 15,
+  "bookriot.com": 10,
+  "theparisreview.org": 15,
+  // Aggregators
   "reddit.com": 10,
   "dev.to": 5,
   "medium.com": 5,
