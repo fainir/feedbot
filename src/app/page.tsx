@@ -118,6 +118,16 @@ export default function ForYouPage() {
   }, []);
 
   const toggleFeed = (id: string) => {
+    // If Show All is on, clicking a chip turns it off and deselects that chip
+    if (showAllFeeds) {
+      setShowAllFeeds(false);
+      localStorage.setItem("myfeed-show-all", "0");
+      const next = new Set(FEEDS.map(f => f.id));
+      next.delete(id);
+      setEnabledFeeds(next);
+      localStorage.setItem("myfeed-for-you-feeds", JSON.stringify([...next]));
+      return;
+    }
     setEnabledFeeds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) { if (next.size > 1) next.delete(id); } else next.add(id);
@@ -314,29 +324,25 @@ export default function ForYouPage() {
             </div>
             <label className="flex items-center justify-between py-2 px-1 cursor-pointer">
               <span className="text-xs text-text">Show all feeds</span>
-              <button onClick={() => { const next = !showAllFeeds; setShowAllFeeds(next); localStorage.setItem("myfeed-show-all", next ? "1" : "0"); }} className={`relative w-9 h-5 rounded-full transition-colors ${showAllFeeds ? "bg-green-500" : "bg-border"}`}>
+              <button onClick={() => { const next = !showAllFeeds; setShowAllFeeds(next); localStorage.setItem("myfeed-show-all", next ? "1" : "0"); if (next) { setEnabledFeeds(DEFAULT_ENABLED); localStorage.setItem("myfeed-for-you-feeds", JSON.stringify([...DEFAULT_ENABLED])); } }} className={`relative w-9 h-5 rounded-full transition-colors ${showAllFeeds ? "bg-green-500" : "bg-border"}`}>
                 <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${showAllFeeds ? "translate-x-4" : ""}`} />
               </button>
             </label>
-            {!showAllFeeds && (
-              <>
-                <div className="flex items-center justify-between mt-2 mb-2">
-                  <span className="text-[11px] text-text-muted">{enabledFeeds.size} of {FEEDS.length} feeds selected</span>
-                  <button onClick={() => { setEnabledFeeds(enabledFeeds.size === FEEDS.length ? new Set(["ai"]) : DEFAULT_ENABLED); localStorage.setItem("myfeed-for-you-feeds", JSON.stringify(enabledFeeds.size === FEEDS.length ? ["ai"] : [...DEFAULT_ENABLED])); }} className="text-[10px] text-text-muted hover:text-text transition-colors">
-                    {enabledFeeds.size === FEEDS.length ? "Deselect all" : "Select all"}
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {FEEDS.map((f) => (
-                    <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${enabledFeeds.has(f.id) ? "border-text/30 bg-text/10 text-text" : "border-border text-text-muted hover:border-text/20"}`}>
-                      <span>{f.icon}</span>
-                      <span>{f.name}</span>
-                      {enabledFeeds.has(f.id) && <Check className="h-3 w-3" />}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            <div className="flex items-center justify-between mt-2 mb-2">
+              <span className="text-[11px] text-text-muted">{showAllFeeds ? "All feeds selected" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}</span>
+              {!showAllFeeds && <button onClick={() => { setEnabledFeeds(enabledFeeds.size === FEEDS.length ? new Set(["ai"]) : DEFAULT_ENABLED); localStorage.setItem("myfeed-for-you-feeds", JSON.stringify(enabledFeeds.size === FEEDS.length ? ["ai"] : [...DEFAULT_ENABLED])); }} className="text-[10px] text-text-muted hover:text-text transition-colors">
+                {enabledFeeds.size === FEEDS.length ? "Deselect all" : "Select all"}
+              </button>}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {FEEDS.map((f) => (
+                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${(showAllFeeds || enabledFeeds.has(f.id)) ? "border-text/30 bg-text/10 text-text" : "border-border text-text-muted hover:border-text/20"}`}>
+                  <span>{f.icon}</span>
+                  <span>{f.name}</span>
+                  {(showAllFeeds || enabledFeeds.has(f.id)) && <Check className="h-3 w-3" />}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
