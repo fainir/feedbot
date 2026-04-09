@@ -19,6 +19,7 @@
 - [x] X button on right side of tab, not overlay center (S)
 - [x] Reduce action button padding + video embed support (M)
 - [x] Add Brave Video Search to get YouTube content into feeds (M)
+- [x] Rewrite pipeline: scan-all → 2-pass AI classify (Sonnet 4.6) → multi-feed insert (XL)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
