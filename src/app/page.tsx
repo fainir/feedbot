@@ -80,6 +80,10 @@ export default function ForYouPage() {
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [enabledFeeds, setEnabledFeeds] = useState<Set<string>>(DEFAULT_ENABLED);
+  const [showAllFeeds, setShowAllFeeds] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("myfeed-show-all") !== "0";
+    return true;
+  });
   const [showEmailPrefs, setShowEmailPrefs] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ enabled: true, frequency: "daily", time: "08:00", feeds: ["for-you"] as string[] });
   const [heroDismissed, setHeroDismissed] = useState(() => {
@@ -123,8 +127,9 @@ export default function ForYouPage() {
   };
 
   const feedNames = useMemo(() => {
+    if (showAllFeeds) return Object.values(FEED_NAME_MAP);
     return [...enabledFeeds].map((id) => FEED_NAME_MAP[id]).filter(Boolean);
-  }, [enabledFeeds]);
+  }, [enabledFeeds, showAllFeeds]);
 
   const fetchFeed = useCallback((cursor?: string) => {
     const feedsParam = feedNames.join(",");
@@ -224,12 +229,12 @@ export default function ForYouPage() {
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
           <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
-          {FEEDS.filter(f => !hiddenFeeds.has(f.id)).map((tab) => (
-            <div key={tab.id} className="group flex shrink-0 items-center border-b-2 border-transparent text-text-muted hover:bg-bg-hover hover:text-text py-3 pl-2.5 pr-1 transition-colors">
+          {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
+            <div key={tab.id} className="group flex shrink-0 items-center border-b-2 border-transparent text-text-muted hover:bg-bg-hover hover:text-text py-3 pl-2 pr-0.5 transition-colors">
               <Link href={`/${tab.id}`} className="flex items-center gap-1 text-xs font-medium whitespace-nowrap">
                 <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
               </Link>
-              <button type="button" onClick={() => setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; })} className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 text-text-muted hover:bg-bg-hover hover:text-text transition-all" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5" /></button>
+              {!showAllFeeds && <button type="button" onClick={() => setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; })} className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 text-text-muted hover:bg-bg-hover hover:text-text transition-all" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5" /></button>}
             </div>
           ))}
         </div>
@@ -293,7 +298,7 @@ export default function ForYouPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{user ? (enabledFeeds.size === FEEDS.length ? "All your feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`) : "Trending from all feeds"}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -304,21 +309,34 @@ export default function ForYouPage() {
         {/* Feed filter panel */}
         {showFilter && (
           <div className="mt-2 p-3 rounded-xl border border-border bg-bg-card">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-text">Toggle feeds in your mix</span>
-              <button onClick={() => { setEnabledFeeds(enabledFeeds.size === FEEDS.length ? new Set(["ai"]) : DEFAULT_ENABLED); localStorage.setItem("myfeed-for-you-feeds", JSON.stringify(enabledFeeds.size === FEEDS.length ? ["ai"] : [...DEFAULT_ENABLED])); }} className="text-[10px] text-text-muted hover:text-text transition-colors">
-                {enabledFeeds.size === FEEDS.length ? "Deselect all" : "Select all"}
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-text">Customize your feed</span>
+            </div>
+            <label className="flex items-center justify-between py-2 px-1 cursor-pointer">
+              <span className="text-xs text-text">Show all feeds</span>
+              <button onClick={() => { const next = !showAllFeeds; setShowAllFeeds(next); localStorage.setItem("myfeed-show-all", next ? "1" : "0"); }} className={`relative w-9 h-5 rounded-full transition-colors ${showAllFeeds ? "bg-green-500" : "bg-border"}`}>
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${showAllFeeds ? "translate-x-4" : ""}`} />
               </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {FEEDS.map((f) => (
-                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${enabledFeeds.has(f.id) ? "border-text/30 bg-text/10 text-text" : "border-border text-text-muted hover:border-text/20"}`}>
-                  <span>{f.icon}</span>
-                  <span>{f.name}</span>
-                  {enabledFeeds.has(f.id) && <Check className="h-3 w-3" />}
-                </button>
-              ))}
-            </div>
+            </label>
+            {!showAllFeeds && (
+              <>
+                <div className="flex items-center justify-between mt-2 mb-2">
+                  <span className="text-[11px] text-text-muted">{enabledFeeds.size} of {FEEDS.length} feeds selected</span>
+                  <button onClick={() => { setEnabledFeeds(enabledFeeds.size === FEEDS.length ? new Set(["ai"]) : DEFAULT_ENABLED); localStorage.setItem("myfeed-for-you-feeds", JSON.stringify(enabledFeeds.size === FEEDS.length ? ["ai"] : [...DEFAULT_ENABLED])); }} className="text-[10px] text-text-muted hover:text-text transition-colors">
+                    {enabledFeeds.size === FEEDS.length ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {FEEDS.map((f) => (
+                    <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${enabledFeeds.has(f.id) ? "border-text/30 bg-text/10 text-text" : "border-border text-text-muted hover:border-text/20"}`}>
+                      <span>{f.icon}</span>
+                      <span>{f.name}</span>
+                      {enabledFeeds.has(f.id) && <Check className="h-3 w-3" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
