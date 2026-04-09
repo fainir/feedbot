@@ -240,11 +240,11 @@ export default function ForYouPage() {
           </Link>
           <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
           {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
-            <div key={tab.id} className="group flex shrink-0 items-center border-b-2 border-transparent text-text-muted hover:bg-bg-hover hover:text-text py-3 pl-2 pr-0.5 transition-colors">
-              <Link href={`/${tab.id}`} className="flex items-center gap-1 text-xs font-medium whitespace-nowrap">
+            <div key={tab.id} className="group relative shrink-0 border-b-2 border-transparent text-text-muted hover:text-text transition-colors">
+              <Link href={`/${tab.id}`} className="flex items-center gap-1 px-2 py-3 text-xs font-medium whitespace-nowrap">
                 <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
               </Link>
-              {!showAllFeeds && <button type="button" onClick={() => setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; })} className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 text-text-muted hover:bg-bg-hover hover:text-text transition-all" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5" /></button>}
+              {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute inset-0 flex items-center justify-center bg-bg-card/90 opacity-0 group-hover:opacity-100 transition-opacity rounded-md" aria-label={`Hide ${tab.name}`}><X className="h-3.5 w-3.5 text-text-muted" /></button>}
             </div>
           ))}
         </div>

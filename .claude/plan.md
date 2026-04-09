@@ -14,6 +14,7 @@
 - [x] Seed all 103 system feeds into DB so they use the same pipeline as user feeds (L)
 - [x] For You customize — toggle feeds on/off, show-all toggle (M)
 - [x] Show All toggle UX — clicking a chip turns off toggle, toggling back selects all (S)
+- [x] Tighter tabs — X overlays on hover instead of taking space (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

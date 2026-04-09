@@ -577,17 +577,17 @@ export default function FeedPage() {
               onTouchStart={(e) => handleTouchStart(tab.id, e.touches[0].clientX)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className={`group flex shrink-0 cursor-grab select-none items-center border-b-2 py-3 pl-2.5 pr-1 text-xs font-medium transition-all active:cursor-grabbing ${
+              className={`group relative shrink-0 cursor-grab select-none border-b-2 text-xs font-medium transition-all active:cursor-grabbing ${
                 feedSlug === tab.id
                   ? "border-text text-text"
-                  : "border-transparent text-text-muted hover:bg-bg-hover hover:text-text"
+                  : "border-transparent text-text-muted hover:text-text"
               } ${draggedTab === tab.id ? "opacity-40 scale-105" : ""}`}
             >
               <Link
                 href={`/${tab.id}`}
                 data-active={feedSlug === tab.id}
                 draggable={false}
-                className="flex items-center gap-1 whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-3 whitespace-nowrap"
               >
                 <span className="text-sm">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.name}</span>
@@ -602,14 +602,14 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-all ${
+                className={`absolute inset-0 flex items-center justify-center rounded-md transition-opacity ${
                   feedSlug === tab.id
-                    ? "opacity-100 text-text/70 hover:bg-text/10 hover:text-text"
-                    : "opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 text-text-muted hover:bg-bg-hover hover:text-text"
+                    ? "opacity-0 hover:opacity-100 bg-bg-card/90"
+                    : "opacity-0 group-hover:opacity-100 bg-bg-card/90"
                 }`}
                 aria-label={`Remove ${tab.name}`}
               >
-                <X className="h-2.5 w-2.5" />
+                <X className="h-3.5 w-3.5 text-text-muted" />
               </button>
             </div>
           ))}
