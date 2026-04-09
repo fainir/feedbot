@@ -602,14 +602,14 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`absolute inset-0 flex items-center justify-center rounded-md transition-opacity ${
+                className={`absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 transition-opacity ${
                   feedSlug === tab.id
-                    ? "opacity-0 hover:opacity-100 bg-bg-card/90"
-                    : "opacity-0 group-hover:opacity-100 bg-bg-card/90"
+                    ? "opacity-0 hover:opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
                 }`}
                 aria-label={`Remove ${tab.name}`}
               >
-                <X className="h-3.5 w-3.5 text-text-muted" />
+                <X className="h-2.5 w-2.5 text-text-muted" />
               </button>
             </div>
           ))}
