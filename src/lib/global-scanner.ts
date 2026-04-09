@@ -259,6 +259,50 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
 
   // ── Anime ──
   { url: "https://news.google.com/rss/search?q=anime+manga+release&hl=en-US&gl=US&ceid=US:en", category: "entertainment" },
+
+  // ── YouTube Channels (free RSS, no API budget) ──
+  // Tech/AI
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA", category: "technology" },      // Fireship
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg", category: "ai" },              // Two Minute Papers
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA", category: "technology" },      // Computerphile
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCddiUEpeqJcYeBxX1IVBKvQ", category: "technology" },      // The Verge
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCBJycsmduvYEL83R_U4JriQ", category: "technology" },      // MKBHD
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC9x0AN7BWHpCDHSm9NiJFJQ", category: "technology" },      // NetworkChuck
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCbRP3c757lWg9M-U7TyEkXA", category: "technology" },      // Theo - t3.gg
+  // Science/Space
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCsXVk37bltHxD1rDPwtNM8Q", category: "science" },         // Kurzgesagt
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA", category: "science" },         // Veritasium
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCLA_DiR1FfKNvjuUpBHmylQ", category: "space" },           // NASA
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC6107grRI4m0o2-emgoDnAA", category: "science" },         // SmarterEveryDay
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC7_gcs09iThXybpVgjHZ_7g", category: "space" },           // PBS Space Time
+  // Business/Startups
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCcefcZRL2oaA_uBNeo5UOWg", category: "startups" },        // Y Combinator
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCCjyq_K1Xwfg8Lndy7lKMpA", category: "startups" },        // TechCrunch
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCkkhmBWfS7pILYIk0iBeTnQ", category: "startups" },        // This Week in Startups
+  // Gaming
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCKy1dAqELo0zrOtPkf0eTMw", category: "gaming" },          // IGN
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCNvzD7Z-g64bPXxGzaQaa4g", category: "gaming" },          // Gameranx
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC-2Y8dQb0S6DtpxNgAKoJKA", category: "gaming" },          // PlayStation
+  // Creative/Design
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC-b3c7kxa5vU-bnmaROgvog", category: "design" },          // The Futur
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCvK4bOhULCpmLabd2pDMtnA", category: "lifestyle" },       // Yes Theory
+  // Cooking
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCJHA_jMfCvEnv-3kRjTCQXw", category: "food" },            // Binging with Babish
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UChBEbMKI1eCcejTtmI32UEw", category: "food" },            // Joshua Weissman
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCbpMy0Fg74eXXkvxJrtEn3w", category: "food" },            // Bon Appetit
+  // Health/Fitness
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC68KOHp3neoaKBGvQ-Y8JPA", category: "health" },          // Jeff Nippard
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCe0TLA0EsQbE-MjuHXevj2A", category: "health" },          // AthleanX
+  // Music
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC2Qw1dzXDBAZPwS7zm37g8g", category: "music" },           // COLORS
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC4eYXhJI4-7wSWc8UNRwD4A", category: "music" },           // NPR Music
+  // World News
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC16niRr50-MSBwiO3YDb3RA", category: "news" },            // BBC News
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCNye-wNBqNL5ZzHSJj3l8Bg", category: "news" },            // Al Jazeera English
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCvJJ_dzjViJCoLf5uKUTwoA", category: "business" },        // CNBC
+  // Photography
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC3DkFux8Iv-aYnTRWzwaiBA", category: "photography" },     // Peter McKinnon
+  { url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCaFRjcbTlBn3-AGOxPmobOQ", category: "photography" },     // Mango Street
 ];
 
 // ─── Source quality weights ───
@@ -355,6 +399,8 @@ const SOURCE_QUALITY: Record<string, number> = {
   "lithub.com": 15,
   "bookriot.com": 10,
   "theparisreview.org": 15,
+  // YouTube
+  "youtube.com": 12,
   // Aggregators
   "reddit.com": 10,
   "dev.to": 5,
@@ -420,6 +466,14 @@ function cleanSourceFromUrl(url: string): string {
 }
 
 function cleanSourceName(raw: string, articleUrl?: string): string {
+  // YouTube feeds: use channel name from feed title
+  if (articleUrl?.includes("youtube.com/watch") || articleUrl?.includes("youtu.be")) {
+    // YouTube RSS feed titles are just the channel name — use as-is if short enough
+    const name = raw.trim();
+    if (name && name.length <= 30 && !name.includes("http")) return name;
+    return "YouTube";
+  }
+
   // Reddit feeds: extract subreddit name
   if (/top scoring links|^r\/|\/r\//i.test(raw)) {
     const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);

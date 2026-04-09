@@ -350,33 +350,30 @@ export async function GET(request: NextRequest) {
   // Get all active feeds for Brave query rotation and classification
   const { data: allFeeds } = await supabase
     .from("feeds")
-    .select("id, name, query_text")
+    .select("id, name, query_text, last_refreshed_at")
     .eq("is_active", true);
 
   if (!allFeeds || allFeeds.length === 0) {
     return NextResponse.json(results);
   }
 
-  // 1B: Brave web search with rotation (pick 10 feeds per cycle)
+  // 1B: Brave web search — scan ALL feeds, cap at 20 queries per cycle
+  // Pick the 20 feeds least recently refreshed for maximum coverage
   try {
-    // Deterministic rotation: day-of-year modulo gives stable rotation across cycles
-    const dayOfYear = Math.floor(
-      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-    );
-    const rotationIdx = dayOfYear % Math.max(1, Math.ceil(allFeeds.length / 10));
-    const start = rotationIdx * 10;
-    const rotationFeeds = allFeeds.slice(start, start + 10);
+    // Sort feeds by last_refreshed_at ascending (least recent first, nulls first)
+    const sortedFeeds = [...allFeeds].sort((a, b) => {
+      const aTime = (a as Record<string, unknown>).last_refreshed_at as string | null;
+      const bTime = (b as Record<string, unknown>).last_refreshed_at as string | null;
+      if (!aTime && !bTime) return 0;
+      if (!aTime) return -1;
+      if (!bTime) return 1;
+      return aTime.localeCompare(bTime);
+    });
 
-    // If slice wraps around (fewer feeds left than 10), fill from beginning
-    const braveFeeds =
-      rotationFeeds.length < 10 && allFeeds.length > 10
-        ? [...rotationFeeds, ...allFeeds.slice(0, 10 - rotationFeeds.length)]
-        : rotationFeeds;
-
-    const braveQueries = braveFeeds
+    const braveQueries = sortedFeeds
       .map((f) => f.query_text)
       .filter(Boolean)
-      .slice(0, 10);
+      .slice(0, 20);
 
     if (braveQueries.length > 0) {
       const braveResult = await scanBrave(braveQueries);
@@ -386,17 +383,9 @@ export async function GET(request: NextRequest) {
     console.error("Brave scan failed:", err);
   }
 
-  // 1C: Brave video search with rotation
+  // 1C: Brave video search — always search 10 diverse topics (no rotation)
   try {
-    const videoTopics = allFeeds.map((f) => f.query_text).filter(Boolean);
-    const dayOfYear = Math.floor(
-      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-    );
-    const videoRotIdx = dayOfYear % Math.max(1, Math.ceil(videoTopics.length / 10));
-    const videoSlice = videoTopics.slice(videoRotIdx * 10, videoRotIdx * 10 + 10);
-    const videoQueries = videoSlice.length > 0 ? videoSlice : undefined;
-
-    const videoResult = await scanBraveVideos(videoQueries);
+    const videoResult = await scanBraveVideos();
     results.phase1_scan.videos = videoResult;
   } catch (err) {
     console.error("Brave video scan failed:", err);
