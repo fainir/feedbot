@@ -10,6 +10,7 @@
 - [x] Add more public feeds (M)
 - [x] Restructure feeds — 15 default tabs, 100+ on Explore (L)
 - [x] Add queries to all 100 Explore feeds so they fetch articles (L)
+- [x] Fix empty feeds — search article_pool for feeds not in DB (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

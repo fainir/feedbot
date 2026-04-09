@@ -89,60 +89,89 @@ export async function GET(req: NextRequest) {
   // Special case: "all" returns mixed articles from all system feeds
   const isAll = queryLower === "all";
 
+  let useArticlePool = false;
+
   if (!isAll && !feedName) {
-    return NextResponse.json({ items: [], hasMore: false });
+    // No TAB_MAP match — search article_pool directly by keywords
+    useArticlePool = true;
   }
 
-  let feedIds: string[] = [];
+  let results: { id: string; title: string; url: string; summary: string; source: string; image_url: string | null; published_at: string; relevance_score: number }[] = [];
 
-  if (isAll) {
-    // Get all system feeds
-    const { data: feeds } = await supabase
-      .from("feeds")
-      .select("id")
-      .eq("user_id", SYSTEM_USER)
-      .eq("is_active", true);
-    feedIds = (feeds || []).map((f: { id: string }) => f.id);
-    // Optional: filter by specific feed names from "feeds" param
-    const feedsParam = req.nextUrl.searchParams.get("feeds");
-    if (feedsParam) {
-      const wantedNames = feedsParam.split(",").map((s) => s.trim());
-      const { data: filtered } = await supabase
-        .from("feeds")
-        .select("id, name")
-        .eq("user_id", SYSTEM_USER)
-        .in("name", wantedNames);
-      if (filtered && filtered.length > 0) {
-        feedIds = filtered.map((f: { id: string }) => f.id);
-      }
+  if (useArticlePool) {
+    // Search article_pool by keywords from the query
+    const keywords = queryLower.split(/[,\s]+/).filter((w: string) => w.length > 3).slice(0, 6);
+    if (keywords.length === 0) return NextResponse.json({ items: [], hasMore: false });
+
+    const orFilter = keywords.map((k: string) => `title.ilike.%${k}%`).join(",");
+    let poolQuery = supabase
+      .from("article_pool")
+      .select("id, title, url, summary, source, image_url, published_at")
+      .or(orFilter)
+      .order("published_at", { ascending: false })
+      .limit(limit * 3);
+
+    if (cursor) {
+      poolQuery = poolQuery.lt("published_at", cursor);
     }
+
+    const { data: poolItems } = await poolQuery;
+
+    results = (poolItems || []).map((item: { id: string; title: string; url: string; summary: string; source: string; image_url: string | null; published_at: string }) => {
+      const text = `${item.title} ${item.summary || ""}`.toLowerCase();
+      const matchCount = keywords.filter((k: string) => text.includes(k)).length;
+      return { ...item, relevance_score: 60 + matchCount * 10 };
+    }).filter((item: { relevance_score: number }) => item.relevance_score >= 70);
+
   } else {
-    const { data: feed } = await supabase
-      .from("feeds")
-      .select("id")
-      .eq("user_id", SYSTEM_USER)
-      .eq("name", feedName)
-      .single();
-    if (!feed) return NextResponse.json({ items: [], hasMore: false });
-    feedIds = [feed.id];
+    let feedIds: string[] = [];
+
+    if (isAll) {
+      const { data: feeds } = await supabase
+        .from("feeds")
+        .select("id")
+        .eq("user_id", SYSTEM_USER)
+        .eq("is_active", true);
+      feedIds = (feeds || []).map((f: { id: string }) => f.id);
+      const feedsParam = req.nextUrl.searchParams.get("feeds");
+      if (feedsParam) {
+        const wantedNames = feedsParam.split(",").map((s) => s.trim());
+        const { data: filtered } = await supabase
+          .from("feeds")
+          .select("id, name")
+          .eq("user_id", SYSTEM_USER)
+          .in("name", wantedNames);
+        if (filtered && filtered.length > 0) {
+          feedIds = filtered.map((f: { id: string }) => f.id);
+        }
+      }
+    } else {
+      const { data: feed } = await supabase
+        .from("feeds")
+        .select("id")
+        .eq("user_id", SYSTEM_USER)
+        .eq("name", feedName)
+        .single();
+      if (!feed) return NextResponse.json({ items: [], hasMore: false });
+      feedIds = [feed.id];
+    }
+
+    if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
+
+    let queryBuilder = supabase
+      .from("feed_items")
+      .select("id, title, url, summary, source, image_url, published_at, relevance_score")
+      .in("feed_id", feedIds)
+      .order("published_at", { ascending: false })
+      .limit(limit + 1);
+
+    if (cursor) {
+      queryBuilder = queryBuilder.lt("published_at", cursor);
+    }
+
+    const { data: items } = await queryBuilder;
+    results = items || [];
   }
-
-  if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
-
-  // Get articles — paginated by cursor (published_at), newest first
-  let queryBuilder = supabase
-    .from("feed_items")
-    .select("id, title, url, summary, source, image_url, published_at, relevance_score")
-    .in("feed_id", feedIds)
-    .order("published_at", { ascending: false })
-    .limit(limit + 1);
-
-  if (cursor) {
-    queryBuilder = queryBuilder.lt("published_at", cursor);
-  }
-
-  const { data: items } = await queryBuilder;
-  const results = items || [];
 
   // Deduplicate by normalized URL + title similarity + filter low-quality content
   const seenUrls = new Set<string>();
