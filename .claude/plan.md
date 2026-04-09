@@ -15,6 +15,7 @@
 - [x] For You customize — toggle feeds on/off, show-all toggle (M)
 - [x] Show All toggle UX — clicking a chip turns off toggle, toggling back selects all (S)
 - [x] Tighter tabs — X overlays on hover instead of taking space (S)
+- [x] Match divider styles — For You divider and Explore left divider same style (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
