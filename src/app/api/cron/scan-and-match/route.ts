@@ -139,7 +139,7 @@ interface CategorizedArticle {
 
 interface MatchResult {
   a: number;   // article index
-  f: string;   // feed UUID
+  f: number;   // feed index (mapped back to UUID after parsing)
   s: number;   // relevance score
 }
 
@@ -254,7 +254,7 @@ async function matchArticlesToFeeds(
   if (!client || articles.length === 0 || feeds.length === 0) return [];
 
   const feedList = feeds
-    .map((f, i) => `F${i}|${f.id}|${(f.query_text || "").slice(0, 80)}`)
+    .map((f, i) => `${i}|${(f.query_text || "").slice(0, 80)}`)
     .join("\n");
 
   const articleList = articles
@@ -267,7 +267,7 @@ async function matchArticlesToFeeds(
   try {
     const response = await client.responses.create({
       model: AI_MODEL,
-      input: `Score how relevant each article is to each feed (0-100). Only return pairs scoring 70+.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nAn article can match 0-10 feeds. Be selective.`,
+      input: `Score how relevant each article is to each feed (0-100). Only return pairs scoring 70+. Use integer indices for both "a" (article) and "f" (feed).\n\nFeeds (index|topic):\n${feedList}\n\nArticles (index|title|source|summary):\n${articleList}\n\nAn article can match 0-10 feeds. Be selective.`,
       text: {
         format: {
           type: "json_schema",
@@ -282,7 +282,7 @@ async function matchArticlesToFeeds(
                   type: "object",
                   properties: {
                     a: { type: "number" },
-                    f: { type: "string" },
+                    f: { type: "number" },
                     s: { type: "number" },
                   },
                   required: ["a", "f", "s"],
@@ -298,21 +298,26 @@ async function matchArticlesToFeeds(
     });
 
     const text = response.output_text;
+    console.log(`[Pass2:${categoryKey}] ${articles.length} articles × ${feeds.length} feeds → ${text.length} chars`);
     const parsed = safeParseJson<{ matches: MatchResult[] }>(text);
-    if (!parsed?.matches || !Array.isArray(parsed.matches)) return [];
+    if (!parsed?.matches || !Array.isArray(parsed.matches)) {
+      console.log(`[Pass2:${categoryKey}] Failed to parse response`);
+      return [];
+    }
+    console.log(`[Pass2:${categoryKey}] ${parsed.matches.length} raw matches, filtering...`);
 
-    // Map A-indices back to article pool IDs and validate
-    const validFeedIds = new Set(feeds.map((f) => f.id));
+    // Map feed indices back to UUIDs and validate
     return parsed.matches
       .filter(
         (m) =>
           typeof m.a === "number" &&
-          typeof m.f === "string" &&
+          typeof m.f === "number" &&
           typeof m.s === "number" &&
           m.s >= 70 &&
           m.a >= 0 &&
           m.a < articles.length &&
-          validFeedIds.has(m.f)
+          m.f >= 0 &&
+          m.f < feeds.length
       )
       .map((m) => ({
         a: m.a,
@@ -520,7 +525,7 @@ export async function GET(request: NextRequest) {
   const categoriesUsed: string[] = [];
 
   // Build all Pass 2 promises and run in parallel
-  const pass2Promises: Promise<{ cat: string; articles: { idx: number; id: string; title: string; source: string; summary: string }[]; matches: MatchResult[] }>[] = [];
+  const pass2Promises: Promise<{ cat: string; articles: { idx: number; id: string; title: string; source: string; summary: string }[]; feeds: { id: string; query_text: string }[]; matches: MatchResult[] }>[] = [];
 
   for (const [cat, articles] of categoryArticles.entries()) {
     const feeds = categoryFeeds.get(cat);
@@ -533,6 +538,7 @@ export async function GET(request: NextRequest) {
       matchArticlesToFeeds(cat, cappedArticles, feeds).then((matches) => ({
         cat,
         articles: cappedArticles,
+        feeds,
         matches,
       }))
     );
@@ -542,12 +548,12 @@ export async function GET(request: NextRequest) {
   for (const r of pass2Results) {
     classify.pass2_calls++;
     if (r.status === "fulfilled") {
-      const { articles: cappedArticles, matches } = r.value;
+      const { articles: cappedArticles, feeds: catFeeds, matches } = r.value;
       for (const m of matches) {
-        if (m.a >= 0 && m.a < cappedArticles.length) {
+        if (m.a >= 0 && m.a < cappedArticles.length && m.f >= 0 && m.f < catFeeds.length) {
           allMatches.push({
             articlePoolId: cappedArticles[m.a].id,
-            feedId: m.f,
+            feedId: catFeeds[m.f].id,
             score: m.s,
           });
         }
