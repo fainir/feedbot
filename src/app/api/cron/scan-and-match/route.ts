@@ -433,7 +433,7 @@ export async function GET(request: NextRequest) {
     .select("id, title, summary, source, url")
     .gte("created_at", cutoff)
     .order("created_at", { ascending: false })
-    .limit(300);
+    .limit(150);
 
   if (!newArticles || newArticles.length === 0) {
     // No new articles to classify — update timestamp and return
@@ -459,28 +459,30 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── Pass 1: Categorize articles in batches of 50 ──
+  // ── Pass 1: Categorize articles in batches of 50 (parallel) ──
 
   const BATCH_SIZE = 50;
   // articleCategories[i] = list of categories for newArticles[i]
   const articleCategories: string[][] = new Array(newArticles.length).fill(null).map(() => []);
 
+  // Build all batch promises and run in parallel
+  const pass1Promises: Promise<{ start: number; result: CategorizedArticle[] }>[] = [];
   for (let i = 0; i < newArticles.length; i += BATCH_SIZE) {
     const batch = newArticles.slice(i, i + BATCH_SIZE);
-    let categorized: CategorizedArticle[] = [];
+    const start = i;
+    pass1Promises.push(
+      categorizeArticleBatch(batch, start).then((result) => ({ start, result }))
+    );
+  }
 
-    // Try with 1 retry
-    for (let attempt = 0; attempt < 2; attempt++) {
-      categorized = await categorizeArticleBatch(batch, i);
-      if (categorized.length > 0) break;
-      if (attempt === 0) console.warn(`Pass 1 retry for batch starting at ${i}`);
-    }
-
+  const pass1Results = await Promise.allSettled(pass1Promises);
+  for (const r of pass1Results) {
     results.phase2_classify.pass1_calls++;
-
-    for (const entry of categorized) {
-      if (entry.i >= 0 && entry.i < newArticles.length) {
-        articleCategories[entry.i] = entry.c;
+    if (r.status === "fulfilled" && r.value.result.length > 0) {
+      for (const entry of r.value.result) {
+        if (entry.i >= 0 && entry.i < newArticles.length) {
+          articleCategories[entry.i] = entry.c;
+        }
       }
     }
   }
@@ -513,32 +515,38 @@ export async function GET(request: NextRequest) {
   const allMatches: { articlePoolId: string; feedId: string; score: number }[] = [];
   const categoriesUsed: string[] = [];
 
+  // Build all Pass 2 promises and run in parallel
+  const pass2Promises: Promise<{ cat: string; articles: { idx: number; id: string; title: string; source: string; summary: string }[]; matches: MatchResult[] }>[] = [];
+
   for (const [cat, articles] of categoryArticles.entries()) {
     const feeds = categoryFeeds.get(cat);
     if (!feeds || feeds.length === 0) continue;
 
-    // Cap at 50 articles per category call
     const cappedArticles = articles.slice(0, 50);
     categoriesUsed.push(cat);
 
-    let matches: MatchResult[] = [];
+    pass2Promises.push(
+      matchArticlesToFeeds(cat, cappedArticles, feeds).then((matches) => ({
+        cat,
+        articles: cappedArticles,
+        matches,
+      }))
+    );
+  }
 
-    // Try with 1 retry
-    for (let attempt = 0; attempt < 2; attempt++) {
-      matches = await matchArticlesToFeeds(cat, cappedArticles, feeds);
-      if (matches.length > 0 || attempt > 0) break;
-      console.warn(`Pass 2 retry for category ${cat}`);
-    }
-
+  const pass2Results = await Promise.allSettled(pass2Promises);
+  for (const r of pass2Results) {
     results.phase2_classify.pass2_calls++;
-
-    for (const m of matches) {
-      if (m.a >= 0 && m.a < cappedArticles.length) {
-        allMatches.push({
-          articlePoolId: cappedArticles[m.a].id,
-          feedId: m.f,
-          score: m.s,
-        });
+    if (r.status === "fulfilled") {
+      const { articles: cappedArticles, matches } = r.value;
+      for (const m of matches) {
+        if (m.a >= 0 && m.a < cappedArticles.length) {
+          allMatches.push({
+            articlePoolId: cappedArticles[m.a].id,
+            feedId: m.f,
+            score: m.s,
+          });
+        }
       }
     }
   }
