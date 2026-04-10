@@ -30,7 +30,7 @@ function getClient(): OpenAI | null {
 
 // Try gpt-4.1-nano (confirmed available April 2025, cheapest with structured output)
 // Fallback order: gpt-4.1-nano → gpt-4o-mini
-const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-nano";
+const AI_MODEL = process.env.OPENAI_MODEL || "gpt-5-nano";
 
 // ── Category system ──
 
