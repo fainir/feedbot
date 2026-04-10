@@ -28,7 +28,9 @@ function getClient(): OpenAI | null {
   return _client;
 }
 
-const AI_MODEL = "gpt-5-nano";
+// Try gpt-4.1-nano (confirmed available April 2025, cheapest with structured output)
+// Fallback order: gpt-4.1-nano → gpt-4o-mini
+const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-nano";
 
 // ── Category system ──
 
@@ -188,6 +190,7 @@ async function categorizeArticleBatch(
     .join("\n");
 
   try {
+    const t0 = Date.now();
     const response = await client.responses.create({
       model: AI_MODEL,
       input: `Categorize each article into one or more categories.\n\nCategories:\n${categoryDesc}\n\nArticles:\n${articleList}`,
@@ -220,7 +223,7 @@ async function categorizeArticleBatch(
     });
 
     const text = response.output_text;
-    console.log(`[Pass1] Response (${text.length} chars):`, text.slice(0, 200));
+    console.log(`[Pass1] ${Date.now() - t0}ms, ${text.length} chars, model=${AI_MODEL}`);
     const parsed = safeParseJson<{ items: CategorizedArticle[] }>(text);
     if (!parsed?.items || !Array.isArray(parsed.items)) return [];
 
@@ -339,90 +342,92 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const phase = url.searchParams.get("phase") || "all";
+
   const supabase = getServiceClient();
-  const results = {
-    phase1_scan: {
-      global: { scanned: 0, added: 0 },
-      brave: { scanned: 0, added: 0 },
-      videos: { scanned: 0, added: 0 },
-    },
-    phase2_classify: {
-      articles_processed: 0,
-      pass1_calls: 0,
-      pass2_calls: 0,
-      categories_used: [] as string[],
-    },
-    phase3_insert: {
-      matches_found: 0,
-      articles_inserted: 0,
-      feeds_updated: 0,
-    },
-  };
+  const results: Record<string, unknown> = {};
 
   // ════════════════════════════════════════════════════════════════
   // PHASE 1: SCAN — collect articles into the pool
   // ════════════════════════════════════════════════════════════════
 
-  // 1A: Global RSS scan (always runs, covers 80% of topics)
-  try {
-    const globalResult = await scanGlobal();
-    results.phase1_scan.global = globalResult;
-  } catch (err) {
-    console.error("Global scan failed:", err);
-  }
+  if (phase === "all" || phase === "scan") {
+    const scanResults = {
+      global: { scanned: 0, added: 0 },
+      brave: { scanned: 0, added: 0 },
+      videos: { scanned: 0, added: 0 },
+    };
 
-  // Get all active feeds for Brave query rotation and classification
-  const { data: allFeeds } = await supabase
-    .from("feeds")
-    .select("id, name, query_text, last_refreshed_at")
-    .eq("is_active", true);
-
-  if (!allFeeds || allFeeds.length === 0) {
-    return NextResponse.json(results);
-  }
-
-  // 1B: Brave web search — scan ALL feeds, cap at 20 queries per cycle
-  // Pick the 20 feeds least recently refreshed for maximum coverage
-  try {
-    // Sort feeds by last_refreshed_at ascending (least recent first, nulls first)
-    const sortedFeeds = [...allFeeds].sort((a, b) => {
-      const aTime = (a as Record<string, unknown>).last_refreshed_at as string | null;
-      const bTime = (b as Record<string, unknown>).last_refreshed_at as string | null;
-      if (!aTime && !bTime) return 0;
-      if (!aTime) return -1;
-      if (!bTime) return 1;
-      return aTime.localeCompare(bTime);
-    });
-
-    const braveQueries = sortedFeeds
-      .map((f) => f.query_text)
-      .filter(Boolean)
-      .slice(0, 20);
-
-    if (braveQueries.length > 0) {
-      const braveResult = await scanBrave(braveQueries);
-      results.phase1_scan.brave = braveResult;
+    // 1A: Global RSS scan
+    try {
+      scanResults.global = await scanGlobal();
+    } catch (err) {
+      console.error("Global scan failed:", err);
     }
-  } catch (err) {
-    console.error("Brave scan failed:", err);
-  }
 
-  // 1C: Brave video search — always search 10 diverse topics (no rotation)
-  try {
-    const videoResult = await scanBraveVideos();
-    results.phase1_scan.videos = videoResult;
-  } catch (err) {
-    console.error("Brave video scan failed:", err);
+    // 1B: Brave web search — 20 least-recently-refreshed feeds
+    try {
+      const { data: allFeeds } = await supabase
+        .from("feeds")
+        .select("id, query_text, last_refreshed_at")
+        .eq("is_active", true);
+
+      if (allFeeds && allFeeds.length > 0) {
+        const sortedFeeds = [...allFeeds].sort((a, b) => {
+          const aTime = (a as Record<string, unknown>).last_refreshed_at as string | null;
+          const bTime = (b as Record<string, unknown>).last_refreshed_at as string | null;
+          if (!aTime && !bTime) return 0;
+          if (!aTime) return -1;
+          if (!bTime) return 1;
+          return aTime.localeCompare(bTime);
+        });
+
+        const braveQueries = sortedFeeds.map((f) => f.query_text).filter(Boolean).slice(0, 20);
+        if (braveQueries.length > 0) {
+          scanResults.brave = await scanBrave(braveQueries);
+        }
+      }
+    } catch (err) {
+      console.error("Brave scan failed:", err);
+    }
+
+    // 1C: Brave video search
+    try {
+      scanResults.videos = await scanBraveVideos();
+    } catch (err) {
+      console.error("Brave video scan failed:", err);
+    }
+
+    results.scan = scanResults;
+
+    // If scan-only mode, return here
+    if (phase === "scan") {
+      return NextResponse.json(results);
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
   // PHASE 2: TWO-PASS AI CLASSIFICATION
   // ════════════════════════════════════════════════════════════════
 
+  // Get all active feeds
+  const { data: allFeeds } = await supabase
+    .from("feeds")
+    .select("id, name, query_text, last_refreshed_at")
+    .eq("is_active", true);
+
+  if (!allFeeds || allFeeds.length === 0) {
+    return NextResponse.json({ ...results, note: "No active feeds" });
+  }
+
   if (!getClient()) {
     console.warn("No OpenAI API key — skipping AI classification");
     return NextResponse.json({ ...results, warning: "No AI key, scan-only mode" });
   }
+
+  const classify = { articles_processed: 0, pass1_calls: 0, pass2_calls: 0, categories_used: [] as string[] };
+  const insert = { matches_found: 0, articles_inserted: 0, feeds_updated: 0 };
 
   // Get new articles since last classification (fallback: last 24h)
   const lastClassifiedAt = await getScanState(supabase, "last_classified_at");
@@ -436,12 +441,11 @@ export async function GET(request: NextRequest) {
     .limit(150);
 
   if (!newArticles || newArticles.length === 0) {
-    // No new articles to classify — update timestamp and return
     await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return NextResponse.json({ ...results, note: "No new articles to classify" });
+    return NextResponse.json({ ...results, classify, insert, note: "No new articles to classify" });
   }
 
-  results.phase2_classify.articles_processed = newArticles.length;
+  classify.articles_processed = newArticles.length;
 
   // Map each feed to its categories (instant, keyword-based)
   const feedCategoryMap = new Map<string, string[]>();
@@ -477,7 +481,7 @@ export async function GET(request: NextRequest) {
 
   const pass1Results = await Promise.allSettled(pass1Promises);
   for (const r of pass1Results) {
-    results.phase2_classify.pass1_calls++;
+    classify.pass1_calls++;
     if (r.status === "fulfilled" && r.value.result.length > 0) {
       for (const entry of r.value.result) {
         if (entry.i >= 0 && entry.i < newArticles.length) {
@@ -536,7 +540,7 @@ export async function GET(request: NextRequest) {
 
   const pass2Results = await Promise.allSettled(pass2Promises);
   for (const r of pass2Results) {
-    results.phase2_classify.pass2_calls++;
+    classify.pass2_calls++;
     if (r.status === "fulfilled") {
       const { articles: cappedArticles, matches } = r.value;
       for (const m of matches) {
@@ -551,8 +555,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  results.phase2_classify.categories_used = categoriesUsed;
-  results.phase3_insert.matches_found = allMatches.length;
+  classify.categories_used = categoriesUsed;
+  insert.matches_found = allMatches.length;
 
   // ════════════════════════════════════════════════════════════════
   // PHASE 3: INSERT matches into feed_items
@@ -560,7 +564,7 @@ export async function GET(request: NextRequest) {
 
   if (allMatches.length === 0) {
     await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return NextResponse.json(results);
+    return NextResponse.json({ ...results, classify, insert });
   }
 
   // Deduplicate: keep highest score per article-feed pair
@@ -597,7 +601,7 @@ export async function GET(request: NextRequest) {
 
   if (newMatches.length === 0) {
     await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return NextResponse.json(results);
+    return NextResponse.json({ ...results, classify, insert });
   }
 
   // Fetch full article data for the matched articles
@@ -609,7 +613,7 @@ export async function GET(request: NextRequest) {
 
   if (!fullArticles || fullArticles.length === 0) {
     await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return NextResponse.json(results);
+    return NextResponse.json({ ...results, classify, insert });
   }
 
   const articleMap = new Map(fullArticles.map((a) => [a.id, a]));
@@ -642,7 +646,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error(`Insert batch failed at offset ${i}:`, error);
     } else {
-      results.phase3_insert.articles_inserted += chunk.length;
+      insert.articles_inserted += chunk.length;
     }
   }
 
@@ -654,10 +658,10 @@ export async function GET(request: NextRequest) {
       .update({ last_refreshed_at: now })
       .eq("id", feedId);
   }
-  results.phase3_insert.feeds_updated = feedsUpdated.size;
+  insert.feeds_updated = feedsUpdated.size;
 
   // Update classification timestamp
   await setScanState(supabase, "last_classified_at", now);
 
-  return NextResponse.json(results);
+  return NextResponse.json({ ...results, classify, insert });
 }
