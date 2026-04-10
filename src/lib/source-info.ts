@@ -12,8 +12,11 @@ export function decodeEntities(text: string): string {
   return el.value;
 }
 
-export function cleanSummary(text: string): string {
-  return decodeEntities(
+export function cleanSummary(text: string, title?: string): string {
+  // Strip template syntax entirely
+  if (/\{\{|\$json\.|<%=|%>/.test(text)) return "";
+
+  let clean = decodeEntities(
     text
       .replace(/Continue reading on [^»]+»/g, "")
       .replace(/<[^>]*>/g, "")
@@ -24,6 +27,17 @@ export function cleanSummary(text: string): string {
       .replace(/Points: \d+ # Comments: \d+/g, "")
       .trim()
   );
+
+  // If summary starts with the title, strip the title portion
+  if (title) {
+    const cleanedTitle = decodeEntities(title).trim();
+    if (clean === cleanedTitle) return "";
+    if (clean.startsWith(cleanedTitle)) {
+      clean = clean.slice(cleanedTitle.length).replace(/^[\s:—\-–]+/, "").trim();
+    }
+  }
+
+  return clean;
 }
 
 export function cleanTitle(title: string): string {
@@ -74,15 +88,39 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (s.includes("techcrunch"))
     return { name: "TechCrunch", icon: "https://techcrunch.com/favicon.ico", color: "bg-green-500/10 text-green-400" };
   if (s.includes("bloomberg"))
-    return { name: "Bloomberg", icon: "", color: "bg-blue-500/10 text-blue-400" };
+    return { name: "Bloomberg", icon: "https://assets.bwbx.io/s3/javelin/public/hub/images/favicon-black-63fe0cd722.png", color: "bg-blue-500/10 text-blue-400" };
   if (s.includes("entrepreneur"))
-    return { name: "Entrepreneur", icon: "", color: "bg-red-500/10 text-red-400" };
+    return { name: "Entrepreneur", icon: "https://www.entrepreneur.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
   if (s.includes("phys.org"))
-    return { name: "Phys.org", icon: "", color: "bg-cyan-500/10 text-cyan-400" };
+    return { name: "Phys.org", icon: "https://phys.org/favicon.ico", color: "bg-cyan-500/10 text-cyan-400" };
   if (s.includes("nature"))
-    return { name: "Nature", icon: "", color: "bg-blue-500/10 text-blue-400" };
+    return { name: "Nature", icon: "https://www.nature.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
   if (s.includes("sciencedaily"))
-    return { name: "ScienceDaily", icon: "", color: "bg-teal-500/10 text-teal-400" };
+    return { name: "ScienceDaily", icon: "https://www.sciencedaily.com/favicon.ico", color: "bg-teal-500/10 text-teal-400" };
+  if (s.includes("bbc"))
+    return { name: "BBC", icon: "https://static.files.bbci.co.uk/core/website/assets/static/icons/favicon/news.ico", color: "bg-red-600/10 text-red-400" };
+  if (s.includes("reuters"))
+    return { name: "Reuters", icon: "https://www.reuters.com/favicon.ico", color: "bg-orange-500/10 text-orange-400" };
+  if (s.includes("al jazeera") || s.includes("aljazeera"))
+    return { name: "Al Jazeera", icon: "https://www.aljazeera.com/favicon.ico", color: "bg-amber-500/10 text-amber-400" };
+  if (s.includes("space.com") || s.includes("latest from space"))
+    return { name: "Space.com", icon: "https://www.space.com/favicon.ico", color: "bg-indigo-500/10 text-indigo-400" };
+  if (s.includes("ign"))
+    return { name: "IGN", icon: "https://www.ign.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("wired"))
+    return { name: "Wired", icon: "https://www.wired.com/favicon.ico", color: "bg-white/10 text-white" };
+  if (s.includes("forbes"))
+    return { name: "Forbes", icon: "https://www.forbes.com/favicon.ico", color: "bg-blue-800/10 text-blue-300" };
+  if (s.includes("decrypt"))
+    return { name: "Decrypt", icon: "https://decrypt.co/favicon.ico", color: "bg-green-500/10 text-green-400" };
+  if (s.includes("coindesk"))
+    return { name: "CoinDesk", icon: "https://www.coindesk.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
+  if (s.includes("youtube"))
+    return { name: cleaned, icon: "https://www.youtube.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("techfundingnews"))
+    return { name: "TechFunding", icon: "", color: "bg-green-500/10 text-green-400" };
+  if (s.includes("runnersworld") || s.includes("runner"))
+    return { name: "Runner's World", icon: "", color: "bg-yellow-500/10 text-yellow-400" };
   if (
     s.includes("google news") ||
     s.includes("- google") ||
@@ -93,7 +131,8 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
     s.includes("software engineering") ||
     s.includes("scientific discoveries")
   )
-    return { name: "News", icon: "", color: "bg-blue-500/10 text-blue-400" };
+    return { name: "News", icon: "https://news.google.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
+  // Fallback: try to generate favicon URL from source name
   return { name: cleaned, icon: "", color: "bg-text/5 text-text-muted" };
 }
 

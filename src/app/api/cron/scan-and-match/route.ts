@@ -267,7 +267,7 @@ async function matchArticlesToFeeds(
   try {
     const response = await client.responses.create({
       model: AI_MODEL,
-      input: `Score how relevant each article is to each feed (0-100). Only return pairs scoring 70+. Use integer indices for both "a" (article) and "f" (feed).\n\nFeeds (index|topic):\n${feedList}\n\nArticles (index|title|source|summary):\n${articleList}\n\nAn article can match 0-10 feeds. Be selective.`,
+      input: `Score how relevant each article is to each feed (0-100). Return pairs scoring 60+. Use integer indices for both "a" (article) and "f" (feed). Be generous — most articles match at least 2-3 feeds.\n\nFeeds (index|topic):\n${feedList}\n\nArticles (index|title|source|summary):\n${articleList}`,
       text: {
         format: {
           type: "json_schema",
@@ -313,7 +313,7 @@ async function matchArticlesToFeeds(
           typeof m.a === "number" &&
           typeof m.f === "number" &&
           typeof m.s === "number" &&
-          m.s >= 70 &&
+          m.s >= 60 &&
           m.a >= 0 &&
           m.a < articles.length &&
           m.f >= 0 &&
@@ -322,7 +322,7 @@ async function matchArticlesToFeeds(
       .map((m) => ({
         a: m.a,
         f: m.f,
-        s: Math.min(100, Math.max(70, m.s)),
+        s: Math.min(100, Math.max(60, m.s)),
       }));
   } catch (err) {
     console.error(`Pass 2 matching failed for category ${categoryKey}:`, err);

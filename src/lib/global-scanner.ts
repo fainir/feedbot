@@ -551,8 +551,57 @@ function normalizeUrl(url: string): string {
   }
 }
 
+/**
+ * Check if an article is junk that should be filtered out.
+ */
+function isJunkArticle(a: RawArticle): boolean {
+  // Homepage/index URLs (not real articles)
+  try {
+    const u = new URL(a.url);
+    const path = u.pathname.replace(/\/+$/, "");
+    if (!path || path === "" || path === "/index" || path === "/index.html") return true;
+  } catch { return true; }
+
+  // Template/broken content in title or summary
+  const templatePatterns = /\{\{|\$json\.|<%=|%>|\{%|undefined|null|NaN/;
+  if (templatePatterns.test(a.title) || templatePatterns.test(a.summary)) return true;
+
+  // Title is too short or generic
+  if (a.title.length < 10 || a.title === "Untitled") return true;
+
+  // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
+  if (a.summary.length < 30 && /breaking news|covering|the best|subscribe|sign up/i.test(a.summary)) return true;
+
+  return false;
+}
+
+/**
+ * Clean up summary text — strip broken content, avoid title duplication.
+ */
+function cleanSummary(summary: string, title: string): string {
+  // Strip template syntax
+  if (/\{\{|\$json\.|<%=/.test(summary)) return "";
+
+  // If summary starts with or equals the title, strip it
+  if (summary === title) return "";
+  if (summary.startsWith(title)) {
+    const rest = summary.slice(title.length).replace(/^[\s:—\-–]+/, "").trim();
+    return rest.length > 20 ? rest : "";
+  }
+
+  return summary;
+}
+
 async function insertToPool(articles: RawArticle[]): Promise<number> {
   if (articles.length === 0) return 0;
+
+  // Filter junk articles
+  articles = articles.filter((a) => !isJunkArticle(a));
+
+  // Clean summaries
+  for (const a of articles) {
+    a.summary = cleanSummary(a.summary, a.title);
+  }
 
   // Deduplicate by normalized URL before inserting
   const seen = new Set<string>();

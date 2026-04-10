@@ -730,7 +730,7 @@ export default function FeedPage() {
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
               const title = cleanTitle(item.title);
-              const summary = cleanSummary(item.summary);
+              const summary = cleanSummary(item.summary, title);
               const hasImage = !!item.image_url;
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];

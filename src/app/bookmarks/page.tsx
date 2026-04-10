@@ -137,7 +137,7 @@ export default function BookmarksPage() {
               if (!item) return null;
               const src = getSourceInfo(item.source);
               const title = cleanTitle(item.title);
-              const summary = cleanSummary(item.summary || "");
+              const summary = cleanSummary(item.summary || "", title);
               const hasImage = !!item.image_url;
               return (
                 <article key={bm.id} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-sm transition-all duration-200">
