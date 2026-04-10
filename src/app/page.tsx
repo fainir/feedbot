@@ -244,7 +244,7 @@ export default function ForYouPage() {
               <Link href={`/${tab.id}`} className="flex items-center gap-1 px-2 py-3 text-xs font-medium whitespace-nowrap">
                 <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
               </Link>
-              {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5 text-text-muted" /></button>}
+              {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 hidden sm:flex items-center justify-center rounded-full bg-bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5 text-text-muted" /></button>}
             </div>
           ))}
         </div>

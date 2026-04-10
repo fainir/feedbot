@@ -602,7 +602,7 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 transition-opacity ${
+                className={`absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 hidden sm:flex items-center justify-center rounded-full bg-bg-card border border-border/50 transition-opacity ${
                   feedSlug === tab.id
                     ? "opacity-0 hover:opacity-100"
                     : "opacity-0 group-hover:opacity-100"
