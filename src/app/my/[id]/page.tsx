@@ -115,13 +115,13 @@ export default function MyFeedPage() {
             </div>
             <h2 className="font-bold text-lg mb-2">Building your feed...</h2>
             <p className="text-sm text-text-muted mb-2 max-w-sm mx-auto">
-              AI is scanning thousands of sources to find articles matching:
+              AI is scanning thousands of sources to find content matching:
             </p>
             <div className="inline-block rounded-xl border border-border bg-bg-card px-4 py-2 mb-6">
               <p className="text-sm text-text italic">&ldquo;{feed.query_text}&rdquo;</p>
             </div>
             <p className="text-xs text-text-muted mb-6">
-              Articles will appear within a few minutes. This page auto-refreshes.
+              Content will appear within a few minutes. This page auto-refreshes.
             </p>
             <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -132,7 +132,7 @@ export default function MyFeedPage() {
           /* Articles */
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-text-muted">{items.length} articles</span>
+              <span className="text-xs text-text-muted">{items.length} finds</span>
               <span className="text-xs text-text-muted">{feed.last_refreshed_at ? `Updated ${new Date(feed.last_refreshed_at).toLocaleTimeString()}` : ""}</span>
             </div>
             {items.map((item) => (

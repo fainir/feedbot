@@ -127,7 +127,7 @@ export default function BookmarksPage() {
           <div className="text-center py-16">
             <Bookmark className="h-10 w-10 text-text-muted mx-auto mb-3 opacity-50" />
             <p className="text-text-muted font-medium">No bookmarks yet</p>
-            <p className="text-xs text-text-muted mt-1">Save articles while reading to find them here later</p>
+            <p className="text-xs text-text-muted mt-1">Save posts while reading to find them here later</p>
             <Link href="/" className="inline-block mt-4 bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">Browse feeds</Link>
           </div>
         ) : (

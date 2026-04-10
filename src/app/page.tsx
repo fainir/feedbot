@@ -201,7 +201,7 @@ export default function ForYouPage() {
   }, [user, userReactions]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) { toast("Sign up to save articles", "info"); return; }
+    if (!user) { toast("Sign up to save your finds", "info"); return; }
     const was = userBookmarks.has(feedItemId);
     setUserBookmarks((s) => { const next = new Set(s); if (next.has(feedItemId)) next.delete(feedItemId); else next.add(feedItemId); return next; });
     try { const res = await fetch("/api/bookmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId }) }); if (!res.ok) throw new Error(); } catch { setUserBookmarks((s) => { const next = new Set(s); if (was) next.add(feedItemId); else next.delete(feedItemId); return next; }); }
@@ -280,7 +280,7 @@ export default function ForYouPage() {
           <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
-            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic - AI finds the best articles, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic - AI finds the best content, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
             <div className="mb-3 flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
@@ -308,7 +308,7 @@ export default function ForYouPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -358,7 +358,7 @@ export default function ForYouPage() {
           ))}</div>
         ) : dedupedItems.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-text-muted font-medium">No articles yet</p>
+            <p className="text-text-muted font-medium">Nothing here yet</p>
             <p className="text-xs text-text-muted mt-1">Fresh picks keep rolling in automatically</p>
           </div>
         ) : (
@@ -414,7 +414,7 @@ export default function ForYouPage() {
         )}
         {hasMore && (
           <button onClick={loadMore} disabled={loadingMore} className="w-full mt-4 py-3 text-sm font-medium text-text-muted hover:text-text border border-border rounded-2xl hover:bg-bg-card transition-all">
-            {loadingMore ? "Loading..." : "Load more articles"}
+            {loadingMore ? "Loading..." : "Load more"}
           </button>
         )}
         {!hasMore && !loading && dedupedItems.length > 0 && (

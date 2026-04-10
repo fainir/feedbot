@@ -273,7 +273,7 @@ export default function FeedPage() {
   }, [user, userReactions]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) { toast("Sign up to save articles", "info"); return; }
+    if (!user) { toast("Sign up to save your finds", "info"); return; }
     const wasBookmarked = userBookmarks.has(feedItemId);
     // Optimistic update
     setUserBookmarks((s) => {
@@ -681,7 +681,7 @@ export default function FeedPage() {
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab?.icon || "📡"} {displayName}</h2>
             <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">
               {activeTab?.query || communityFeed?.description || ""}
-              {!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} articles`}
+              {!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}
             </p>
             {communityFeed && <p className="text-[10px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
           </div>
@@ -707,7 +707,7 @@ export default function FeedPage() {
       {newArticlesAvailable > 0 && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
           <button onClick={handleRefresh} className="bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold shadow-lg hover:opacity-90 transition-all">
-            {newArticlesAvailable} new {newArticlesAvailable === 1 ? "article" : "articles"} - tap to refresh
+            {newArticlesAvailable} new {newArticlesAvailable === 1 ? "post" : "posts"} - tap to refresh
           </button>
         </div>
       )}
@@ -792,7 +792,7 @@ export default function FeedPage() {
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length < 15 && (
           <div className="text-center py-8">
             <p className="text-sm text-text-muted mb-1">This feed is building up</p>
-            <p className="text-xs text-text-muted">New articles are added continuously. Check back soon for more.</p>
+            <p className="text-xs text-text-muted">New content is added continuously. Check back soon for more.</p>
           </div>
         )}
 
@@ -927,7 +927,7 @@ export default function FeedPage() {
                 </div>
                 <button onClick={() => setShowCustomize(false)} className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors"><X className="h-5 w-5 text-text-muted" /></button>
               </div>
-              <p className="text-sm text-text-muted mb-4 ml-10">Change the prompt to adjust what articles appear.</p>
+              <p className="text-sm text-text-muted mb-4 ml-10">Change the prompt to adjust what content appears.</p>
               <textarea autoFocus className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} />
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowCustomize(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>

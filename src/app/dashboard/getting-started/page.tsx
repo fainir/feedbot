@@ -24,8 +24,8 @@ const STEPS: Step[] = [
   },
   {
     icon: Bookmark,
-    title: "Save articles you love",
-    description: "Click the bookmark icon on any article to save it. Access your saved items from the \"Saved\" tab in the tab bar.",
+    title: "Save what you love",
+    description: "Click the bookmark icon on any post to save it. Access your saved items from the \"Saved\" tab in the tab bar.",
     action: "Try bookmarking",
     tip: "Use the 'B' key to jump to your saved items anytime.",
   },
@@ -56,7 +56,7 @@ const STEPS: Step[] = [
     description: "Check out the \"For You\" picks for personalized recommendations, Daily Brief for a morning summary, and \"Catch Me Up\" to summarize what you missed.",
     action: "Explore features",
     actionUrl: "/dashboard",
-    tip: "The more you read, the better \"For You\" gets at recommending articles.",
+    tip: "The more you read, the better \"For You\" gets at recommending content.",
   },
 ];
 
