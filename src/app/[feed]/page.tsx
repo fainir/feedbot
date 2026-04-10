@@ -388,11 +388,17 @@ export default function FeedPage() {
   }, [activeTab, items]);
 
   const dedupedItems = useMemo(() => {
-    const seen = new Set<string>();
+    const seenUrls = new Set<string>();
+    const seenTitles = new Set<string>();
     return items.filter((item) => {
       const key = item.url.split("?")[0].split("#")[0];
-      if (seen.has(key)) return false;
-      seen.add(key);
+      if (seenUrls.has(key)) return false;
+      seenUrls.add(key);
+      // Fuzzy title dedup: normalize to lowercase words, skip if 80%+ overlap
+      const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(w => w.length > 3);
+      const titleKey = words.sort().join(" ");
+      if (seenTitles.has(titleKey)) return false;
+      seenTitles.add(titleKey);
       return true;
     });
   }, [items]);

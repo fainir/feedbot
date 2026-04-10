@@ -554,6 +554,9 @@ function normalizeUrl(url: string): string {
 /**
  * Check if an article is junk that should be filtered out.
  */
+// Spam keywords — gambling, crypto scams, SEO spam, promotional junk
+const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free)\b/i;
+
 function isJunkArticle(a: RawArticle): boolean {
   // Homepage/index URLs (not real articles)
   try {
@@ -568,6 +571,13 @@ function isJunkArticle(a: RawArticle): boolean {
 
   // Title is too short or generic
   if (a.title.length < 10 || a.title === "Untitled") return true;
+
+  // Spam/gambling/scam content
+  if (SPAM_PATTERNS.test(a.title) || SPAM_PATTERNS.test(a.summary)) return true;
+
+  // Non-English content (basic check: title has non-Latin characters as majority)
+  const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
+  if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
   if (a.summary.length < 30 && /breaking news|covering|the best|subscribe|sign up/i.test(a.summary)) return true;
