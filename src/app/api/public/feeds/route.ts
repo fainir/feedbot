@@ -142,12 +142,23 @@ export async function GET(req: NextRequest) {
     // Filter garbage titles
     const title = (item.title || "").trim();
     if (title.length < 15) return false;
+    // Filter Wikipedia generic pages (not news)
+    if (/- Wikipedia$/i.test(title)) return false;
+    // Filter non-Latin script titles (Bengali, Chinese, Arabic, etc.)
+    const nonLatinScript = /[\u0980-\u09FF\u4E00-\u9FFF\u3400-\u4DBF\u0600-\u06FF\u0400-\u04FF\u0E00-\u0E7F\u0900-\u097F\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/;
+    if (nonLatinScript.test(title)) {
+      const latinChars = (title.match(/[a-zA-Z]/g) || []).length;
+      if (latinChars / title.length < 0.5) return false;
+    }
     // Detect if prompt is Latin-script — if so, filter non-Latin titles
     const promptIsLatin = /^[a-zA-Z]/.test(queryLower);
     if (promptIsLatin) {
       const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'"\-—:;()\[\]@#$%&*+=/\\|<>{}~`^_]/g) || []).length / title.length;
       if (latinRatio < 0.5) return false;
     }
+    // Filter French/Spanish/German titles at API level too
+    const foreignArticles = (title.match(/\b(la|el|los|las|del|les|des|une|sur|avec|dans|der|die|das|den|ein|eine|gli|dei|alla|und|est|sont|mais|pour|qui|von|wie)\b/gi) || []).length;
+    if (foreignArticles >= 3) return false;
     // Filter garbage patterns: excessive special chars
     const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
     if (specialRatio > 0.03) return false;
@@ -178,8 +189,13 @@ export async function GET(req: NextRequest) {
     // Penalize low-effort DEV.to posts (no summary = likely low quality)
     const src = normalizeSource(item.source);
     const devPenalty = (src === "devto" && (!summary || summary.length < 40)) ? 0.7 : 1;
+    // Penalize DEV posts with spammy title patterns (star counts, numbered lists, excessive emoji)
+    const devSpamPenalty = (src === "devto" && /(\d+K?\s*Stars?⭐|^\d+\s+(Things|Ways|Tips|Hacks|Secrets)|^Day \d+:)/i.test(item.title)) ? 0.6 : 1;
 
-    return { ...item, _finalScore: baseScore * freshness * summaryPenalty * devPenalty };
+    // Penalize Medium posts where summary is just author attribution
+    const mediumBylinePenalty = (src === "medium" && summary.length < 40 && /^By:\s/i.test(summary)) ? 0.5 : 1;
+
+    return { ...item, _finalScore: baseScore * freshness * summaryPenalty * devPenalty * devSpamPenalty * mediumBylinePenalty };
   });
 
   // ── Story clustering: group similar titles, keep best per cluster ──
@@ -219,8 +235,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Source diversity: cap any single source at 20% of feed ──
-  const maxPerSource = Math.max(3, Math.ceil(limit * 0.2));
+  // ── Source diversity: cap any single source (tighter for single feeds, looser for "all") ──
+  const diversityCap = isAll ? 0.2 : 0.15;
+  const maxPerSource = Math.max(3, Math.ceil(limit * diversityCap));
   const sourceCounts = new Map<string, number>();
   const diverse = clusters
     .sort((a, b) => b._finalScore - a._finalScore)

@@ -31,6 +31,8 @@ export function cleanSummary(text: string, title?: string): string {
       .replace(/Photo:\s*[^\n]{0,50}$/i, "")
       .replace(/^Introduction\s*$/i, "")
       .replace(/^Abstract\s*$/i, "")
+      .replace(/^By:\s*[^\n]{0,60}$/i, "")
+      .replace(/^Written by\s*[^\n]{0,60}$/i, "")
       .trim()
   );
 
@@ -167,6 +169,12 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
     return { name: "Wikipedia", icon: "https://en.wikipedia.org/favicon.ico", color: "bg-white/10 text-white" };
   if (s.includes("variety"))
     return { name: "Variety", icon: "https://variety.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("krebsonsecurity"))
+    return { name: "Krebs", icon: "", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("bleepingcomputer"))
+    return { name: "BleepingComputer", icon: "", color: "bg-blue-500/10 text-blue-400" };
+  if (s.includes("darkreading"))
+    return { name: "Dark Reading", icon: "", color: "bg-purple-500/10 text-purple-400" };
   if (s.includes("techfundingnews"))
     return { name: "TechFunding", icon: "", color: "bg-green-500/10 text-green-400" };
   if (s.includes("runnersworld") || s.includes("runner"))

@@ -196,8 +196,13 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   { url: "https://opensource.com/feed", category: "opensource" },
   { url: "https://itsfoss.com/feed/", category: "opensource" },
   { url: "https://www.reddit.com/r/linux/top/.rss?t=day", category: "opensource" },
+  { url: "https://www.reddit.com/r/opensource/top/.rss?t=day", category: "opensource" },
+  { url: "https://www.reddit.com/r/selfhosted/top/.rss?t=day", category: "opensource" },
   { url: "https://dev.to/feed/tag/opensource", category: "opensource" },
   { url: "https://dev.to/feed/tag/linux", category: "opensource" },
+  { url: "https://news.google.com/rss/search?q=open+source+software+github+trending&hl=en-US&gl=US&ceid=US:en", category: "opensource" },
+  { url: "https://www.reddit.com/r/freesoftware/top/.rss?t=day", category: "opensource" },
+  { url: "https://hnrss.org/newest?q=open+source+github", category: "opensource" },
 
   // ── Education ──
   { url: "https://www.edsurge.com/feeds/articles", category: "education" },
@@ -216,6 +221,13 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   // ── Security ──
   { url: "https://www.reddit.com/r/netsec/top/.rss?t=day", category: "security" },
   { url: "https://medium.com/feed/tag/cybersecurity", category: "security" },
+  { url: "https://krebsonsecurity.com/feed/", category: "security" },
+  { url: "https://www.bleepingcomputer.com/feed/", category: "security" },
+  { url: "https://therecord.media/feed", category: "security" },
+  { url: "https://www.darkreading.com/rss.xml", category: "security" },
+  { url: "https://threatpost.com/feed/", category: "security" },
+  { url: "https://news.google.com/rss/search?q=cybersecurity+data+breach+zero+day&hl=en-US&gl=US&ceid=US:en", category: "security" },
+  { url: "https://dev.to/feed/tag/security", category: "security" },
 
   // ── Space ──
   { url: "https://www.reddit.com/r/space/top/.rss?t=day", category: "space" },
@@ -562,7 +574,7 @@ function normalizeUrl(url: string): string {
  * Check if an article is junk that should be filtered out.
  */
 // Spam keywords — gambling, crypto scams, SEO spam, promotional junk
-const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|slot online|situs game|terpercaya|judi online|casino|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up|free strategy call|seed.?s? phrase|made \$\d[\d,]+\s*in\s*\d+\s*days?|my .{0,20}wallet holds|usdt.{0,30}seed|rtp.*slot|pola rtp|gamdom|crypto casino)\b/i;
+const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|slot online|situs game|terpercaya|judi online|casino|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up|free strategy call|seed.?s? phrase|made \$\d[\d,]+\s*in\s*\d+\s*days?|my .{0,20}wallet holds|usdt.{0,30}seed|rtp.*slot|pola rtp|gamdom|crypto casino|top .{0,20}designer in|best .{0,20}developer in|hire .{0,20}freelancer|APK.*download|APK.*guide|APK.*install|complete guide to .{0,20}(features|download|usage)|you need to know about .{0,10}(fitness|gym|health)|Fidelity Capital Investment|cost me \$\d[\d,]+|step-by-step guide to start.{0,20}exchange|that'?s why we'?re building|something bigger than just)\b/i;
 
 function isJunkArticle(a: RawArticle): boolean {
   // Homepage/index URLs (not real articles)
@@ -583,15 +595,20 @@ function isJunkArticle(a: RawArticle): boolean {
   // Spam/gambling/scam content
   if (SPAM_PATTERNS.test(a.title) || SPAM_PATTERNS.test(a.summary)) return true;
 
-  // Non-English content
+  // Non-English content — non-Latin script detection (Bengali, Chinese, Arabic, Cyrillic, Thai, Hindi, Japanese, Korean)
+  const nonLatinScript = /[\u0980-\u09FF\u4E00-\u9FFF\u3400-\u4DBF\u0600-\u06FF\u0400-\u04FF\u0E00-\u0E7F\u0900-\u097F\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/;
+  if (nonLatinScript.test(a.title)) {
+    // Allow if mostly Latin (e.g. "What is 人工智能?" should pass)
+    const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
+    if (latinChars / a.title.length < 0.5) return true;
+  }
   const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
   if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
-  // Non-English detection: check for Spanish/Portuguese/Indonesian/French articles
-  // Use common function words that appear in nearly every sentence of that language
-  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|studi|kasus|aprendimos|ignorar|porque|también|después|además|mientras|através|você|fazer|quando|então|bienvenida|exploradores|lunares|batieron|récords|astronautas|primeros|regresado|mengenal|pola)\b/i;
+  // Non-English detection: check for Spanish/Portuguese/Indonesian/French/German/Italian articles
+  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|studi|kasus|aprendimos|ignorar|porque|también|después|además|mientras|através|você|fazer|quando|então|bienvenida|exploradores|lunares|batieron|récords|astronautas|primeros|regresado|mengenal|pola|pourquoi|nous|cette|notre|même|était|depuis|können|werden|durch|zwischen|über|delle|degli|questa|quello|quando|essere|delle|membaca|kripto|tuntas|halo|bicara|rasanya|sekarang|delegá|sueño|vivir|parece)\b/i;
   if (nonEnglish.test(a.title)) return true;
-  // Also check: if title has 3+ Spanish/Portuguese/French articles/prepositions, it's non-English
-  const foreignArticles = (a.title.match(/\b(la|el|los|las|del|una|les|des|une|sur|avec|dans|pelo|pela|pelo|aos|nas|nos)\b/gi) || []).length;
+  // Also check: if title has 3+ Spanish/Portuguese/French/German/Italian articles/prepositions, it's non-English
+  const foreignArticles = (a.title.match(/\b(la|el|los|las|del|una|les|des|une|sur|avec|dans|pelo|pela|pelo|aos|nas|nos|der|die|das|den|dem|ein|eine|gli|dei|dello|alla|il|und|est|sont|mais|pour|qui|que|von|wie|wir|sie)\b/gi) || []).length;
   if (foreignArticles >= 3) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)

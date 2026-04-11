@@ -13,12 +13,23 @@ const TABS: Record<string, { name: string; icon: string; description: string }> 
   business: { name: "Business", icon: "📈", description: "Business strategy, leadership, market trends, and entrepreneurship news" },
   space: { name: "Space", icon: "🚀", description: "SpaceX launches, NASA missions, Mars exploration, and space industry updates" },
   health: { name: "Health", icon: "🏥", description: "Health research, medical breakthroughs, mental health, nutrition, and biotech news" },
+  "open-source": { name: "Open Source", icon: "🐙", description: "GitHub trending, open source projects, FOSS, Linux, and community-driven software" },
+  robotics: { name: "Robotics", icon: "🦾", description: "Humanoid robots, industrial automation, drones, embodied AI, and robotics engineering" },
+  energy: { name: "Energy", icon: "⚡", description: "Solar power, battery storage, nuclear fusion, grid modernization, and clean energy" },
   climate: { name: "Climate", icon: "🌍", description: "Climate change, renewable energy, sustainability, and green technology news" },
   fintech: { name: "Fintech", icon: "💳", description: "Fintech news, digital banking, payment technology, neobanks, and financial APIs" },
   devops: { name: "DevOps", icon: "🔧", description: "DevOps, cloud infrastructure, Kubernetes, CI/CD, AWS, Azure, GCP, and SRE" },
   data: { name: "Data", icon: "📊", description: "Data science, analytics, big data, data engineering, and business intelligence" },
   mobile: { name: "Mobile", icon: "📱", description: "Mobile app development, iOS, Android, React Native, Flutter, and app trends" },
   marketing: { name: "Marketing", icon: "📣", description: "Digital marketing, SEO, content marketing, growth hacking, and social media" },
+  ev: { name: "EVs", icon: "🚗", description: "Electric vehicles, Tesla, EV charging, autonomous driving, and battery technology" },
+  "ar-vr": { name: "AR / VR", icon: "🥽", description: "Augmented reality, virtual reality, Apple Vision Pro, Meta Quest, and spatial computing" },
+  quantum: { name: "Quantum Computing", icon: "⚛️", description: "Quantum processors, qubits, quantum algorithms, and quantum error correction" },
+  biotech: { name: "Biotech", icon: "🧬", description: "Gene therapy, CRISPR, drug discovery, synthetic biology, and longevity research" },
+  "indie-hackers": { name: "Indie Hackers", icon: "🧑‍💻", description: "Solo founders, bootstrapping, side projects, and building in public" },
+  productivity: { name: "Productivity", icon: "⏱️", description: "Productivity tools, time management, workflows, and note-taking apps" },
+  "world-news": { name: "World News", icon: "🗞️", description: "Global events, geopolitics, international relations, and world affairs" },
+  "us-politics": { name: "US Politics", icon: "🇺🇸", description: "US elections, policy analysis, Congress, and American politics" },
 };
 
 type Props = {
