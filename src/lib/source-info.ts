@@ -60,6 +60,28 @@ export function cleanTitle(title: string): string {
 export function cleanSourceDisplay(raw: string): string {
   // Medium subdomains → "Medium"
   if (/\.medium\.com|^medium\.com/i.test(raw)) return "Medium";
+  // Domain-based cleanup
+  if (/news\.google\.com/i.test(raw)) return "News";
+  if (/en\.wikipedia\.org/i.test(raw)) return "Wikipedia";
+  if (/sciencedaily|Latest Science News/i.test(raw)) return "ScienceDaily";
+  if (/businessinsider|All Content from Business/i.test(raw)) return "Business Insider";
+  if (/siliconvalleygradient/i.test(raw)) return "SV Gradient";
+  if (/infosecwriteups/i.test(raw)) return "InfoSec";
+  if (/osintteam/i.test(raw)) return "OSINT Team";
+  if (/theblock\.co/i.test(raw)) return "The Block";
+  if (/electrek/i.test(raw)) return "Electrek";
+  if (/lifehacker/i.test(raw)) return "Lifehacker";
+  if (/arstechnica/i.test(raw)) return "Ars Technica";
+  if (/theverge/i.test(raw)) return "The Verge";
+  if (/pcgamer/i.test(raw)) return "PC Gamer";
+  if (/gamespot/i.test(raw)) return "GameSpot";
+  if (/kotaku/i.test(raw)) return "Kotaku";
+  if (/theguardian/i.test(raw)) return "The Guardian";
+  if (/rockpapershotgun|Rock Paper Shotgun/i.test(raw)) return "RPS";
+  if (/variety/i.test(raw)) return "Variety";
+  if (/spacenews/i.test(raw)) return "SpaceNews";
+  if (/espn/i.test(raw)) return "ESPN";
+  if (/ai\.gopubby|pub\.towardsai|ai\.plainenglish/i.test(raw)) return "Medium";
   if (/top scoring links|^r\/|\/r\//i.test(raw)) {
     const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
     if (match) return "r/" + match[1];
@@ -125,6 +147,26 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
     return { name: "CoinDesk", icon: "https://www.coindesk.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
   if (s.includes("youtube"))
     return { name: cleaned, icon: "https://www.youtube.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("sciencedaily") || s.includes("latest science news"))
+    return { name: "ScienceDaily", icon: "https://www.sciencedaily.com/favicon.ico", color: "bg-teal-500/10 text-teal-400" };
+  if (s.includes("businessinsider") || s.includes("all content from business"))
+    return { name: "Business Insider", icon: "https://www.businessinsider.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
+  if (s.includes("pcgamer"))
+    return { name: "PC Gamer", icon: "https://www.pcgamer.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
+  if (s.includes("gamespot"))
+    return { name: "GameSpot", icon: "https://www.gamespot.com/favicon.ico", color: "bg-yellow-500/10 text-yellow-400" };
+  if (s.includes("kotaku"))
+    return { name: "Kotaku", icon: "https://kotaku.com/favicon.ico", color: "bg-white/10 text-white" };
+  if (s.includes("theguardian") || s.includes("guardian"))
+    return { name: "The Guardian", icon: "https://www.theguardian.com/favicon.ico", color: "bg-blue-600/10 text-blue-400" };
+  if (s.includes("lifehacker"))
+    return { name: "Lifehacker", icon: "https://lifehacker.com/favicon.ico", color: "bg-green-500/10 text-green-400" };
+  if (s.includes("electrek"))
+    return { name: "Electrek", icon: "https://electrek.co/favicon.ico", color: "bg-green-500/10 text-green-400" };
+  if (s.includes("wikipedia"))
+    return { name: "Wikipedia", icon: "https://en.wikipedia.org/favicon.ico", color: "bg-white/10 text-white" };
+  if (s.includes("variety"))
+    return { name: "Variety", icon: "https://variety.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
   if (s.includes("techfundingnews"))
     return { name: "TechFunding", icon: "", color: "bg-green-500/10 text-green-400" };
   if (s.includes("runnersworld") || s.includes("runner"))

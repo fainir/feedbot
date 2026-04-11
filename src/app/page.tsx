@@ -26,7 +26,6 @@ const FEEDS = [
   { id: "startups", name: "Startups", icon: "🚀" },
   { id: "dev", name: "Dev", icon: "⚡" },
   { id: "science", name: "Science", icon: "🔬" },
-  { id: "crypto", name: "Crypto", icon: "₿" },
   { id: "design", name: "Design", icon: "🎨" },
   { id: "security", name: "Security", icon: "🔒" },
   { id: "gaming", name: "Gaming", icon: "🎮" },
@@ -417,7 +416,7 @@ export default function ForYouPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {!ytId && hasImage && (
                       <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-3 sm:p-4">

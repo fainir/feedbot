@@ -586,9 +586,13 @@ function isJunkArticle(a: RawArticle): boolean {
   // Non-English content
   const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
   if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
-  // Common non-English patterns (Indonesian/Malay, Portuguese, Spanish, French blog spam)
-  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|teknologi|studi|kasus|aprendimos|ignorar|sobre|porque|también|después|además|mientras|através|você|como|fazer|quando|então)\b/i;
-  if (nonEnglish.test(a.title) || nonEnglish.test(a.summary)) return true;
+  // Non-English detection: check for Spanish/Portuguese/Indonesian/French articles
+  // Use common function words that appear in nearly every sentence of that language
+  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|studi|kasus|aprendimos|ignorar|porque|también|después|además|mientras|através|você|fazer|quando|então|bienvenida|exploradores|lunares|batieron|récords|astronautas|primeros|regresado|mengenal|pola)\b/i;
+  if (nonEnglish.test(a.title)) return true;
+  // Also check: if title has 3+ Spanish/Portuguese/French articles/prepositions, it's non-English
+  const foreignArticles = (a.title.match(/\b(la|el|los|las|del|una|les|des|une|sur|avec|dans|pelo|pela|pelo|aos|nas|nos)\b/gi) || []).length;
+  if (foreignArticles >= 3) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
   if (a.summary.length < 30 && /breaking news|covering|the best|subscribe|sign up/i.test(a.summary)) return true;
@@ -830,7 +834,7 @@ export async function scanBraveVideos(queries?: string[]): Promise<{ scanned: nu
   for (const q of searchQueries) {
     try {
       const res = await fetch(
-        `https://api.search.brave.com/res/v1/videos/search?q=${encodeURIComponent(q)}&count=10&freshness=pm`,
+        `https://api.search.brave.com/res/v1/videos/search?q=${encodeURIComponent(q)}&count=20&freshness=pw`,
         { headers: { Accept: "application/json", "X-Subscription-Token": apiKey } }
       );
       if (!res.ok) continue;

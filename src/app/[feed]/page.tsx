@@ -158,7 +158,7 @@ const ALL_SYSTEM_FEEDS = [
 ];
 
 // Default 15 tabs shown in tab bar
-const DEFAULT_TAB_IDS = new Set(["ai","tech","startups","dev","science","crypto","design","security","gaming","business","space","health","open-source","robotics","energy"]);
+const DEFAULT_TAB_IDS = new Set(["ai","tech","startups","dev","science","design","security","gaming","business","space","health","open-source","robotics","energy"]);
 const TABS = ALL_SYSTEM_FEEDS.filter(f => DEFAULT_TAB_IDS.has(f.id));
 
 const PROMPT_EXAMPLES = [
@@ -751,7 +751,7 @@ export default function FeedPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {!ytId && hasImage && (
                       <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-3 sm:p-4">
