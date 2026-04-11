@@ -44,23 +44,6 @@ const FEED_NAME_MAP: Record<string, string> = {
   space: "Space", health: "Health", "open-source": "Open Source", robotics: "Robotics", energy: "Energy",
 };
 
-const GRADIENTS = [
-  "from-blue-900/40 to-blue-800/20",
-  "from-purple-900/40 to-purple-800/20",
-  "from-green-900/40 to-green-800/20",
-  "from-orange-900/40 to-orange-800/20",
-  "from-red-900/40 to-red-800/20",
-  "from-cyan-900/40 to-cyan-800/20",
-  "from-pink-900/40 to-pink-800/20",
-  "from-indigo-900/40 to-indigo-800/20",
-];
-
-function getGradient(title: string): string {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
-
 const DEFAULT_ENABLED = new Set(FEEDS.map((f) => f.id));
 
 export default function ForYouPage() {
@@ -269,7 +252,7 @@ export default function ForYouPage() {
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
-        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
+        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0" style={{ maskImage: "linear-gradient(to right, black 90%, transparent)", WebkitMaskImage: "linear-gradient(to right, black 90%, transparent)" }}>
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
@@ -343,7 +326,7 @@ export default function ForYouPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}{!loading && dedupedItems.length > 0 && (() => { const newest = dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b); return ` · Updated ${timeAgo(newest.publishedAt)}`; })()}</p>
           </div>
           <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -407,7 +390,7 @@ export default function ForYouPage() {
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
               return (
-                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-sm transition-all duration-200">
+                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
                       <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
@@ -415,7 +398,7 @@ export default function ForYouPage() {
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {!ytId && hasImage && (
-                      <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
+                      <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
@@ -434,8 +417,8 @@ export default function ForYouPage() {
                       )}
                       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40">
                         <div className="flex items-center gap-0.5">
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /><span className="hidden sm:inline">More</span></button>
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">Less</span></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" />More</button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" />Less</button>
                         </div>
                         <div className="flex items-center gap-0.5">
                           <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`p-1.5 rounded-md text-xs flex items-center justify-center transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>

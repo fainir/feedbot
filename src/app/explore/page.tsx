@@ -171,7 +171,7 @@ export default function ExplorePage() {
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
-        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
+        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0" style={{ maskImage: "linear-gradient(to right, black 90%, transparent)", WebkitMaskImage: "linear-gradient(to right, black 90%, transparent)" }}>
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
@@ -248,7 +248,7 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* System feeds */}
           {FEEDS.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (
-            <Link key={feed.id} href={`/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all">
+            <Link key={feed.id} href={`/${feed.id}`} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">{feed.icon}</span>
                 <h3 className="font-semibold text-text group-hover:text-text/80 transition-colors">{feed.name}</h3>
@@ -267,7 +267,7 @@ export default function ExplorePage() {
               return 0;
             })
             .map((feed) => (
-            <div key={feed.id} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 transition-all relative">
+            <div key={feed.id} className="group p-4 rounded-xl border border-border bg-bg-card hover:border-text/20 hover:bg-bg-hover/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative">
               <Link href={`/${feed.slug || feed.id}`} className="block">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-2xl">📡</span>
@@ -319,6 +319,15 @@ export default function ExplorePage() {
           </div>
         </div>
       </main>
+
+      <footer className="border-t border-border py-6 mt-8">
+        <div className="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-center gap-4 text-[11px] text-text-muted">
+          <span>MyFeed &copy; {new Date().getFullYear()}</span>
+          <Link href="/privacy" className="hover:text-text transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-text transition-colors">Terms</Link>
+          <Link href="/contact" className="hover:text-text transition-colors">Contact</Link>
+        </div>
+      </footer>
 
       {/* New Feed Modal */}
       {showNewFeed && (

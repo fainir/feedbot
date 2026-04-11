@@ -21,24 +21,6 @@ interface FeedItem {
   publishedAt: string;
 }
 
-// Gradient fallback for articles without cover images
-const GRADIENTS = [
-  "from-blue-900/40 to-blue-800/20",
-  "from-purple-900/40 to-purple-800/20",
-  "from-green-900/40 to-green-800/20",
-  "from-orange-900/40 to-orange-800/20",
-  "from-red-900/40 to-red-800/20",
-  "from-cyan-900/40 to-cyan-800/20",
-  "from-pink-900/40 to-pink-800/20",
-  "from-indigo-900/40 to-indigo-800/20",
-];
-
-function getGradient(title: string): string {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
-
 // All system feeds — any of these can be loaded by slug
 const ALL_SYSTEM_FEEDS = [
   { id: "ai", name: "AI & ML", icon: "🤖", query: "artificial intelligence breakthroughs, LLM models, AI startups, machine learning research, GPT Claude Gemini, AI tools and products" },
@@ -567,7 +549,7 @@ export default function FeedPage() {
 
         {/* Scrollable tabs — drag to reorder, X to remove */}
         {/* TODO: Add unread count badges per tab — requires tracking last visit timestamp per feed */}
-        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
+        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2" style={{ maskImage: "linear-gradient(to right, black 90%, transparent)", WebkitMaskImage: "linear-gradient(to right, black 90%, transparent)" }}>
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
@@ -682,6 +664,7 @@ export default function FeedPage() {
             <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">
               {activeTab?.query || communityFeed?.description || ""}
               {!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}
+              {!loading && dedupedItems.length > 0 && (() => { const newest = dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b); return ` · Updated ${timeAgo(newest.publishedAt)}`; })()}
             </p>
             {communityFeed && <p className="text-[10px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
           </div>
@@ -742,7 +725,7 @@ export default function FeedPage() {
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
               return (
-                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-sm transition-all duration-200">
+                <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
                       <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
@@ -750,7 +733,7 @@ export default function FeedPage() {
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {!ytId && hasImage && (
-                      <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
+                      <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
@@ -768,8 +751,8 @@ export default function FeedPage() {
                       )}
                       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40">
                         <div className="flex items-center gap-0.5">
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" /><span className="hidden sm:inline">More</span></button>
-                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1.5 rounded-md text-xs flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">Less</span></button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3.5 w-3.5" />More</button>
+                          <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3.5 w-3.5" />Less</button>
                         </div>
                         <div className="flex items-center gap-0.5">
                           <button onClick={(e) => { e.preventDefault(); handleBookmark(item.id); }} className={`p-1.5 rounded-md text-xs flex items-center justify-center transition-all ${userBookmarks.has(item.id) ? "text-yellow-400 bg-yellow-500/10" : "text-text-muted hover:text-text hover:bg-bg-hover"}`} aria-label="Save">{userBookmarks.has(item.id) ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}</button>
