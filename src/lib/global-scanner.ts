@@ -508,7 +508,14 @@ function cleanSourceName(raw: string, articleUrl?: string): string {
 }
 
 function summarize(text: string): string {
-  const clean = text.replace(/<[^>]+>/g, "").trim();
+  let clean = text
+    .replace(/<[^>]+>/g, "")
+    .replace(/Continue reading on [^»\n]+[»…]?/gi, "")
+    .replace(/submitted by\s+\/u\/\w+/gi, "")
+    .replace(/\[link\]/gi, "")
+    .replace(/\[comments\]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (clean.length <= 200) return clean;
   const truncated = clean.slice(0, 197);
   const lastSpace = truncated.lastIndexOf(" ");
@@ -555,7 +562,7 @@ function normalizeUrl(url: string): string {
  * Check if an article is junk that should be filtered out.
  */
 // Spam keywords — gambling, crypto scams, SEO spam, promotional junk
-const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free)\b/i;
+const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up)\b/i;
 
 function isJunkArticle(a: RawArticle): boolean {
   // Homepage/index URLs (not real articles)
@@ -575,9 +582,11 @@ function isJunkArticle(a: RawArticle): boolean {
   // Spam/gambling/scam content
   if (SPAM_PATTERNS.test(a.title) || SPAM_PATTERNS.test(a.summary)) return true;
 
-  // Non-English content (basic check: title has non-Latin characters as majority)
+  // Non-English content
   const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
   if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
+  // Common non-English patterns (Indonesian, Portuguese, Spanish blog spam)
+  if (/\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak)\b/i.test(a.title)) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
   if (a.summary.length < 30 && /breaking news|covering|the best|subscribe|sign up/i.test(a.summary)) return true;

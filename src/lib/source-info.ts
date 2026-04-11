@@ -18,13 +18,19 @@ export function cleanSummary(text: string, title?: string): string {
 
   let clean = decodeEntities(
     text
-      .replace(/Continue reading on [^»]+»/g, "")
+      .replace(/Continue reading on [^»\n]+[»…]?/gi, "")
+      .replace(/Read more on [^\n]+/gi, "")
       .replace(/<[^>]*>/g, "")
       .replace(/\s+/g, " ")
-      .replace(/^(submitted by \/u\/\w+\s*\[link\]\s*\[comments\])/i, "")
+      .replace(/submitted by\s+\/u\/\w+/gi, "")
+      .replace(/\[link\]/gi, "")
+      .replace(/\[comments\]/gi, "")
       .replace(/Article URL: https?:\/\/\S+/g, "")
       .replace(/Comments URL: https?:\/\/\S+/g, "")
       .replace(/Points: \d+ # Comments: \d+/g, "")
+      .replace(/Photo:\s*[^\n]{0,50}$/i, "")
+      .replace(/^Introduction\s*$/i, "")
+      .replace(/^Abstract\s*$/i, "")
       .trim()
   );
 
@@ -52,6 +58,8 @@ export function cleanTitle(title: string): string {
 }
 
 export function cleanSourceDisplay(raw: string): string {
+  // Medium subdomains → "Medium"
+  if (/\.medium\.com|^medium\.com/i.test(raw)) return "Medium";
   if (/top scoring links|^r\/|\/r\//i.test(raw)) {
     const match = raw.match(/\/r\/(\w+)/i) || raw.match(/^r\/(\w+)/i);
     if (match) return "r/" + match[1];
