@@ -586,8 +586,8 @@ function isJunkArticle(a: RawArticle): boolean {
   // Non-English content
   const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
   if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
-  // Common non-English patterns (Indonesian/Malay, Portuguese, Spanish blog spam)
-  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|teknologi|studi|kasus)\b/i;
+  // Common non-English patterns (Indonesian/Malay, Portuguese, Spanish, French blog spam)
+  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|teknologi|studi|kasus|aprendimos|ignorar|sobre|porque|también|después|además|mientras|através|você|como|fazer|quando|então)\b/i;
   if (nonEnglish.test(a.title) || nonEnglish.test(a.summary)) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
