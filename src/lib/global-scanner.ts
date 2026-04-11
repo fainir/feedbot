@@ -803,14 +803,24 @@ export async function scanBraveVideos(queries?: string[]): Promise<{ scanned: nu
   const defaultQueries = [
     "AI technology explained",
     "startup pitch funding",
-    "programming tutorial",
-    "science documentary",
+    "programming tutorial 2026",
+    "science documentary new",
     "tech review 2026",
     "cybersecurity explained",
     "space exploration news",
-    "design process",
+    "design process tutorial",
     "game development devlog",
-    "robotics demo",
+    "robotics demo 2026",
+    "crypto blockchain explained",
+    "machine learning project",
+    "open source project demo",
+    "cooking technique tutorial",
+    "fitness workout routine",
+    "business strategy explained",
+    "climate change science",
+    "indie game trailer",
+    "web development tutorial",
+    "photography tips tricks",
   ];
 
   const searchQueries = queries || defaultQueries;

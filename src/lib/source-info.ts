@@ -140,8 +140,30 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
     s.includes("scientific discoveries")
   )
     return { name: "News", icon: "https://news.google.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
-  // Fallback: try to generate favicon URL from source name
+  // Fallback: use Google Favicons API to get icon from source domain
   return { name: cleaned, icon: "", color: "bg-text/5 text-text-muted" };
+}
+
+/**
+ * Get favicon URL for any source, with Google Favicons API as fallback.
+ * Use this in components to always show an icon.
+ */
+export function getSourceFavicon(source: string, articleUrl?: string): string {
+  const info = getSourceInfo(source);
+  if (info.icon) return info.icon;
+  // Try to extract domain from article URL
+  if (articleUrl) {
+    try {
+      const domain = new URL(articleUrl).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch {}
+  }
+  // Try to extract domain from source name
+  const s = source.toLowerCase();
+  if (s.includes(".")) {
+    return `https://www.google.com/s2/favicons?domain=${s}&sz=32`;
+  }
+  return "";
 }
 
 export function timeAgo(dateStr: string): string {

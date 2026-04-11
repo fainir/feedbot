@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
     }).filter((item: { relevance_score: number }) => item.relevance_score >= 70);
   } else {
     if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
-    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit + 1);
+    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit * 3);
     if (cursor) queryBuilder = queryBuilder.lt("published_at", cursor);
     const { data: items } = await queryBuilder;
     results = items || [];
@@ -167,9 +167,19 @@ export async function GET(req: NextRequest) {
   const now = Date.now();
   const scored = deduped.map((item) => {
     const ageHours = (now - new Date(item.published_at).getTime()) / 3_600_000;
-    const freshness = Math.max(0.3, 1 - ageHours / 96); // decay over 4 days, floor at 0.3
+    // Steeper decay: articles lose 50% score in 12h, floor at 0.2
+    const freshness = Math.max(0.2, 1 - ageHours / 24);
     const baseScore = item.relevance_score || 70;
-    return { ...item, _finalScore: baseScore * freshness };
+
+    // Penalize stub/empty summaries (low content quality signal)
+    const summary = (item.summary || "").trim();
+    const summaryPenalty = (!summary || summary.length < 20) ? 0.8 : 1;
+
+    // Penalize low-effort DEV.to posts (no summary = likely low quality)
+    const src = normalizeSource(item.source);
+    const devPenalty = (src === "devto" && (!summary || summary.length < 40)) ? 0.7 : 1;
+
+    return { ...item, _finalScore: baseScore * freshness * summaryPenalty * devPenalty };
   });
 
   // ── Story clustering: group similar titles, keep best per cluster ──
@@ -209,8 +219,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Source diversity: cap any single source at 40% of feed ──
-  const maxPerSource = Math.max(3, Math.ceil(limit * 0.4));
+  // ── Source diversity: cap any single source at 20% of feed ──
+  const maxPerSource = Math.max(3, Math.ceil(limit * 0.2));
   const sourceCounts = new Map<string, number>();
   const diverse = clusters
     .sort((a, b) => b._finalScore - a._finalScore)

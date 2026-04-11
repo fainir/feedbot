@@ -8,7 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
-import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, timeAgo } from "@/lib/source-info";
+import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, getSourceFavicon, timeAgo } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -735,6 +735,7 @@ export default function FeedPage() {
           <div className="space-y-4 pt-2">
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
+              const favicon = src.icon || getSourceFavicon(item.source, item.url);
               const title = cleanTitle(item.title);
               const summary = cleanSummary(item.summary, title);
               const hasImage = !!item.image_url;
@@ -756,7 +757,7 @@ export default function FeedPage() {
                     <div className="p-3 sm:p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
-                          {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                          {favicon ? <img src={favicon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>

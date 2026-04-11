@@ -7,7 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
-import { cleanSummary, cleanTitle, getSourceInfo, timeAgo } from "@/lib/source-info";
+import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -157,7 +157,11 @@ export default function ForYouPage() {
       .finally(() => setLoading(false));
   }, [fetchFeed]);
 
-  const dedupedItems = useMemo(() => {
+  const { dedupedItems, trendingTopics } = useMemo(() => {
+    // Load source preferences for personalization
+    let sourcePrefs: Record<string, number> = {};
+    try { sourcePrefs = JSON.parse(localStorage.getItem("myfeed-source-prefs") || "{}"); } catch {}
+
     // URL dedup
     const seenUrls = new Set<string>();
     const urlDeduped = items.filter((item) => {
@@ -167,10 +171,21 @@ export default function ForYouPage() {
       return true;
     });
 
-    // Story clustering — group by similar titles, keep best
+    // Apply personalization: boost liked sources, penalize disliked
+    if (Object.keys(sourcePrefs).length > 0) {
+      urlDeduped.sort((a, b) => {
+        const aBoost = sourcePrefs[a.source.toLowerCase()] || 0;
+        const bBoost = sourcePrefs[b.source.toLowerCase()] || 0;
+        if (aBoost !== bBoost) return bBoost - aBoost; // higher preference first
+        return 0; // keep original order (by date)
+      });
+    }
+
+    // Story clustering — group by similar titles, keep best + track trending
     const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
     const clusters: typeof urlDeduped = [];
     const clusterKeys = new Map<string, number>();
+    const clusterCounts = new Map<number, number>(); // cluster index → count of similar stories
     for (const item of urlDeduped) {
       const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w)).slice(0, 5);
       const key = words.join(" ");
@@ -178,11 +193,20 @@ export default function ForYouPage() {
       let matched = false;
       for (const [ek, idx] of clusterKeys) {
         const overlap = words.filter((w) => ek.includes(w)).length;
-        if (overlap >= 3) { matched = true; break; }
+        if (overlap >= 3) {
+          clusterCounts.set(idx, (clusterCounts.get(idx) || 1) + 1);
+          matched = true;
+          break;
+        }
       }
-      if (!matched) { clusterKeys.set(key, clusters.length); clusters.push(item); }
+      if (!matched) { clusterKeys.set(key, clusters.length); clusterCounts.set(clusters.length, 1); clusters.push(item); }
     }
-    return clusters;
+    // Build trending set: items with 3+ similar stories
+    const trending = new Set<string>();
+    for (const [idx, count] of clusterCounts) {
+      if (count >= 3 && clusters[idx]) trending.add(clusters[idx].id);
+    }
+    return { dedupedItems: clusters, trendingTopics: trending };
   }, [items]);
 
   const loadMore = () => {
@@ -197,8 +221,20 @@ export default function ForYouPage() {
     if (!user) { toast("Sign up to save your preferences", "info"); return; }
     const prev = userReactions[feedItemId];
     setUserReactions((r) => { const next = { ...r }; if (next[feedItemId] === reaction) delete next[feedItemId]; else next[feedItemId] = reaction; return next; });
+    // Track source preferences for personalization
+    const item = items.find((i) => i.id === feedItemId);
+    if (item) {
+      try {
+        const prefs = JSON.parse(localStorage.getItem("myfeed-source-prefs") || "{}");
+        const src = item.source.toLowerCase();
+        if (!prefs[src]) prefs[src] = 0;
+        if (reaction === "like") prefs[src] = Math.min(5, prefs[src] + 1);
+        else prefs[src] = Math.max(-5, prefs[src] - 1);
+        localStorage.setItem("myfeed-source-prefs", JSON.stringify(prefs));
+      } catch {}
+    }
     try { const res = await fetch("/api/reactions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId, reaction }) }); if (!res.ok) throw new Error(); } catch { setUserReactions((r) => { const next = { ...r }; if (prev) next[feedItemId] = prev; else delete next[feedItemId]; return next; }); }
-  }, [user, userReactions]);
+  }, [user, userReactions, items]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
     if (!user) { toast("Sign up to save your finds", "info"); return; }
@@ -365,6 +401,7 @@ export default function ForYouPage() {
           <div className="space-y-4 pt-2">
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
+              const favicon = src.icon || getSourceFavicon(item.source, item.url);
               const title = cleanTitle(item.title);
               const summary = cleanSummary(item.summary, title);
               const hasImage = !!item.image_url;
@@ -386,10 +423,11 @@ export default function ForYouPage() {
                     <div className="p-3 sm:p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
-                          {src.icon ? <img src={src.icon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                          {favicon ? <img src={favicon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>
+                          {trendingTopics.has(item.id) && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400">Trending</span>}
                       </div>
                       <h2 className="font-semibold text-text leading-snug text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
                       {summary && summary !== title && summary.length > 10 && (
