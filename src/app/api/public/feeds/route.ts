@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
       if (latinRatio < 0.5) return false;
     }
     // Filter French/Spanish/German titles at API level too
-    const foreignArticles = (title.match(/\b(la|el|los|las|del|les|des|une|sur|avec|dans|der|die|das|den|ein|eine|gli|dei|alla|und|est|sont|mais|pour|qui|von|wie)\b/gi) || []).length;
+    const foreignArticles = (title.match(/\b(la|le|el|los|las|del|les|des|une|sur|avec|dans|der|die|das|den|ein|eine|gli|dei|alla|und|est|sont|mais|pour|qui|que|von|wie|du|au|aux|nous|vous|ses|ces|cette|notre|leur|pourquoi|degli|dello|nella|como|por|para|mais|seu|sua|pode|pelo|das|dem|wird|sich|oder|nicht|aber)\b/gi) || []).length;
     if (foreignArticles >= 3) return false;
     // Filter garbage patterns: excessive special chars
     const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
