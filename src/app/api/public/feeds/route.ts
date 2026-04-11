@@ -14,6 +14,22 @@ const TAB_MAP: Record<string, string> = {
   "scientific discoveries": "Science",
   "technology news": "Tech News",
   "artificial intelligence machine learning": "AI & ML",
+  "open source projects": "Open Source",
+  "video games": "Gaming",
+  "cybersecurity": "Security",
+  "spacex launches": "Space",
+  "health research": "Health",
+  "business strategy": "Business",
+  "ui ux design": "Design",
+  "cryptocurrency bitcoin": "Crypto",
+  "energy technology": "Energy",
+  "humanoid robots": "Robotics",
+  "cloud infrastructure": "DevOps",
+  "data science": "Data",
+  "mobile app": "Mobile",
+  "digital marketing": "Marketing",
+  "climate change": "Climate",
+  "fintech news": "Fintech",
 };
 
 function normalizeSource(source: string): string {
@@ -108,17 +124,38 @@ export async function GET(req: NextRequest) {
   let results: { id: string; title: string; url: string; summary: string; source: string; image_url: string | null; published_at: string; relevance_score: number }[] = [];
 
   if (!isAll && feedIds.length === 0) {
-    const keywords = queryLower.split(/[,\s]+/).filter((w: string) => w.length > 3).slice(0, 6);
+    // Stop words that match too broadly — never use as search keywords
+    const STOP_WORDS = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into","also","some","than","other","each","most","only","very","over","such","after","much","many","make","like","back","well","even","want","give","good","best","does","were","them","then","know","come","take","need","find","tell","help","work","part","look","made","down","used","through","where","before","between","under","along","while","really","using","being","going","still","every","first","last","next","step","guide","complete","learn","build","start","data","time","high","full","great","simple","easy","real","world","people","without","around","another","within","because","different","thought","however","getting","making","working","little","something","same","during","long","right","both","ways","things"]);
+    const keywords = queryLower
+      .split(/[,\s]+/)
+      .filter((w: string) => w.length > 3 && !STOP_WORDS.has(w))
+      .slice(0, 8);
     if (keywords.length === 0) return NextResponse.json({ items: [], hasMore: false });
-    const orFilter = keywords.map((k: string) => `title.ilike.%${k}%`).join(",");
-    let poolQuery = supabase.from("article_pool").select("id, title, url, summary, source, image_url, published_at").or(orFilter).order("published_at", { ascending: false }).limit(limit * 3);
+
+    // Use the most specific keywords (longest words) for the DB query
+    const sortedByLength = [...keywords].sort((a, b) => b.length - a.length);
+    const dbKeywords = sortedByLength.slice(0, 4); // Top 4 most specific
+    const orFilter = dbKeywords.map((k: string) => `title.ilike.%${k}%`).join(",");
+    let poolQuery = supabase.from("article_pool").select("id, title, url, summary, source, image_url, published_at").or(orFilter).order("published_at", { ascending: false }).limit(limit * 5);
     if (cursor) poolQuery = poolQuery.lt("published_at", cursor);
     const { data: poolItems } = await poolQuery;
+
+    // Score by how many keywords match — require 2+ matches for multi-keyword queries
+    const minMatches = keywords.length >= 3 ? 2 : 1;
     results = (poolItems || []).map((item: { id: string; title: string; url: string; summary: string; source: string; image_url: string | null; published_at: string }) => {
       const text = `${item.title} ${item.summary || ""}`.toLowerCase();
       const matchCount = keywords.filter((k: string) => text.includes(k)).length;
-      return { ...item, relevance_score: 60 + matchCount * 10 };
-    }).filter((item: { relevance_score: number }) => item.relevance_score >= 70);
+      // Bonus for title-only matches (stronger signal than summary matches)
+      const titleText = (item.title || "").toLowerCase();
+      const titleMatches = keywords.filter((k: string) => titleText.includes(k)).length;
+      const score = matchCount * 15 + titleMatches * 10;
+      return { ...item, relevance_score: score };
+    }).filter((item: { relevance_score: number }, _i: number, _arr: { relevance_score: number }[]) => {
+      // For multi-keyword queries, require matching multiple keywords
+      const text = `${(item as { title: string }).title} ${(item as { summary: string }).summary || ""}`.toLowerCase();
+      const matchCount = keywords.filter((k: string) => text.includes(k)).length;
+      return matchCount >= minMatches && item.relevance_score >= 30;
+    });
   } else {
     if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
     let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit * 3);
@@ -164,8 +201,12 @@ export async function GET(req: NextRequest) {
     if (accentedChars >= 2) return false;
     // Detect Turkish/other non-English via specific characters
     if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
-    // API-level spam filter for articles already in DB
+    // API-level spam + low-quality filter for articles already in DB
     if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange/i.test(title)) return false;
+    // Filter learning diary posts ("Day 1:", "Day 21:", etc.) — personal logs, not curated content
+    if (/^Day \d+\s*[:\-–—]/i.test(title)) return false;
+    // Filter "Soul in Motion" style personal journal DEV posts
+    if (/^Soul in Motion|A Day of Becoming/i.test(title)) return false;
     // Filter off-topic source/content mismatches
     const itemSource = (item.source || "").toLowerCase();
     // Block entertainment/cooking/DIY sources from appearing in non-matching feeds
@@ -255,8 +296,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Source diversity: cap any single source (tighter for single feeds, looser for "all") ──
-  const diversityCap = isAll ? 0.2 : 0.15;
+  // ── Source diversity: cap any single source ──
+  const diversityCap = isAll ? 0.15 : 0.15;
   const maxPerSource = Math.max(3, Math.ceil(limit * diversityCap));
   const sourceCounts = new Map<string, number>();
   const diverse = clusters
