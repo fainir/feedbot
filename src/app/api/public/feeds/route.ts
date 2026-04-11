@@ -62,16 +62,6 @@ export async function GET(req: NextRequest) {
 
   const supabase = getSupabase();
   const queryLower = query.toLowerCase().trim();
-  let feedName = TAB_MAP[queryLower];
-  if (!feedName) {
-    // Try prefix matching for longer prompts
-    for (const [prefix, name] of Object.entries(TAB_MAP)) {
-      if (queryLower.startsWith(prefix)) {
-        feedName = name;
-        break;
-      }
-    }
-  }
 
   // Special case: "all" returns mixed articles from all system feeds
   const isAll = queryLower === "all";
@@ -97,24 +87,57 @@ export async function GET(req: NextRequest) {
         feedIds = filtered.map((f: { id: string }) => f.id);
       }
     }
-  } else if (feedName) {
-    // Legacy TAB_MAP match
-    const { data: feed } = await supabase
-      .from("feeds")
-      .select("id")
-      .eq("user_id", SYSTEM_USER)
-      .eq("name", feedName)
-      .single();
-    if (feed) feedIds = [feed.id];
   }
 
-  // If no match yet, try matching by query_text (all 103 system feeds have query_text)
+  // Smart feed matching: try multiple strategies to find the best system feed
   if (!isAll && feedIds.length === 0) {
+    // Strategy 1: Direct TAB_MAP lookup (exact or prefix)
+    let feedName = TAB_MAP[queryLower];
+    if (!feedName) {
+      for (const [prefix, name] of Object.entries(TAB_MAP)) {
+        if (queryLower.startsWith(prefix)) { feedName = name; break; }
+      }
+    }
+    if (feedName) {
+      const { data: feed } = await supabase.from("feeds").select("id").eq("user_id", SYSTEM_USER).eq("name", feedName).single();
+      if (feed) feedIds = [feed.id];
+    }
+  }
+
+  // Strategy 2: Score all system feeds by keyword overlap with the query
+  if (!isAll && feedIds.length === 0) {
+    const { data: allFeeds } = await supabase
+      .from("feeds")
+      .select("id, name, query_text")
+      .eq("user_id", SYSTEM_USER)
+      .eq("is_active", true);
+
+    if (allFeeds && allFeeds.length > 0) {
+      const queryWords = queryLower.split(/[\s,]+/).filter((w: string) => w.length > 2);
+      let bestFeed: { id: string; score: number } | null = null;
+
+      for (const feed of allFeeds) {
+        const feedText = `${feed.name} ${feed.query_text || ""}`.toLowerCase();
+        const matchCount = queryWords.filter((w: string) => feedText.includes(w)).length;
+        const score = matchCount / Math.max(queryWords.length, 1);
+        // Require at least 30% keyword overlap and at least 2 matches
+        if (matchCount >= 2 && score >= 0.3 && (!bestFeed || score > bestFeed.score)) {
+          bestFeed = { id: feed.id, score };
+        }
+      }
+
+      if (bestFeed) feedIds = [bestFeed.id];
+    }
+  }
+
+  // Strategy 3: ilike search on query_text (partial match)
+  if (!isAll && feedIds.length === 0) {
+    const firstPhrase = queryLower.split(",")[0].trim().slice(0, 40);
     const { data: matchByQuery } = await supabase
       .from("feeds")
       .select("id")
       .eq("user_id", SYSTEM_USER)
-      .ilike("query_text", `%${queryLower.split(",")[0].trim().slice(0, 40)}%`)
+      .ilike("query_text", `%${firstPhrase}%`)
       .limit(1)
       .single();
     if (matchByQuery) feedIds = [matchByQuery.id];

@@ -41,7 +41,8 @@
 - [x] UI/UX polish — remove gradient placeholders, consistent image ratio, visible More/Less labels, tab fade, card hover, freshness indicator, explore footer (M)
 - [x] Feed content quality pass 5 — fix open-source feed, non-English filter, source diversity, spam filters, page title bug, story clustering, Wikipedia filter (XL)
 - [x] Feed quality pass 6 — tighten accent threshold, API-level spam filter, QA next batch (S)
-- [~] Feed quality pass 7 — fix custom feed relevance, homepage diversity, Day X filter, open-source feed (L)
+- [x] Feed quality pass 7 — fix custom feed relevance, homepage diversity, Day X filter, open-source feed (L)
+- [~] Feed quality pass 8 — smart feed matching with keyword overlap scoring (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
