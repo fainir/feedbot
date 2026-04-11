@@ -156,9 +156,27 @@ export async function GET(req: NextRequest) {
       const latinRatio = (title.match(/[a-zA-Z0-9\s.,!?'"\-—:;()\[\]@#$%&*+=/\\|<>{}~`^_]/g) || []).length / title.length;
       if (latinRatio < 0.5) return false;
     }
-    // Filter French/Spanish/German titles at API level too
+    // Filter French/Spanish/German titles at API level — word matching + accent detection
     const foreignArticles = (title.match(/\b(la|le|el|los|las|del|les|des|une|sur|avec|dans|der|die|das|den|ein|eine|gli|dei|alla|und|est|sont|mais|pour|qui|que|von|wie|du|au|aux|nous|vous|ses|ces|cette|notre|leur|pourquoi|degli|dello|nella|como|por|para|mais|seu|sua|pode|pelo|das|dem|wird|sich|oder|nicht|aber)\b/gi) || []).length;
     if (foreignArticles >= 3) return false;
+    // Detect French/Spanish/Portuguese via accented characters (é, è, ê, à, ç, ñ, ü, ö, ã, õ)
+    const accentedChars = (title.match(/[éèêëàâçñüöäãõîôûù]/gi) || []).length;
+    if (accentedChars >= 3) return false;
+    // Detect Turkish/other non-English via specific characters
+    if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
+    // Filter off-topic source/content mismatches
+    const itemSource = (item.source || "").toLowerCase();
+    // Block entertainment/cooking/DIY sources from appearing in non-matching feeds
+    if (!isAll) {
+      const offTopicSources = /r\/(cooking|recipes|DIY|crafts|movies|television|anime|books|comics|gardening|askreddit|pics|funny|memes|sports|nfl|nba|soccer)/i;
+      if (offTopicSources.test(itemSource)) {
+        // Only allow these in their matching feeds
+        const allowedInQuery = /cook|recipe|food|diy|maker|movie|film|anime|book|comic|garden|sport|game/i;
+        if (!allowedInQuery.test(queryLower)) return false;
+      }
+      // Block ESPN from non-sports feeds
+      if (itemSource.includes("espn") && !/sport|game|athlet/i.test(queryLower)) return false;
+    }
     // Filter garbage patterns: excessive special chars
     const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
     if (specialRatio > 0.03) return false;
