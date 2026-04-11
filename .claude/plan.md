@@ -26,6 +26,21 @@
 - [x] Switch classification pipeline from Haiku to GPT-5 Nano (M)
 - [x] Fix JSON schema — add additionalProperties: false (S)
 - [x] Add YouTube channel RSS feeds + remove Brave rotation limits (M)
+- [x] Fix pipeline timeout — parallelize AI calls, reduce batch size (M)
+- [x] Fix AI matching — use integer indices instead of UUIDs for feed matching (S)
+- [x] Split pipeline into scan/classify phases to stay under timeout (M)
+- [x] Switch to gpt-5-nano ($0.05/1M tokens, cheapest option) (S)
+- [x] Fix mobile tab close — X button triggers on tap instead of just hover (S)
+- [x] Feed quality improvements — filter junk, better summaries, dedup, source icons (L)
+- [x] Replace "articles" with "finds/posts/content" in all user-facing copy (S)
+- [x] Feed quality pass 2 — fix Reddit/Medium cruft, more spam filters, dedup (M)
+- [x] Feed quality pass 3 — crypto scams, ad copy, non-English filters (S)
+- [x] Feed quality pass 4 — source diversity, personalization, freshness, dedup, favicons, trending, video, summaries, DEV scoring (XL)
+- [x] Fix remaining casino/slot spam in Gaming feed (S)
+- [x] Pre-release fixes — Spanish filter, broken imgs, source names, remove crypto tab, more video, accent fix (L)
+- [x] UI/UX polish — remove gradient placeholders, consistent image ratio, visible More/Less labels, tab fade, card hover, freshness indicator, explore footer (M)
+- [x] Feed content quality pass 5 — fix open-source feed, non-English filter, source diversity, spam filters, page title bug, story clustering, Wikipedia filter (XL)
+- [~] Feed quality pass 6 — tighten accent threshold, API-level spam filter, QA next batch (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

@@ -161,9 +161,11 @@ export async function GET(req: NextRequest) {
     if (foreignArticles >= 3) return false;
     // Detect French/Spanish/Portuguese via accented characters (é, è, ê, à, ç, ñ, ü, ö, ã, õ)
     const accentedChars = (title.match(/[éèêëàâçñüöäãõîôûù]/gi) || []).length;
-    if (accentedChars >= 3) return false;
+    if (accentedChars >= 2) return false;
     // Detect Turkish/other non-English via specific characters
     if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
+    // API-level spam filter for articles already in DB
+    if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange/i.test(title)) return false;
     // Filter off-topic source/content mismatches
     const itemSource = (item.source || "").toLowerCase();
     // Block entertainment/cooking/DIY sources from appearing in non-matching feeds
