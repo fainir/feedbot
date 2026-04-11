@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
     const nonLatinScript = /[\u0980-\u09FF\u4E00-\u9FFF\u3400-\u4DBF\u0600-\u06FF\u0400-\u04FF\u0E00-\u0E7F\u0900-\u097F\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/;
     if (nonLatinScript.test(title)) {
       const latinChars = (title.match(/[a-zA-Z]/g) || []).length;
-      if (latinChars / title.length < 0.5) return false;
+      if (latinChars / title.length < 0.8) return false; // Stricter: must be 80% Latin if any non-Latin present
     }
     // Detect if prompt is Latin-script — if so, filter non-Latin titles
     const promptIsLatin = /^[a-zA-Z]/.test(queryLower);
