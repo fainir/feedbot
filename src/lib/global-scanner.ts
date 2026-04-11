@@ -562,7 +562,7 @@ function normalizeUrl(url: string): string {
  * Check if an article is junk that should be filtered out.
  */
 // Spam keywords — gambling, crypto scams, SEO spam, promotional junk
-const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up)\b/i;
+const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up|free strategy call|seed.?s? phrase|made \$\d[\d,]+\s*in\s*\d+\s*days?|my .{0,20}wallet holds|usdt.{0,30}seed)\b/i;
 
 function isJunkArticle(a: RawArticle): boolean {
   // Homepage/index URLs (not real articles)
@@ -576,8 +576,9 @@ function isJunkArticle(a: RawArticle): boolean {
   const templatePatterns = /\{\{|\$json\.|<%=|%>|\{%|undefined|null|NaN/;
   if (templatePatterns.test(a.title) || templatePatterns.test(a.summary)) return true;
 
-  // Title is too short or generic
+  // Title is too short, generic, or truncated
   if (a.title.length < 10 || a.title === "Untitled") return true;
+  if (a.title.endsWith(":") && a.title.length < 30) return true;
 
   // Spam/gambling/scam content
   if (SPAM_PATTERNS.test(a.title) || SPAM_PATTERNS.test(a.summary)) return true;
@@ -585,8 +586,9 @@ function isJunkArticle(a: RawArticle): boolean {
   // Non-English content
   const latinChars = (a.title.match(/[a-zA-Z]/g) || []).length;
   if (a.title.length > 20 && latinChars / a.title.length < 0.3) return true;
-  // Common non-English patterns (Indonesian, Portuguese, Spanish blog spam)
-  if (/\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak)\b/i.test(a.title)) return true;
+  // Common non-English patterns (Indonesian/Malay, Portuguese, Spanish blog spam)
+  const nonEnglish = /\b(dalam|dengan|untuk|yang|dari|adalah|merupakan|perjalanan|menuju|melampaui|kedewasaan|peristiwa|terjebak|membangun|budidaya|berbasis|teknologi|studi|kasus)\b/i;
+  if (nonEnglish.test(a.title) || nonEnglish.test(a.summary)) return true;
 
   // Summary is just the site tagline (contains "Breaking news" / "covering" / "the best" + short)
   if (a.summary.length < 30 && /breaking news|covering|the best|subscribe|sign up/i.test(a.summary)) return true;
