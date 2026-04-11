@@ -562,7 +562,7 @@ function normalizeUrl(url: string): string {
  * Check if an article is junk that should be filtered out.
  */
 // Spam keywords — gambling, crypto scams, SEO spam, promotional junk
-const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|situs game|terpercaya|judi online|casino online|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up|free strategy call|seed.?s? phrase|made \$\d[\d,]+\s*in\s*\d+\s*days?|my .{0,20}wallet holds|usdt.{0,30}seed)\b/i;
+const SPAM_PATTERNS = /\b(aviator|crash game|1win|slot machine|slot online|situs game|terpercaya|judi online|casino|betting tips|win real money|free spins|promo code|bonus code|referral code|airdrop claim|token presale|pump and dump|get rich quick|make \$\d+.*day|training institute|best institute|join now free|tour packages?\b.*\b(couple|family|honeymoon)|pole danc(er|ing)|bitunix|buy now|order now|click here to|limited time offer|act fast|hurry up|free strategy call|seed.?s? phrase|made \$\d[\d,]+\s*in\s*\d+\s*days?|my .{0,20}wallet holds|usdt.{0,30}seed|rtp.*slot|pola rtp|gamdom|crypto casino)\b/i;
 
 function isJunkArticle(a: RawArticle): boolean {
   // Homepage/index URLs (not real articles)
