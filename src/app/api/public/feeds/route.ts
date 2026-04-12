@@ -3,34 +3,111 @@ import { createClient } from "@supabase/supabase-js";
 
 const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
-// Map tab queries to system feed names in DB
-// Keys are the start of the query text (matched with startsWith)
-// Legacy TAB_MAP for backward compat with old query formats
-const TAB_MAP: Record<string, string> = {
-  "tech industry": "Tech News",
-  "artificial intelligence": "AI & ML",
-  "startup funding": "Startups",
-  "software engineering": "Dev",
-  "scientific discoveries": "Science",
-  "technology news": "Tech News",
-  "artificial intelligence machine learning": "AI & ML",
-  "open source projects": "Open Source",
-  "video games": "Gaming",
-  "cybersecurity": "Security",
-  "spacex launches": "Space",
-  "health research": "Health",
-  "business strategy": "Business",
-  "ui ux design": "Design",
-  "cryptocurrency bitcoin": "Crypto",
-  "energy technology": "Energy",
-  "humanoid robots": "Robotics",
-  "cloud infrastructure": "DevOps",
-  "data science": "Data",
-  "mobile app": "Mobile",
-  "digital marketing": "Marketing",
-  "climate change": "Climate",
-  "fintech news": "Fintech",
-};
+// ── TF-IDF Feed Matcher ──
+// Builds a weighted keyword→feed index from all system feed query_texts.
+// Keywords rare across feeds score higher (IDF), so "django" → Dev is strong
+// while "web" → many feeds is weak. This replaces the old TAB_MAP + naive overlap.
+const MATCH_STOP_WORDS = new Set([
+  "and","the","for","with","from","that","this","into","about","also","more",
+  "most","just","some","very","over","such","like","each","make","good","best",
+  "new","all","how","what","when","your","will","been","have","does","than",
+  "other","every","between","through","their","which","these","those","where",
+  "could","would","should","only","still","while","after","before","under",
+  "using","based","real","high","full","great","latest","news","feed","trends",
+  "tips","tools","guide","today","world","industry","company","companies",
+]);
+
+interface FeedIndex {
+  feeds: { id: string; name: string; keywords: string[] }[];
+  idf: Map<string, number>; // keyword → IDF weight
+}
+
+let _feedIndex: FeedIndex | null = null;
+let _feedIndexTime = 0;
+
+async function getFeedIndex(supabase: ReturnType<typeof getSupabase>): Promise<FeedIndex> {
+  // Cache for 5 minutes
+  if (_feedIndex && Date.now() - _feedIndexTime < 300_000) return _feedIndex;
+
+  const { data: allFeeds } = await supabase
+    .from("feeds")
+    .select("id, name, query_text")
+    .eq("user_id", SYSTEM_USER)
+    .eq("is_active", true);
+
+  if (!allFeeds || allFeeds.length === 0) {
+    _feedIndex = { feeds: [], idf: new Map() };
+    _feedIndexTime = Date.now();
+    return _feedIndex;
+  }
+
+  // Extract keywords from each feed's name + query_text
+  const feeds = allFeeds.map(f => {
+    const text = `${f.name} ${f.query_text || ""}`.toLowerCase();
+    const keywords = text
+      .split(/[\s,]+/)
+      .map(w => w.replace(/[^a-z0-9]/g, ""))
+      .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
+    return { id: f.id, name: f.name, keywords: [...new Set(keywords)] };
+  });
+
+  // Build IDF: weight = 1 / (number of feeds containing this keyword)
+  const docFreq = new Map<string, number>();
+  for (const feed of feeds) {
+    for (const kw of feed.keywords) {
+      docFreq.set(kw, (docFreq.get(kw) || 0) + 1);
+    }
+  }
+  const idf = new Map<string, number>();
+  const totalFeeds = feeds.length;
+  for (const [kw, freq] of docFreq) {
+    idf.set(kw, Math.log(totalFeeds / freq)); // classic IDF
+  }
+
+  _feedIndex = { feeds, idf };
+  _feedIndexTime = Date.now();
+  return _feedIndex;
+}
+
+function matchFeeds(queryLower: string, index: FeedIndex, maxFeeds: number = 2): { id: string; score: number }[] {
+  const queryWords = queryLower
+    .split(/[\s,]+/)
+    .map(w => w.replace(/[^a-z0-9]/g, ""))
+    .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
+
+  if (queryWords.length === 0) return [];
+
+  const feedScores: { id: string; name: string; score: number; matchCount: number }[] = [];
+
+  for (const feed of index.feeds) {
+    let score = 0;
+    let matchCount = 0;
+    for (const qw of queryWords) {
+      // Check if this query word matches any feed keyword
+      // Support substring matching: "django" matches "django", "spacex" matches "spacex"
+      const matched = feed.keywords.some(fk => fk.includes(qw) || qw.includes(fk));
+      if (matched) {
+        const idfWeight = index.idf.get(qw) || 1;
+        // Bonus for longer keywords (more specific)
+        const lengthBonus = Math.min(qw.length / 5, 2);
+        score += idfWeight * lengthBonus;
+        matchCount++;
+      }
+    }
+    if (matchCount >= 1) {
+      feedScores.push({ id: feed.id, name: feed.name, score, matchCount });
+    }
+  }
+
+  // Sort by score, require at least 1 match
+  feedScores.sort((a, b) => b.score - a.score);
+
+  // Return top N feeds, but only if they have meaningful scores
+  const top = feedScores.slice(0, maxFeeds);
+  if (top.length === 0) return [];
+  // Second feed must have at least 40% of the top score to be included
+  return top.filter((f, i) => i === 0 || f.score >= top[0].score * 0.4);
+}
 
 function normalizeSource(source: string): string {
   const s = source.toLowerCase();
@@ -89,58 +166,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Smart feed matching: try multiple strategies to find the best system feed
+  // ── TF-IDF Feed Matching ──
+  // Score all 100+ system feeds by IDF-weighted keyword overlap.
+  // Returns top 1-2 feeds. "Python Django web" → Dev (high: django is rare)
+  // not Web3 (low: "web" is common across many feeds).
   if (!isAll && feedIds.length === 0) {
-    // Strategy 1: Direct TAB_MAP lookup (exact or prefix)
-    let feedName = TAB_MAP[queryLower];
-    if (!feedName) {
-      for (const [prefix, name] of Object.entries(TAB_MAP)) {
-        if (queryLower.startsWith(prefix)) { feedName = name; break; }
-      }
-    }
-    if (feedName) {
-      const { data: feed } = await supabase.from("feeds").select("id").eq("user_id", SYSTEM_USER).eq("name", feedName).single();
-      if (feed) feedIds = [feed.id];
-    }
-  }
-
-  // Strategy 2: Score all system feeds by keyword overlap with the query
-  if (!isAll && feedIds.length === 0) {
-    const { data: allFeeds } = await supabase
-      .from("feeds")
-      .select("id, name, query_text")
-      .eq("user_id", SYSTEM_USER)
-      .eq("is_active", true);
-
-    if (allFeeds && allFeeds.length > 0) {
-      const queryWords = queryLower.split(/[\s,]+/).filter((w: string) => w.length > 2);
-      let bestFeed: { id: string; score: number } | null = null;
-
-      for (const feed of allFeeds) {
-        const feedText = `${feed.name} ${feed.query_text || ""}`.toLowerCase();
-        const matchCount = queryWords.filter((w: string) => feedText.includes(w)).length;
-        const score = matchCount / Math.max(queryWords.length, 1);
-        // Require at least 30% keyword overlap and at least 2 matches
-        if (matchCount >= 2 && score >= 0.3 && (!bestFeed || score > bestFeed.score)) {
-          bestFeed = { id: feed.id, score };
-        }
-      }
-
-      if (bestFeed) feedIds = [bestFeed.id];
-    }
-  }
-
-  // Strategy 3: ilike search on query_text (partial match)
-  if (!isAll && feedIds.length === 0) {
-    const firstPhrase = queryLower.split(",")[0].trim().slice(0, 40);
-    const { data: matchByQuery } = await supabase
-      .from("feeds")
-      .select("id")
-      .eq("user_id", SYSTEM_USER)
-      .ilike("query_text", `%${firstPhrase}%`)
-      .limit(1)
-      .single();
-    if (matchByQuery) feedIds = [matchByQuery.id];
+    const index = await getFeedIndex(supabase);
+    const matched = matchFeeds(queryLower, index, 2);
+    feedIds = matched.map(f => f.id);
   }
 
   // Last resort: search article_pool directly by keywords
@@ -225,7 +258,7 @@ export async function GET(req: NextRequest) {
     // Detect Turkish/other non-English via specific characters
     if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
     // API-level spam + low-quality filter for articles already in DB
-    if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange/i.test(title)) return false;
+    if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange|TRX Airdrop|claim \d+.*TRX|claim \d+.*tokens|free airdrop|best gym in|best .{0,20}locations for unforgettable|wedding photography in/i.test(title)) return false;
     // Filter learning diary posts ("Day 1:", "Day 21:", etc.) — personal logs, not curated content
     if (/^Day \d+\s*[:\-–—]/i.test(title)) return false;
     // Filter "Soul in Motion" style personal journal DEV posts
@@ -242,6 +275,10 @@ export async function GET(req: NextRequest) {
       }
       // Block ESPN from non-sports feeds
       if (itemSource.includes("espn") && !/sport|game|athlet/i.test(queryLower)) return false;
+      // Block Billboard/NME from non-music feeds
+      if (/billboard|nme\.com/i.test(itemSource) && !/music|song|album|artist|concert/i.test(queryLower)) return false;
+      // Block Hollywood Reporter/IndieWire from non-entertainment feeds
+      if (/hollywoodreporter|indiewire/i.test(itemSource) && !/movie|film|tv|show|entertain|actor|director/i.test(queryLower)) return false;
     }
     // Filter garbage patterns: excessive special chars
     const specialRatio = (title.match(/[><={}|^~`]/g) || []).length / title.length;
