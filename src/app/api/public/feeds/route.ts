@@ -216,10 +216,33 @@ export async function GET(req: NextRequest) {
     });
   } else {
     if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
-    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit * 3);
+    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit * 4);
     if (cursor) queryBuilder = queryBuilder.lt("published_at", cursor);
     const { data: items } = await queryBuilder;
     results = items || [];
+
+    // ── Within-feed relevance re-ranking ──
+    // When matched via TF-IDF (not "all"), re-rank articles by how well
+    // their title matches the user's query keywords.
+    // "React Next.js tutorials" → boost articles with "React" or "Next.js" in title
+    if (!isAll && results.length > 0) {
+      const queryKeywords = queryLower
+        .split(/[\s,]+/)
+        .map((w: string) => w.replace(/[^a-z0-9]/g, ""))
+        .filter((w: string) => w.length > 3 && !MATCH_STOP_WORDS.has(w));
+
+      if (queryKeywords.length > 0) {
+        results = results.map(item => {
+          const titleLower = (item.title || "").toLowerCase();
+          const summaryLower = (item.summary || "").toLowerCase();
+          const titleHits = queryKeywords.filter((k: string) => titleLower.includes(k)).length;
+          const summaryHits = queryKeywords.filter((k: string) => summaryLower.includes(k)).length;
+          // Boost: each title hit adds 20 points, summary hit adds 5
+          const queryBoost = titleHits * 20 + summaryHits * 5;
+          return { ...item, relevance_score: (item.relevance_score || 70) + queryBoost };
+        });
+      }
+    }
   }
 
   // Deduplicate by normalized URL + title similarity + filter low-quality content
