@@ -44,7 +44,8 @@
 - [x] Feed quality pass 7 — fix custom feed relevance, homepage diversity, Day X filter, open-source feed (L)
 - [x] Feed quality pass 8 — smart feed matching with keyword overlap scoring (M)
 - [x] Feed matching rewrite — TF-IDF weighted feed index + multi-feed merge + within-feed re-ranking (L)
-- [~] Rewrite classify pipeline — single pass, articles + feed prompts → AI matches → insert (M)
+- [x] Rewrite classify pipeline — single pass, articles + feed prompts → AI matches → insert (M)
+- [~] Add quality gate to LLM classify prompt — skip spam, promo, low-quality (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

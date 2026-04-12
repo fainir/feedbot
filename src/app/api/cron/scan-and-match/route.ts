@@ -138,7 +138,7 @@ async function classify(supabase: SupabaseClient) {
       apiCalls++;
       const response = await client.responses.create({
         model: AI_MODEL,
-        input: `Here are the feeds:\n${feedList}\n\nHere are new articles:\n${articleList}\n\nFor each article, pick 1-3 feeds it belongs to. Only match if clearly relevant.`,
+        input: `Here are the feeds:\n${feedList}\n\nHere are new articles:\n${articleList}\n\nFor each article, pick 1-3 feeds it belongs to. Only match if clearly relevant. Skip these entirely — do NOT match them to any feed:\n- Spam, ads, or promotional content (e.g. "Maximize your sales", "free download", "email list")\n- Non-English articles\n- Personal diary posts or vague self-help with no substance\n- SEO bait or listicle clickbait with no real content\n- Product landing pages disguised as articles`,
         text: {
           format: {
             type: "json_schema",
