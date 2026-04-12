@@ -43,7 +43,8 @@
 - [x] Feed quality pass 6 — tighten accent threshold, API-level spam filter, QA next batch (S)
 - [x] Feed quality pass 7 — fix custom feed relevance, homepage diversity, Day X filter, open-source feed (L)
 - [x] Feed quality pass 8 — smart feed matching with keyword overlap scoring (M)
-- [~] Feed matching rewrite — TF-IDF weighted feed index + multi-feed merge + spam fixes (L)
+- [x] Feed matching rewrite — TF-IDF weighted feed index + multi-feed merge + within-feed re-ranking (L)
+- [~] Rewrite classify pipeline — single pass, articles + feed prompts → AI matches → insert (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
