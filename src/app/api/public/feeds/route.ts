@@ -83,9 +83,11 @@ function matchFeeds(queryLower: string, index: FeedIndex, maxFeeds: number = 2):
     let score = 0;
     let matchCount = 0;
     for (const qw of queryWords) {
-      // Check if this query word matches any feed keyword
-      // Support substring matching: "django" matches "django", "spacex" matches "spacex"
-      const matched = feed.keywords.some(fk => fk.includes(qw) || qw.includes(fk));
+      // Exact word match — "web" must NOT match "web3"
+      // Allow: query "python" matches feed keyword "python"
+      // Allow: query "spacex" matches feed keyword "spacex"
+      // Block: query "web" matching feed keyword "web3"
+      const matched = feed.keywords.some(fk => fk === qw);
       if (matched) {
         const idfWeight = index.idf.get(qw) || 1;
         // Bonus for longer keywords (more specific)
