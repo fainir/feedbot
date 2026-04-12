@@ -45,7 +45,8 @@
 - [x] Feed quality pass 8 — smart feed matching with keyword overlap scoring (M)
 - [x] Feed matching rewrite — TF-IDF weighted feed index + multi-feed merge + within-feed re-ranking (L)
 - [x] Rewrite classify pipeline — single pass, articles + feed prompts → AI matches → insert (M)
-- [~] Add quality gate to LLM classify prompt — skip spam, promo, low-quality (S)
+- [x] Add quality gate to LLM classify prompt — skip spam, promo, low-quality (S)
+- [~] Fix instrumentation.ts log fields + test cron results (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

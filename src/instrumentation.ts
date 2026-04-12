@@ -47,7 +47,8 @@ async function runCycle(baseUrl: string, cronSecret: string) {
       signal: AbortSignal.timeout(180_000), // 3 min for classify
     });
     const data = await res.json();
-    console.log(`[Cron] Classify done: processed=${data.classify?.articles_processed || 0}, inserted=${data.insert?.articles_inserted || 0}, feeds=${data.insert?.feeds_updated || 0}`);
+    const c = data.classify || {};
+    console.log(`[Cron] Classify done: articles=${c.articles || 0}, new=${c.newArticles || 0}, skipped=${c.skipped || 0}, calls=${c.apiCalls || 0}, matches=${c.matches || 0}, inserted=${c.inserted || 0}, feeds=${c.feedsUpdated || 0}`);
   } catch (err) {
     console.error("[Cron] Classify failed:", err);
   }
