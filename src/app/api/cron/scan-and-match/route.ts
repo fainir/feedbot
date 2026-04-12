@@ -97,20 +97,40 @@ async function classify(supabase: SupabaseClient) {
     return { articles: 0, matches: 0, inserted: 0 };
   }
 
-  // Build feed list: "0:AI & ML — artificial intelligence LLM AI startups machine learning\n1:Tech — ..."
-  const feedList = feeds.map((f, i) =>
-    `${i}:${f.name} — ${(f.query_text || "").slice(0, 80)}`
-  ).join("\n");
+  // Skip articles already in any feed (don't re-classify)
+  const articleIds = articles.map(a => a.id);
+  const { data: alreadyMatched } = await supabase
+    .from("feed_items")
+    .select("article_pool_id")
+    .in("article_pool_id", articleIds.slice(0, 500));
+  const matchedSet = new Set((alreadyMatched || []).map((r: { article_pool_id: string }) => r.article_pool_id));
+  const newArticles = articles.filter(a => !matchedSet.has(a.id));
 
-  // Process articles in batches of 50
-  const BATCH = 50;
+  if (newArticles.length === 0) {
+    await setScanState(supabase, "last_classified_at", new Date().toISOString());
+    return { articles: articles.length, skipped: articles.length, matches: 0, inserted: 0 };
+  }
+
+  // Build compact feed list: "0:Feed Name — top keywords" (~6 words, not full 80-char prompt)
+  // This saves ~60% tokens vs full query_text, repeated in every batch call
+  const feedList = feeds.map((f, i) => {
+    const keywords = (f.query_text || "")
+      .split(/[\s,]+/)
+      .filter((w: string) => w.length > 3)
+      .slice(0, 6)
+      .join(" ");
+    return `${i}:${f.name} — ${keywords}`;
+  }).join("\n");
+
+  // Process in batches of 100 (fewer calls = less repeated feed list = cheaper)
+  const BATCH = 100;
   const allMatches: { articleIdx: number; feedIdx: number }[] = [];
   let apiCalls = 0;
 
-  for (let i = 0; i < articles.length; i += BATCH) {
-    const batch = articles.slice(i, i + BATCH);
+  for (let i = 0; i < newArticles.length; i += BATCH) {
+    const batch = newArticles.slice(i, i + BATCH);
     const articleList = batch.map((a, j) => {
-      const summary = (a.summary || "").slice(0, 100);
+      const summary = (a.summary || "").slice(0, 80);
       return `${j}|${a.title}|${summary}|${a.source}`;
     }).join("\n");
 
@@ -165,31 +185,15 @@ async function classify(supabase: SupabaseClient) {
   // Deduplicate matches
   const seen = new Set<string>();
   const uniqueMatches = allMatches.filter(m => {
-    const key = `${articles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
+    const key = `${newArticles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 
-  // Check which pairs already exist in feed_items
-  const articleIds = [...new Set(uniqueMatches.map(m => articles[m.articleIdx].id))];
-  const feedIds = [...new Set(uniqueMatches.map(m => feeds[m.feedIdx].id))];
-
-  const { data: existing } = await supabase
-    .from("feed_items")
-    .select("article_pool_id, feed_id")
-    .in("article_pool_id", articleIds.slice(0, 500))
-    .in("feed_id", feedIds);
-
-  const existingSet = new Set(
-    (existing || []).map((e: { article_pool_id: string; feed_id: string }) => `${e.article_pool_id}::${e.feed_id}`)
-  );
-
-  // Build insert rows (only new pairs)
-  const toInsert = uniqueMatches
-    .filter(m => !existingSet.has(`${articles[m.articleIdx].id}::${feeds[m.feedIdx].id}`))
-    .map(m => {
-      const a = articles[m.articleIdx];
+  // Build insert rows
+  const toInsert = uniqueMatches.map(m => {
+      const a = newArticles[m.articleIdx];
       return {
         feed_id: feeds[m.feedIdx].id,
         article_pool_id: a.id,
@@ -221,7 +225,7 @@ async function classify(supabase: SupabaseClient) {
 
   await setScanState(supabase, "last_classified_at", now);
 
-  return { articles: articles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size };
+  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size };
 }
 
 // ════════════════════════════════════════════════════════════════
