@@ -283,7 +283,7 @@ export async function GET(req: NextRequest) {
     // Detect Turkish/other non-English via specific characters
     if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
     // API-level spam + low-quality filter for articles already in DB
-    if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange|TRX Airdrop|claim \d+.*TRX|claim \d+.*tokens|free airdrop|best gym in|best .{0,20}locations for unforgettable|wedding photography in/i.test(title)) return false;
+    if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange|TRX Airdrop|claim \d+.*TRX|claim \d+.*tokens|free airdrop|best gym in|best .{0,20}locations for unforgettable|wedding photography in|free download|maximize your sales|email list$|buy chatgpt.*discount|#ULKQ|#Keywords:/i.test(title)) return false;
     // Filter learning diary posts ("Day 1:", "Day 21:", etc.) — personal logs, not curated content
     if (/^Day \d+\s*[:\-–—]/i.test(title)) return false;
     // Filter "Soul in Motion" style personal journal DEV posts
