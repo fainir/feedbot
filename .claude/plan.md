@@ -48,7 +48,8 @@
 - [x] Add quality gate to LLM classify prompt — skip spam, promo, low-quality (S)
 - [x] Fix instrumentation.ts log fields + test cron results (S)
 - [x] Tighten LLM classify prompt + fix diversity cap (S)
-- [~] Rewrite LLM prompt — user intent framing + quality scoring (M)
+- [x] Rewrite LLM prompt — user intent framing + quality scoring (M)
+- [~] Instant custom feed + LLM summaries (L)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

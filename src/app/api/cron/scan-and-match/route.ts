@@ -119,7 +119,7 @@ async function classify(supabase: SupabaseClient) {
 
   // Process in batches of 100 (fewer calls = less repeated feed list = cheaper)
   const BATCH = 100;
-  const allMatches: { articleIdx: number; feedIdx: number; quality: number }[] = [];
+  const allMatches: { articleIdx: number; feedIdx: number; quality: number; summary: string }[] = [];
   let apiCalls = 0;
 
   for (let i = 0; i < newArticles.length; i += BATCH) {
@@ -133,7 +133,7 @@ async function classify(supabase: SupabaseClient) {
       apiCalls++;
       const response = await client.responses.create({
         model: AI_MODEL,
-        input: `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nFor each article, pick 1-3 feeds and rate quality (1-10). Quality 8+ = must-read for that feed's user. 5-7 = relevant. Below 5 = don't include.\n\nSkip entirely (no match): spam, ads, promos, non-English, personal diaries, SEO bait, product pages, clickbait with no substance.`,
+        input: `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nFor each article:\n- Pick 1-3 feeds and rate quality (1-10). 8+ = must-read. Below 5 = don't include.\n- Write a clean 1-sentence summary (max 120 chars) that tells the reader what's interesting about the article.\n\nSkip entirely (no match): spam, ads, promos, non-English, personal diaries, SEO bait, product pages, clickbait.`,
         text: {
           format: {
             type: "json_schema",
@@ -150,8 +150,9 @@ async function classify(supabase: SupabaseClient) {
                       a: { type: "number" },
                       f: { type: "array", items: { type: "number" } },
                       q: { type: "number" },
+                      s: { type: "string" },
                     },
-                    required: ["a", "f", "q"],
+                    required: ["a", "f", "q", "s"],
                     additionalProperties: false,
                   },
                 },
@@ -163,15 +164,16 @@ async function classify(supabase: SupabaseClient) {
         },
       });
 
-      const parsed = JSON.parse(response.output_text) as { m: { a: number; f: number[]; q: number }[] };
+      const parsed = JSON.parse(response.output_text) as { m: { a: number; f: number[]; q: number; s: string }[] };
       for (const match of parsed.m) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
         const quality = typeof match.q === "number" ? match.q : 5;
-        if (quality < 6) continue; // Skip low-quality matches
+        if (quality < 6) continue;
+        const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
-            allMatches.push({ articleIdx: i + match.a, feedIdx: fi, quality });
+            allMatches.push({ articleIdx: i + match.a, feedIdx: fi, quality, summary });
           }
         }
       }
@@ -189,7 +191,7 @@ async function classify(supabase: SupabaseClient) {
   }
   const uniqueMatches = [...bestByKey.values()];
 
-  // Build insert rows
+  // Build insert rows — use LLM summary if available, fallback to RSS summary
   const toInsert = uniqueMatches.map(m => {
       const a = newArticles[m.articleIdx];
       return {
@@ -197,10 +199,10 @@ async function classify(supabase: SupabaseClient) {
         article_pool_id: a.id,
         title: a.title,
         url: a.url,
-        summary: a.summary,
+        summary: m.summary || a.summary,
         source: a.source,
         image_url: a.image_url,
-        relevance_score: m.quality * 10, // 6→60, 7→70, 8→80, 9→90, 10→100
+        relevance_score: m.quality * 10,
         published_at: a.published_at,
       };
     });
