@@ -54,7 +54,8 @@
 - [x] Fix custom feed tab bug — private feeds crash on /[slug] route (S)
 - [x] Fix tab bar scroll — remove mask that blocks scrolling (S)
 - [x] Email CTA for guests — inline card + bottom CTA (S)
-- [~] Signup flows — auto-create feed from prompt, auto-enable email from CTA (S)
+- [x] Signup flows — auto-create feed from prompt, auto-enable email from CTA (S)
+- [~] Fix email flow — create missing /api/email-preferences endpoint (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

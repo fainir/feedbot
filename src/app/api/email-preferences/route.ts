@@ -1,66 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase-server";
+import { getServiceClient } from "@/lib/supabase";
 
-function getAuthClient() {
-  const cookieStore = cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll() } }
-  );
-}
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-// GET - get current user's email preferences
 export async function GET() {
-  const supabase = getAuthClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const service = getServiceClient();
-  const { data } = await service
+  const svc = getServiceClient();
+  const { data } = await svc
     .from("email_preferences")
-    .select("*")
+    .select("digest_enabled, digest_frequency, feed_ids")
     .eq("user_id", user.id)
     .single();
 
-  return NextResponse.json(data || {
-    digest_enabled: false,
-    digest_frequency: "daily",
-    feed_ids: null,
+  return NextResponse.json({
+    enabled: data?.digest_enabled ?? false,
+    frequency: data?.digest_frequency ?? "daily",
+    feeds: data?.feed_ids ?? ["for-you"],
   });
 }
 
-// POST - update email preferences
-// { digest_enabled, digest_frequency, feed_ids }
 export async function POST(req: NextRequest) {
-  const supabase = getAuthClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { digest_enabled, digest_frequency, feed_ids } = body;
+  // Accept both frontend format (enabled/frequency/feeds) and raw DB format
+  const enabled = body.enabled ?? body.digest_enabled ?? true;
+  const frequency = body.frequency || body.digest_frequency || "daily";
+  const feedIds = body.feeds || body.feed_ids || ["for-you"];
 
-  const service = getServiceClient();
-  const { data, error } = await service
+  const svc = getServiceClient();
+  const { error } = await svc
     .from("email_preferences")
     .upsert({
       user_id: user.id,
-      digest_enabled: digest_enabled ?? false,
-      digest_frequency: digest_frequency || "daily",
-      feed_ids: feed_ids || null,
-    }, { onConflict: "user_id" })
-    .select()
-    .single();
+      digest_enabled: enabled,
+      digest_frequency: frequency,
+      feed_ids: feedIds,
+    }, { onConflict: "user_id" });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (error) return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  return NextResponse.json({ success: true });
 }
