@@ -382,7 +382,7 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Source diversity: cap any single source ──
-  const diversityCap = isAll ? 0.15 : 0.15;
+  const diversityCap = isAll ? 0.15 : 0.20;
   const maxPerSource = Math.max(3, Math.ceil(limit * diversityCap));
   const sourceCounts = new Map<string, number>();
   const diverse = clusters
