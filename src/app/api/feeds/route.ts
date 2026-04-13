@@ -135,38 +135,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create feed" }, { status: 500 });
   }
 
-  // Instant feed population: use LLM to match recent articles from pool to this feed's prompt
-  let initialCount = 0;
-  try {
-    initialCount = await instantClassify(getServiceClient(), feed.id, query_text);
-    if (initialCount > 0) {
-      await supabase.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feed.id);
-    }
-  } catch {
-    // Instant classify failed — feed will populate on next cron cycle
-  }
-
-  // Also try Brave discovery as fallback for extra content
-  try {
-    const braveItems = await discoverFeeds(query_text);
-    if (braveItems.length > 0) {
-      const rows = braveItems.map((item) => ({
-        feed_id: feed.id,
-        title: item.title,
-        url: item.url,
-        summary: item.summary,
-        source: item.source,
-        image_url: item.image_url,
-        published_at: item.published_at,
-      }));
-      await getServiceClient().from("feed_items").insert(rows);
-      initialCount += braveItems.length;
-    }
-  } catch {}
-
+  // Fire-and-forget: populate feed in background so the response returns instantly
+  const svc = getServiceClient();
+  const feedId = feed.id;
+  Promise.resolve().then(async () => {
+    try {
+      const count = await instantClassify(svc, feedId, query_text);
+      if (count > 0) await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
+    } catch {}
+    try {
+      const braveItems = await discoverFeeds(query_text);
+      if (braveItems.length > 0) {
+        await svc.from("feed_items").insert(braveItems.map(item => ({
+          feed_id: feedId, title: item.title, url: item.url, summary: item.summary,
+          source: item.source, image_url: item.image_url, published_at: item.published_at,
+        })));
+        await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
+      }
+    } catch {}
+  });
 
   return NextResponse.json(
-    { feed, initial_items_count: initialCount },
+    { feed, populating: true },
     { status: 201 }
   );
 }
