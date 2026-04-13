@@ -51,7 +51,8 @@
 - [x] Rewrite LLM prompt — user intent framing + quality scoring (M)
 - [x] Instant custom feed + LLM summaries (L)
 - [x] Fix instant classify — batch size, index alignment, dedup (S)
-- [~] Fix custom feed tab bug — private feeds crash on /[slug] route (S)
+- [x] Fix custom feed tab bug — private feeds crash on /[slug] route (S)
+- [~] Fix tab bar scroll — remove mask that blocks scrolling (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

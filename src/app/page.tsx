@@ -252,7 +252,7 @@ export default function ForYouPage() {
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
-        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0" style={{ maskImage: "linear-gradient(to right, black 90%, transparent)", WebkitMaskImage: "linear-gradient(to right, black 90%, transparent)" }}>
+        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
           </Link>
