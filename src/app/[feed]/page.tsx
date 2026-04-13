@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -724,7 +724,18 @@ export default function FeedPage() {
               const hasImage = !!item.image_url;
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
+              const showEmailCta = !user && i === 5;
               return (
+                <>{showEmailCta && (
+                  <div key="email-cta" className="rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 text-center">
+                    <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
+                    <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
+                    <p className="text-xs text-text-muted mb-3">The best posts from your favorite feeds, sent to your email every morning. Free.</p>
+                    <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+                      <Mail className="h-3 w-3" />Sign up for free
+                    </Link>
+                  </div>
+                )}
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
@@ -762,6 +773,7 @@ export default function FeedPage() {
                     </div>
                   </a>
                 </article>
+                </>
               );
             })}
           </div>
@@ -771,7 +783,17 @@ export default function FeedPage() {
           <LoadMoreSentinel loading={loadingMore} onVisible={loadMore} />
         )}
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length >= 15 && (
-          <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
+          !user ? (
+            <div className="mt-4 rounded-2xl border border-border bg-bg-card p-5 text-center">
+              <p className="text-sm font-semibold text-text mb-1">Want these posts in your inbox?</p>
+              <p className="text-xs text-text-muted mb-3">Sign up and get your favorite feeds sent to your email every morning.</p>
+              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+                <Mail className="h-3 w-3" />Sign up for free
+              </Link>
+            </div>
+          ) : (
+            <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
+          )
         )}
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length < 15 && (
           <div className="text-center py-8">

@@ -382,6 +382,8 @@ export default function ForYouPage() {
         ) : (
           <div className="space-y-4 pt-2">
             {dedupedItems.map((item, i) => {
+              // Inline email CTA for guests after 5th article
+              const showEmailCta = !user && i === 5;
               const src = getSourceInfo(item.source);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);
               const title = cleanTitle(item.title);
@@ -390,6 +392,16 @@ export default function ForYouPage() {
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
               return (
+                <>{showEmailCta && (
+                  <div key="email-cta" className="rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 text-center">
+                    <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
+                    <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
+                    <p className="text-xs text-text-muted mb-3">The best posts from all your feeds, sent to your email every morning. Free.</p>
+                    <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+                      <Mail className="h-3 w-3" />Sign up for free
+                    </Link>
+                  </div>
+                )}
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
@@ -428,6 +440,7 @@ export default function ForYouPage() {
                     </div>
                   </a>
                 </article>
+                </>
               );
             })}
           </div>
@@ -438,7 +451,17 @@ export default function ForYouPage() {
           </button>
         )}
         {!hasMore && !loading && dedupedItems.length > 0 && (
-          <p className="text-center py-8 text-xs text-text-muted">You&apos;re all caught up</p>
+          !user ? (
+            <div className="mt-6 rounded-2xl border border-border bg-bg-card p-6 text-center">
+              <p className="text-sm font-semibold text-text mb-1">New posts every morning in your inbox</p>
+              <p className="text-xs text-text-muted mb-3">Sign up and we&apos;ll send you the best posts from your favorite feeds. No spam, unsubscribe anytime.</p>
+              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
+                <Mail className="h-3.5 w-3.5" />Get your free email updates
+              </Link>
+            </div>
+          ) : (
+            <p className="text-center py-8 text-xs text-text-muted">You&apos;re all caught up</p>
+          )
         )}
       </main>
 
