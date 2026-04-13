@@ -47,7 +47,8 @@
 - [x] Rewrite classify pipeline — single pass, articles + feed prompts → AI matches → insert (M)
 - [x] Add quality gate to LLM classify prompt — skip spam, promo, low-quality (S)
 - [x] Fix instrumentation.ts log fields + test cron results (S)
-- [~] Tighten LLM classify prompt + fix diversity cap (S)
+- [x] Tighten LLM classify prompt + fix diversity cap (S)
+- [~] Rewrite LLM prompt — user intent framing + quality scoring (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

@@ -111,20 +111,15 @@ async function classify(supabase: SupabaseClient) {
     return { articles: articles.length, skipped: articles.length, matches: 0, inserted: 0 };
   }
 
-  // Build compact feed list: "0:Feed Name — top keywords" (~6 words, not full 80-char prompt)
-  // This saves ~60% tokens vs full query_text, repeated in every batch call
-  const feedList = feeds.map((f, i) => {
-    const keywords = (f.query_text || "")
-      .split(/[\s,]+/)
-      .filter((w: string) => w.length > 3)
-      .slice(0, 6)
-      .join(" ");
-    return `${i}:${f.name} — ${keywords}`;
-  }).join("\n");
+  // Build feed list with FULL user prompts — the LLM needs to understand
+  // what each user WANTS, not just a category label
+  const feedList = feeds.map((f, i) =>
+    `${i}: "${f.query_text || f.name}"`
+  ).join("\n");
 
   // Process in batches of 100 (fewer calls = less repeated feed list = cheaper)
   const BATCH = 100;
-  const allMatches: { articleIdx: number; feedIdx: number }[] = [];
+  const allMatches: { articleIdx: number; feedIdx: number; quality: number }[] = [];
   let apiCalls = 0;
 
   for (let i = 0; i < newArticles.length; i += BATCH) {
@@ -138,7 +133,7 @@ async function classify(supabase: SupabaseClient) {
       apiCalls++;
       const response = await client.responses.create({
         model: AI_MODEL,
-        input: `Here are the feeds:\n${feedList}\n\nHere are new articles:\n${articleList}\n\nFor each article, pick 1-3 feeds where the article is PRIMARILY about that feed's topic. A gaming article should only go in Gaming, not Security. A cooking article should only go in Cooking, not Health. Be precise — match the core topic, not tangential keywords.\n\nSkip these entirely — do NOT match them to any feed:\n- Spam, ads, or promotional content (e.g. "Maximize your sales", "free download", "email list")\n- Non-English articles\n- Personal diary posts or vague self-help with no substance\n- SEO bait or listicle clickbait with no real content\n- Product landing pages disguised as articles`,
+        input: `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nFor each article, pick 1-3 feeds and rate quality (1-10). Quality 8+ = must-read for that feed's user. 5-7 = relevant. Below 5 = don't include.\n\nSkip entirely (no match): spam, ads, promos, non-English, personal diaries, SEO bait, product pages, clickbait with no substance.`,
         text: {
           format: {
             type: "json_schema",
@@ -154,8 +149,9 @@ async function classify(supabase: SupabaseClient) {
                     properties: {
                       a: { type: "number" },
                       f: { type: "array", items: { type: "number" } },
+                      q: { type: "number" },
                     },
-                    required: ["a", "f"],
+                    required: ["a", "f", "q"],
                     additionalProperties: false,
                   },
                 },
@@ -167,13 +163,15 @@ async function classify(supabase: SupabaseClient) {
         },
       });
 
-      const parsed = JSON.parse(response.output_text) as { m: { a: number; f: number[] }[] };
+      const parsed = JSON.parse(response.output_text) as { m: { a: number; f: number[]; q: number }[] };
       for (const match of parsed.m) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
+        const quality = typeof match.q === "number" ? match.q : 5;
+        if (quality < 6) continue; // Skip low-quality matches
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
-            allMatches.push({ articleIdx: i + match.a, feedIdx: fi });
+            allMatches.push({ articleIdx: i + match.a, feedIdx: fi, quality });
           }
         }
       }
@@ -182,14 +180,14 @@ async function classify(supabase: SupabaseClient) {
     }
   }
 
-  // Deduplicate matches
-  const seen = new Set<string>();
-  const uniqueMatches = allMatches.filter(m => {
+  // Deduplicate matches — keep highest quality per article-feed pair
+  const bestByKey = new Map<string, typeof allMatches[0]>();
+  for (const m of allMatches) {
     const key = `${newArticles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    const existing = bestByKey.get(key);
+    if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
+  }
+  const uniqueMatches = [...bestByKey.values()];
 
   // Build insert rows
   const toInsert = uniqueMatches.map(m => {
@@ -202,7 +200,7 @@ async function classify(supabase: SupabaseClient) {
         summary: a.summary,
         source: a.source,
         image_url: a.image_url,
-        relevance_score: 80,
+        relevance_score: m.quality * 10, // 6→60, 7→70, 8→80, 9→90, 10→100
         published_at: a.published_at,
       };
     });
