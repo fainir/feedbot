@@ -206,7 +206,7 @@ export default function FeedPage() {
         // Load user's custom feeds as tabs
         fetch("/api/feeds").then((r) => r.json()).then((d) => {
           const feeds = (d.feeds || []).map((f: { id: string; slug?: string; name: string }) => ({
-            id: f.slug || f.id,
+            id: `my/${f.id}`,
             slug: f.slug || f.id,
             name: f.name.length > 20 ? f.name.slice(0, 18) + "..." : f.name,
             icon: "📡",
