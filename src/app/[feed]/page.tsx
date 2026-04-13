@@ -731,7 +731,7 @@ export default function FeedPage() {
                     <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
                     <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
                     <p className="text-xs text-text-muted mb-3">The best posts from your favorite feeds, sent to your email every morning. Free.</p>
-                    <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+                    <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
                       <Mail className="h-3 w-3" />Sign up for free
                     </Link>
                   </div>
@@ -787,7 +787,7 @@ export default function FeedPage() {
             <div className="mt-4 rounded-2xl border border-border bg-bg-card p-5 text-center">
               <p className="text-sm font-semibold text-text mb-1">Want these posts in your inbox?</p>
               <p className="text-xs text-text-muted mb-3">Sign up and get your favorite feeds sent to your email every morning.</p>
-              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+              <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
                 <Mail className="h-3 w-3" />Sign up for free
               </Link>
             </div>

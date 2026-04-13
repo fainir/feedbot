@@ -397,7 +397,7 @@ export default function ForYouPage() {
                     <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
                     <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
                     <p className="text-xs text-text-muted mb-3">The best posts from all your feeds, sent to your email every morning. Free.</p>
-                    <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+                    <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
                       <Mail className="h-3 w-3" />Sign up for free
                     </Link>
                   </div>
@@ -455,7 +455,7 @@ export default function ForYouPage() {
             <div className="mt-6 rounded-2xl border border-border bg-bg-card p-6 text-center">
               <p className="text-sm font-semibold text-text mb-1">New posts every morning in your inbox</p>
               <p className="text-xs text-text-muted mb-3">Sign up and we&apos;ll send you the best posts from your favorite feeds. No spam, unsubscribe anytime.</p>
-              <Link href="/login?signup=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
                 <Mail className="h-3.5 w-3.5" />Get your free email updates
               </Link>
             </div>

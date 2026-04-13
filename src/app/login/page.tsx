@@ -24,6 +24,7 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(searchParams.get("error") === "auth" ? "Authentication failed. Please check your login details." : searchParams.get("error_description") || searchParams.get("error") || null);
   const [message, setMessage] = useState<string | null>(null);
   const pendingPrompt = searchParams.get("prompt");
+  const wantsEmail = searchParams.get("email") === "true";
 
   const supabase = createClient();
 
@@ -76,6 +77,16 @@ function LoginContent() {
           }
         } catch { /* feed creation failed, still redirect */ }
       }
+      // Auto-enable email updates if they signed up from email CTA
+      if (wantsEmail) {
+        try {
+          await fetch("/api/email-preferences", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: true, frequency: "daily", time: "08:00", feeds: ["for-you"] }),
+          });
+        } catch {}
+      }
       window.location.href = "/dashboard";
     } else {
       trackEvent("login", { method: "email" });
@@ -91,9 +102,11 @@ function LoginContent() {
 
   async function handleGoogleLogin() {
     trackEvent("login_attempt", { method: "google", has_prompt: !!pendingPrompt });
-    const redirectUrl = pendingPrompt
-      ? `${window.location.origin}/auth/callback?prompt=${encodeURIComponent(pendingPrompt)}`
-      : `${window.location.origin}/auth/callback`;
+    const params = new URLSearchParams();
+    if (pendingPrompt) params.set("prompt", pendingPrompt);
+    if (wantsEmail) params.set("email", "true");
+    const qs = params.toString();
+    const redirectUrl = `${window.location.origin}/auth/callback${qs ? `?${qs}` : ""}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

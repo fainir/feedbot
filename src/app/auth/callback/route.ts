@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const rawNext = searchParams.get("next") ?? "/dashboard";
   const prompt = searchParams.get("prompt");
+  const wantsEmail = searchParams.get("email") === "true";
 
   // Prevent open redirect: only allow relative paths starting with /
   // Block protocol-relative URLs (//evil.com), absolute URLs, and data: URIs
@@ -36,9 +37,8 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const redirectUrl = new URL(`${origin}${next}`);
-      if (prompt) {
-        redirectUrl.searchParams.set("prompt", prompt);
-      }
+      if (prompt) redirectUrl.searchParams.set("prompt", prompt);
+      if (wantsEmail) redirectUrl.searchParams.set("email", "true");
       return NextResponse.redirect(redirectUrl);
     }
   }
