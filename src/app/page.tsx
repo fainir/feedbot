@@ -321,7 +321,7 @@ export default function ForYouPage() {
             {FEEDS.map((f) => {
               const active = showAllFeeds || enabledFeeds.has(f.id);
               return (
-                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-all ${active ? "border-text/20 bg-text/10 text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"}`}>
+                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap border transition-all ${active ? "border-text/20 bg-text/10 text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"}`}>
                   <span>{f.icon}</span>
                   <span>{f.name}</span>
                   {active && <Check className="h-3 w-3" />}
