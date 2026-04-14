@@ -321,17 +321,33 @@ export default function ForYouPage() {
         </div>
       )}
 
-      {/* Feed header with filter toggle */}
-      <div className="max-w-2xl mx-auto px-4 pt-3 pb-1">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">✨ For You</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">{showAllFeeds ? "All feeds" : `${enabledFeeds.size} of ${FEEDS.length} feeds`}{!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}{!loading && dedupedItems.length > 0 && (() => { const sc = new Set(dedupedItems.map(i => i.source)).size; return sc > 1 ? ` from ${sc} sources` : ""; })()}{!loading && dedupedItems.length > 0 && (() => { const newest = dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b); return ` · Updated ${timeAgo(newest.publishedAt)}`; })()}</p>
+      {/* Feed header */}
+      <div className="max-w-2xl mx-auto px-4 pt-4 pb-2">
+        <div className="rounded-2xl border border-border bg-bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-text flex items-center gap-2">✨ For You</h2>
+              <p className="text-xs text-text-muted mt-1">
+                {!loading && dedupedItems.length > 0
+                  ? `${dedupedItems.length} posts from ${new Set(dedupedItems.map(i => i.source)).size} sources`
+                  : showAllFeeds ? "All feeds" : `${enabledFeeds.size} feeds selected`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {user ? (
+                <button onClick={() => setShowEmailPrefs(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
+                  <Mail className="h-3 w-3" />Inbox
+                </button>
+              ) : (
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-3 w-3" />Get in email
+                </Link>
+              )}
+              <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
+                <SlidersHorizontal className="h-3 w-3" />Edit
+              </button>
+            </div>
           </div>
-          <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Edit feeds
-          </button>
         </div>
 
         {/* Feed filter panel */}

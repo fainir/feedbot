@@ -657,31 +657,31 @@ export default function FeedPage() {
       <div className="h-11" /> {/* Spacer for fixed header */}
 
       {/* Feed header */}
-      <div className="max-w-2xl mx-auto px-4 pt-3 pb-1">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text flex items-center gap-1.5">{activeTab?.icon || "📡"} {displayName}</h2>
-            <p className="text-[11px] text-text-muted mt-0.5 line-clamp-1">
-              {activeTab?.query || communityFeed?.description || ""}
-              {!loading && dedupedItems.length > 0 && ` · ${dedupedItems.length} finds`}
-              {!loading && dedupedItems.length > 0 && (() => { const newest = dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b); return ` · Updated ${timeAgo(newest.publishedAt)}`; })()}
-            </p>
-            {communityFeed && <p className="text-[10px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
-          </div>
-          <div className="flex-shrink-0 flex items-center gap-1 mt-0.5">
-            <button onClick={handleRefresh} className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Refresh feed" disabled={refreshing}>
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            </button>
-            <button onClick={handleShareFeed} className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Share feed">
-              <Share2 className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
-              className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text transition-colors"
-            >
-              <Sparkles className="h-3 w-3" />
-              Customize
-            </button>
+      <div className="max-w-2xl mx-auto px-4 pt-4 pb-2">
+        <div className="rounded-2xl border border-border bg-bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-text flex items-center gap-2">
+                <span className="text-lg">{activeTab?.icon || "📡"}</span> {displayName}
+              </h2>
+              <p className="text-xs text-text-muted mt-1 line-clamp-1">
+                {!loading && dedupedItems.length > 0
+                  ? `${dedupedItems.length} posts · Updated ${timeAgo(dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b).publishedAt)}`
+                  : activeTab?.query || communityFeed?.description || ""}
+              </p>
+              {communityFeed && <p className="text-[11px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={handleRefresh} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh feed" disabled={refreshing}>
+                <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              </button>
+              <button onClick={handleShareFeed} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Share feed">
+                <Share2 className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
+                <Sparkles className="h-3 w-3" />Customize
+              </button>
+            </div>
           </div>
         </div>
       </div>
