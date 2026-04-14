@@ -82,7 +82,8 @@
 - [x] My Feed icon + revert Customize to Sparkles (S)
 - [x] Feed header matches My Feed style, MF icon fix, chips margin-right alignment (S)
 - [x] Smaller email button + smaller banner input/button (S)
-- [~] Bigger top nav bar + items (S)
+- [x] Bigger top nav bar + items (S)
+- [~] Round Create my feed button + lighter banner bg (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

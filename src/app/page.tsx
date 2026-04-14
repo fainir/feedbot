@@ -335,7 +335,7 @@ export default function ForYouPage() {
       {/* Hero banner for guests -create feed */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-3xl border border-border bg-bg-card shadow-sm p-6 sm:p-8">
+          <div className="relative rounded-3xl border border-border bg-bg-card/50 shadow-sm p-6 sm:p-8">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-5 right-5 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
@@ -348,14 +348,14 @@ export default function ForYouPage() {
               <input
                 type="text"
                 placeholder="e.g. React tutorials, SpaceX launches, startup funding..."
-                className="min-w-0 w-full bg-bg-hover border-none rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-text/20 placeholder:text-text-muted/40 sm:flex-1"
+                className="min-w-0 w-full bg-bg-hover border-none rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-text/20 placeholder:text-text-muted/40 sm:flex-1"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleHeroSubmit(); }}
               />
               <button
                 onClick={handleHeroSubmit}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-5 py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-text px-5 py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto"
               >
                 <Sparkles className="h-4 w-4" />
                 <span>Create my feed</span>
