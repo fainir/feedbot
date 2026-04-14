@@ -67,7 +67,8 @@
 - [x] Email CTA in header, not separate banner — different for guest/user (M)
 - [x] Chill header buttons (no borders) + better hero banner copy (S)
 - [x] Header tweaks — hide stats, show prompt, horizontal chips, better hero copy (M)
-- [~] Header layout: chips row → Customize → Get in email (single scrollable row) (S)
+- [x] Header layout: 2 rows — title+actions top, chips+customize bottom (S)
+- [~] Feed tab headers: 2-row layout with prompt text + Customize (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

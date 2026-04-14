@@ -656,35 +656,37 @@ export default function FeedPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width */}
+      {/* Feed header — full width, 2 rows */}
       <div className="border-b border-border bg-bg-card">
-        <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-text flex items-center gap-2">
-                <span className="text-lg">{activeTab?.icon || "📡"}</span> {displayName}
-              </h2>
-              <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
-                {activeTab?.query || communityFeed?.description || ""}
-              </p>
-              {communityFeed && <p className="text-[11px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {!user && (
-                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
-                  <Mail className="h-3 w-3" />Get in email
-                </Link>
-              )}
+        <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
+          {/* Row 1: icon + title left, action buttons right */}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h2 className="text-base font-bold text-text flex items-center gap-2 min-w-0">
+              <span className="text-lg flex-shrink-0">{activeTab?.icon || "📡"}</span> <span className="truncate">{displayName}</span>
+            </h2>
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button onClick={handleRefresh} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
               <button onClick={handleShareFeed} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
                 <Share2 className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all">
-                <Sparkles className="h-3 w-3" />Customize
-              </button>
+              {!user && (
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-3 w-3" />Get in email
+                </Link>
+              )}
             </div>
+          </div>
+          {/* Row 2: prompt text (scrollable) + Customize */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+            <p className="text-xs text-text-muted whitespace-nowrap flex-shrink-0">
+              {activeTab?.query || communityFeed?.description || ""}
+            </p>
+            {communityFeed && <span className="text-[11px] text-text-muted whitespace-nowrap flex-shrink-0">· by {communityFeed.creator}</span>}
+            <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0 ml-auto">
+              <Sparkles className="h-3 w-3" />Customize
+            </button>
           </div>
         </div>
       </div>
