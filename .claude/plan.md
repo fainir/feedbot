@@ -75,7 +75,8 @@
 - [x] Create feed button uses Sparkles icon instead of Plus (S)
 - [x] Smaller chip padding (S)
 - [x] Better guest banner — explain product, more noticeable yet clean (S)
-- [~] Replace em dash with hyphen in user-facing text (S)
+- [x] Replace em dash with hyphen in user-facing text (S)
+- [~] CSS polish from designer reference — spacing, colors, card styles, chip styles (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
