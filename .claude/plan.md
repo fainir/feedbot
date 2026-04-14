@@ -84,7 +84,8 @@
 - [x] Smaller email button + smaller banner input/button (S)
 - [x] Bigger top nav bar + items (S)
 - [x] Round Create my feed button + lighter banner bg (S)
-- [~] MF icon tighter — less padding between text and edges (S)
+- [x] MF icon tighter — less padding between text and edges (S)
+- [~] Faster tab navigation — prefetch on hover + cache visited feeds (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

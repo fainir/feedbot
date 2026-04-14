@@ -316,20 +316,39 @@ export default function FeedPage() {
   }, [activeTab, feedSlug, fetchFeed, fetchBySlug]);
 
   useEffect(() => {
-    setLoading(true);
-    setItems([]);
-    setNextCursor(null);
     setCommunityFeed(null);
     setNotFound(false);
 
+    // Check cache first — instant tab switching for visited feeds
+    const cacheKey = `mf_cache_${feedSlug}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { items: cachedItems, hasMore: cachedMore, cursor, ts } = JSON.parse(cached);
+        // Use cache if < 2 min old
+        if (Date.now() - ts < 120_000) {
+          setItems(cachedItems);
+          setHasMore(cachedMore);
+          setNextCursor(cursor);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {}
+
+    setLoading(true);
+    setItems([]);
+    setNextCursor(null);
+
     if (activeTab) {
-      // System tab -use query-based API
       fetchFeed(activeTab.query)
-        .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
+        .then((d) => {
+          setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null);
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ items: d.items || [], hasMore: d.hasMore || false, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
+        })
         .catch(() => setItems([]))
         .finally(() => setLoading(false));
     } else {
-      // Try loading as a community feed by slug
       fetch(`/api/public/feed-by-slug?slug=${encodeURIComponent(feedSlug)}&limit=50`)
         .then((r) => {
           if (!r.ok) { setNotFound(true); setLoading(false); return; }
@@ -342,9 +361,9 @@ export default function FeedPage() {
           setNextCursor(d.nextCursor || null);
           if (d.feed) {
             setCommunityFeed(d.feed);
-            // Track view (fire and forget)
             fetch(`/api/feeds/${d.feed.id}/view`, { method: "POST" }).catch(() => {});
           }
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ items: d.items, hasMore: d.hasMore || false, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
         })
         .catch(() => setNotFound(true))
         .finally(() => setLoading(false));
@@ -574,6 +593,15 @@ export default function FeedPage() {
                 href={`/${tab.id}`}
                 data-active={feedSlug === tab.id}
                 draggable={false}
+                onMouseEnter={() => {
+                  // Prefetch feed data on hover
+                  const sysFeed = ALL_SYSTEM_FEEDS.find(f => f.id === tab.id);
+                  if (sysFeed && !sessionStorage.getItem(`mf_cache_${tab.id}`)) {
+                    fetch(`/api/public/feeds?q=${encodeURIComponent(sysFeed.query)}&limit=50`).then(r => r.json()).then(d => {
+                      try { sessionStorage.setItem(`mf_cache_${tab.id}`, JSON.stringify({ items: d.items || [], hasMore: d.hasMore || false, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
+                    }).catch(() => {});
+                  }
+                }}
                 className="flex items-center gap-1.5 px-2.5 py-3.5 whitespace-nowrap"
               >
                 <span className="text-sm">{tab.icon}</span>
