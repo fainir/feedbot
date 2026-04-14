@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -55,6 +55,7 @@ export default function ForYouPage() {
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showFeedPicker, setShowFeedPicker] = useState(false);
   const [newPrompt, setNewPrompt] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -252,20 +253,28 @@ export default function ForYouPage() {
         <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
         </Link>
-        {/* Mobile: dropdown selector */}
-        <div className="sm:hidden flex-1 min-w-0 px-2">
-          <select
-            value=""
-            onChange={(e) => { if (e.target.value) window.location.href = e.target.value; }}
-            className="w-full bg-transparent text-sm font-semibold text-text border-none focus:outline-none focus:ring-0 py-2 appearance-none cursor-pointer"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 4px center" }}
-          >
-            <option value="" disabled>📡 My Feed</option>
-            <option value="/">📡 My Feed</option>
-            {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
-              <option key={tab.id} value={`/${tab.id}`}>{tab.icon} {tab.name}</option>
-            ))}
-          </select>
+        {/* Mobile: custom dropdown selector */}
+        <div className="sm:hidden flex-1 min-w-0 px-2 relative">
+          <button onClick={() => setShowFeedPicker(!showFeedPicker)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-hover/50 border border-border/50 text-sm font-semibold text-text w-full">
+            <Rss className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">My Feed</span>
+            <ChevronDown className={`h-3.5 w-3.5 ml-auto flex-shrink-0 text-text-muted transition-transform ${showFeedPicker ? "rotate-180" : ""}`} />
+          </button>
+          {showFeedPicker && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowFeedPicker(false)} />
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-bg-card border border-border rounded-xl shadow-lg max-h-80 overflow-y-auto py-1">
+                <Link href="/" onClick={() => setShowFeedPicker(false)} className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-text bg-bg-hover/50">
+                  <Rss className="h-3.5 w-3.5" />My Feed
+                </Link>
+                {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
+                  <Link key={tab.id} href={`/${tab.id}`} onClick={() => setShowFeedPicker(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
+                    <span>{tab.icon}</span>{tab.name}
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         {/* Desktop: horizontal tabs */}
         <div className="hidden sm:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-0 min-w-0">
