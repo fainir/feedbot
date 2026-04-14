@@ -42,6 +42,6 @@ export async function POST(req: NextRequest) {
       feed_ids: feedIds,
     }, { onConflict: "user_id" });
 
-  if (error) return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Failed to save", detail: error.message, code: error.code }, { status: 500 });
   return NextResponse.json({ success: true });
 }
