@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -312,11 +312,11 @@ export default function ForYouPage() {
                   <Mail className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button onClick={() => { handleShare({ id: "", title: "For You - MyFeed", url: "https://myfeed.space", summary: "", source: "", publishedAt: "" }); }} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Share">
-                <Share2 className="h-3.5 w-3.5" />
+              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh">
+                <RefreshCw className="h-3.5 w-3.5" />
               </button>
               <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
-                <SlidersHorizontal className="h-3 w-3" />Edit
+                <Sparkles className="h-3 w-3" />Customize
               </button>
             </div>
           </div>
