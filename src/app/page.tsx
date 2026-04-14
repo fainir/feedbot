@@ -252,17 +252,33 @@ export default function ForYouPage() {
         <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
         </Link>
-        <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
+        {/* Mobile: dropdown selector */}
+        <div className="sm:hidden flex-1 min-w-0 px-2">
+          <select
+            value=""
+            onChange={(e) => { if (e.target.value) window.location.href = e.target.value; }}
+            className="w-full bg-transparent text-sm font-semibold text-text border-none focus:outline-none focus:ring-0 py-2 appearance-none cursor-pointer"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 4px center" }}
+          >
+            <option value="" disabled>📡 My Feed</option>
+            <option value="/">📡 My Feed</option>
+            {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
+              <option key={tab.id} value={`/${tab.id}`}>{tab.icon} {tab.name}</option>
+            ))}
+          </select>
+        </div>
+        {/* Desktop: horizontal tabs */}
+        <div className="hidden sm:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-0 min-w-0">
           <Link href="/" className="px-3 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1.5">
-            <Rss className="h-3.5 w-3.5" /><span className="hidden sm:inline">My Feed</span>
+            <Rss className="h-3.5 w-3.5" />My Feed
           </Link>
           <div className="w-px h-5 bg-border/50 mx-1 flex-shrink-0" />
           {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
             <div key={tab.id} className="group relative shrink-0 border-b-2 border-transparent text-text-muted hover:text-text transition-colors">
               <Link href={`/${tab.id}`} className="flex items-center gap-1.5 px-2.5 py-3.5 text-sm font-medium whitespace-nowrap">
-                <span>{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
+                <span>{tab.icon}</span>{tab.name}
               </Link>
-              {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 hidden sm:flex items-center justify-center rounded-full bg-bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5 text-text-muted" /></button>}
+              {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5 text-text-muted" /></button>}
             </div>
           ))}
         </div>

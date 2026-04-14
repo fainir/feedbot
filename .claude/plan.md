@@ -88,7 +88,8 @@
 - [x] Faster tab navigation — prefetch on hover + cache visited feeds (M)
 - [x] Banner unique bg + theme default from system with localStorage persist (S)
 - [x] Fix banner dark mode gradient (S)
-- [~] Explore cleanup + mobile icon-only buttons + verify analytics/contact (M)
+- [x] Explore cleanup + mobile icon-only buttons + verify analytics/contact (M)
+- [~] Mobile: dropdown feed selector instead of scrolling tabs (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

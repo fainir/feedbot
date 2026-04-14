@@ -566,10 +566,24 @@ export default function FeedPage() {
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
         </Link>
 
-        {/* Scrollable tabs */}
-        <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
+        {/* Mobile: dropdown selector */}
+        <div className="sm:hidden flex-1 min-w-0 px-2">
+          <select
+            value={`/${feedSlug}`}
+            onChange={(e) => { if (e.target.value) window.location.href = e.target.value; }}
+            className="w-full bg-transparent text-sm font-semibold text-text border-none focus:outline-none focus:ring-0 py-2 appearance-none cursor-pointer"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 4px center" }}
+          >
+            <option value="/">📡 My Feed</option>
+            {allTabs.map((tab) => (
+              <option key={tab.id} value={`/${tab.id}`}>{tab.icon} {tab.name}</option>
+            ))}
+          </select>
+        </div>
+        {/* Desktop: horizontal tabs */}
+        <div ref={tabBarRef} className="hidden sm:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-0 min-w-0 pr-2">
           <Link href="/" className="px-3 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1.5">
-            <Rss className="h-3.5 w-3.5" /><span className="hidden sm:inline">My Feed</span>
+            <Rss className="h-3.5 w-3.5" />My Feed
           </Link>
           <div className="w-px h-5 bg-border/50 mx-1 flex-shrink-0" />
           {allTabs.map((tab) => (
@@ -594,7 +608,6 @@ export default function FeedPage() {
                 data-active={feedSlug === tab.id}
                 draggable={false}
                 onMouseEnter={() => {
-                  // Prefetch feed data on hover
                   const sysFeed = ALL_SYSTEM_FEEDS.find(f => f.id === tab.id);
                   if (sysFeed && !sessionStorage.getItem(`mf_cache_${tab.id}`)) {
                     fetch(`/api/public/feeds?q=${encodeURIComponent(sysFeed.query)}&limit=50`).then(r => r.json()).then(d => {
@@ -604,8 +617,8 @@ export default function FeedPage() {
                 }}
                 className="flex items-center gap-1.5 px-2.5 py-3.5 whitespace-nowrap"
               >
-                <span className="text-sm">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.name}</span>
+                <span>{tab.icon}</span>
+                {tab.name}
               </Link>
               <button
                 type="button"
@@ -617,7 +630,7 @@ export default function FeedPage() {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable={false}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 hidden sm:flex items-center justify-center rounded-full bg-bg-card border border-border/50 transition-opacity ${
+                className={`absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 transition-opacity ${
                   feedSlug === tab.id
                     ? "opacity-0 hover:opacity-100"
                     : "opacity-0 group-hover:opacity-100"
