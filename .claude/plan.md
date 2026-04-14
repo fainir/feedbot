@@ -61,7 +61,8 @@
 - [x] Email digest shows For You content from system feeds (S)
 - [x] Digest = For You only — system feeds, selectable like For You filter (S)
 - [x] Redesign feed headers — full-width, email CTA card for guests + users (M)
-- [~] Move banners under header, not above (S)
+- [x] Move banners under header, not above (S)
+- [~] For You header matches tab header button style (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

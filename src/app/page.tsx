@@ -292,24 +292,29 @@ export default function ForYouPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width */}
+      {/* Feed header — full width, matches tab header style */}
       <div className="border-b border-border bg-bg-card">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-base font-bold text-text flex items-center gap-2">✨ For You</h2>
-              <p className="text-xs text-text-muted mt-0.5">
+              <h2 className="text-base font-bold text-text flex items-center gap-2">
+                <span className="text-lg">✨</span> For You
+              </h2>
+              <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
                 {!loading && dedupedItems.length > 0
-                  ? `${dedupedItems.length} posts from ${new Set(dedupedItems.map(i => i.source)).size} sources`
+                  ? `${dedupedItems.length} posts · Updated ${timeAgo(dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b).publishedAt)}`
                   : showAllFeeds ? "All feeds" : `${enabledFeeds.size} feeds selected`}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {user && (
-                <button onClick={() => setShowEmailPrefs(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
-                  <Mail className="h-3 w-3" />Inbox
+                <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Email updates">
+                  <Mail className="h-3.5 w-3.5" />
                 </button>
               )}
+              <button onClick={() => { handleShare({ id: "", title: "For You - MyFeed", url: "https://myfeed.space", summary: "", source: "", publishedAt: "" }); }} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Share">
+                <Share2 className="h-3.5 w-3.5" />
+              </button>
               <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
                 <SlidersHorizontal className="h-3 w-3" />Edit
               </button>
