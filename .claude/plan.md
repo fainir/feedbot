@@ -60,7 +60,8 @@
 - [x] Debug email_preferences table insert failure — UUID filter fix (S)
 - [x] Email digest shows For You content from system feeds (S)
 - [x] Digest = For You only — system feeds, selectable like For You filter (S)
-- [~] Redesign feed headers — nicer look, email CTA for guests + users (M)
+- [x] Redesign feed headers — full-width, email CTA card for guests + users (M)
+- [~] Move banners under header, not above (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

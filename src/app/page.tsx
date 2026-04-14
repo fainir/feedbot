@@ -292,35 +292,6 @@ export default function ForYouPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Hero banner for guests — explains value prop + search */}
-      {!user && !heroDismissed && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
-            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
-            <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
-            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic - AI finds the best content, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
-                placeholder="What are you interested in? e.g. AI safety research, Rust programming..."
-                className="min-w-0 w-full bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50 sm:flex-1"
-                value={newPrompt}
-                onChange={(e) => setNewPrompt(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleHeroSubmit(); }}
-              />
-              <button
-                onClick={handleHeroSubmit}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-3 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto sm:py-2.5"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{user ? "Create feed" : "Sign up to create"}</span>
-              </button>
-            </div>
-            <p className="text-[10px] text-text-muted">Browse without signing up. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to create and save your feeds.</p>
-          </div>
-        </div>
-      )}
-
       {/* Feed header — full width */}
       <div className="border-b border-border bg-bg-card">
         <div className="max-w-2xl mx-auto px-4 py-3">
@@ -347,9 +318,34 @@ export default function ForYouPage() {
         </div>
       </div>
 
-      {/* Email CTA card for guests — dismissable */}
+      {/* Guest banners — under the header */}
       {!user && !heroDismissed && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
+        <div className="max-w-2xl mx-auto px-4 pt-3 space-y-3">
+          {/* Hero: value prop + create feed */}
+          <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
+            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
+            <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic - AI finds the best content, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                type="text"
+                placeholder="What are you interested in? e.g. AI safety research, Rust programming..."
+                className="min-w-0 w-full bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50 sm:flex-1"
+                value={newPrompt}
+                onChange={(e) => setNewPrompt(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleHeroSubmit(); }}
+              />
+              <button
+                onClick={handleHeroSubmit}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-3 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto sm:py-2.5"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Sign up to create</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-text-muted">Browse without signing up. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to create and save your feeds.</p>
+          </div>
+          {/* Email CTA */}
           <div className="relative rounded-2xl border border-border bg-bg-card p-4 flex items-center gap-3">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-text/5 flex items-center justify-center"><Mail className="h-4 w-4 text-text-muted" /></div>
