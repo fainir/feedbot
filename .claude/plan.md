@@ -58,7 +58,8 @@
 - [x] Fix email flow — fix /api/email-preferences endpoint (S)
 - [x] Fix email sending — use Resend default domain until DNS verified (S)
 - [x] Debug email_preferences table insert failure — UUID filter fix (S)
-- [~] Email digest shows For You content from system feeds (S)
+- [x] Email digest shows For You content from system feeds (S)
+- [~] Digest = For You only — system feeds, selectable like For You filter (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
