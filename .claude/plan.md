@@ -78,7 +78,8 @@
 - [x] Replace em dash with hyphen in user-facing text (S)
 - [x] CSS polish from designer reference — spacing, colors, card styles, chip styles (M)
 - [x] Replace Sparkles overuse + chips scroll + header bg fix (S)
-- [~] Smaller chips (S)
+- [x] Smaller chips (S)
+- [~] My Feed icon + revert Customize to Sparkles (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

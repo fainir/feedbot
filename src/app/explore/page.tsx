@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Sparkles, X, MoreVertical, Sun, Moon, LogIn } from "lucide-react";
+import { Plus, Sparkles, X, MoreVertical, Sun, Moon, LogIn, Rss } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -173,7 +173,7 @@ export default function ExplorePage() {
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <span className="text-sm">✨</span><span className="hidden sm:inline">My Feed</span>
+            <Rss className="h-3 w-3" /><span className="hidden sm:inline">My Feed</span>
           </Link>
           {TABS.map((tab) => (
             <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">

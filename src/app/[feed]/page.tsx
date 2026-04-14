@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -551,7 +551,7 @@ export default function FeedPage() {
         {/* TODO: Add unread count badges per tab -requires tracking last visit timestamp per feed */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <span className="text-sm">✨</span><span className="hidden sm:inline">My Feed</span>
+            <Rss className="h-3 w-3" /><span className="hidden sm:inline">My Feed</span>
           </Link>
           <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
           {allTabs.map((tab) => (
@@ -687,7 +687,7 @@ export default function FeedPage() {
               </p>
             </div>
             <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0">
-              <SlidersHorizontal className="h-3 w-3" />Customize
+              <Sparkles className="h-3 w-3" />Customize
             </button>
           </div>
         </div>

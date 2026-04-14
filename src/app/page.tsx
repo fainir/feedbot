@@ -254,7 +254,7 @@ export default function ForYouPage() {
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1">
-            <span className="text-sm">✨</span><span className="hidden sm:inline">My Feed</span>
+            <Rss className="h-3 w-3" /><span className="hidden sm:inline">My Feed</span>
           </Link>
           <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
           {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
@@ -298,7 +298,7 @@ export default function ForYouPage() {
           {/* Row 1: title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
             <h2 className="text-base font-bold text-text flex items-center gap-2">
-              <span className="text-lg">✨</span> My Feed
+              <Rss className="h-4 w-4" /> My Feed
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
               <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
