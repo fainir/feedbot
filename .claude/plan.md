@@ -86,7 +86,8 @@
 - [x] Round Create my feed button + lighter banner bg (S)
 - [x] MF icon tighter — less padding between text and edges (S)
 - [x] Faster tab navigation — prefetch on hover + cache visited feeds (M)
-- [~] Banner unique bg + theme default from system with localStorage persist (S)
+- [x] Banner unique bg + theme default from system with localStorage persist (S)
+- [~] Fix banner dark mode gradient (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
