@@ -656,15 +656,15 @@ export default function FeedPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header */}
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-2">
-        <div className="rounded-2xl border border-border bg-bg-card p-4">
+      {/* Feed header — full width */}
+      <div className="border-b border-border bg-bg-card">
+        <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-base font-bold text-text flex items-center gap-2">
                 <span className="text-lg">{activeTab?.icon || "📡"}</span> {displayName}
               </h2>
-              <p className="text-xs text-text-muted mt-1 line-clamp-1">
+              <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
                 {!loading && dedupedItems.length > 0
                   ? `${dedupedItems.length} posts · Updated ${timeAgo(dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b).publishedAt)}`
                   : activeTab?.query || communityFeed?.description || ""}
@@ -685,6 +685,20 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
+
+      {/* Email CTA card for guests — dismissable */}
+      {!user && (
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+          <div className="relative rounded-2xl border border-border bg-bg-card p-4 flex items-center gap-3">
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-text/5 flex items-center justify-center"><Mail className="h-4 w-4 text-text-muted" /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-text">Get your feeds in your inbox</p>
+              <p className="text-xs text-text-muted mt-0.5">Best posts sent to your email every morning. Free.</p>
+            </div>
+            <Link href="/login?signup=true&email=true" className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">Sign up</Link>
+          </div>
+        </div>
+      )}
 
       {/* Fixed new articles toast */}
       {newArticlesAvailable > 0 && (

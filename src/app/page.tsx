@@ -321,27 +321,23 @@ export default function ForYouPage() {
         </div>
       )}
 
-      {/* Feed header */}
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-2">
-        <div className="rounded-2xl border border-border bg-bg-card p-4">
+      {/* Feed header — full width */}
+      <div className="border-b border-border bg-bg-card">
+        <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-base font-bold text-text flex items-center gap-2">✨ For You</h2>
-              <p className="text-xs text-text-muted mt-1">
+              <p className="text-xs text-text-muted mt-0.5">
                 {!loading && dedupedItems.length > 0
                   ? `${dedupedItems.length} posts from ${new Set(dedupedItems.map(i => i.source)).size} sources`
                   : showAllFeeds ? "All feeds" : `${enabledFeeds.size} feeds selected`}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {user ? (
+              {user && (
                 <button onClick={() => setShowEmailPrefs(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
                   <Mail className="h-3 w-3" />Inbox
                 </button>
-              ) : (
-                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
-                  <Mail className="h-3 w-3" />Get in email
-                </Link>
               )}
               <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
                 <SlidersHorizontal className="h-3 w-3" />Edit
@@ -349,6 +345,24 @@ export default function ForYouPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Email CTA card for guests — dismissable */}
+      {!user && !heroDismissed && (
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+          <div className="relative rounded-2xl border border-border bg-bg-card p-4 flex items-center gap-3">
+            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-text/5 flex items-center justify-center"><Mail className="h-4 w-4 text-text-muted" /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-text">Get your feeds in your inbox</p>
+              <p className="text-xs text-text-muted mt-0.5">Best posts sent to your email every morning. Free.</p>
+            </div>
+            <Link href="/login?signup=true&email=true" className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">Sign up</Link>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto px-4 pt-2">
 
         {/* Feed filter panel */}
         {showFilter && (
