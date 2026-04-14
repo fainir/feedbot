@@ -70,7 +70,8 @@
 - [x] Header layout: 2 rows — title+actions top, chips+customize bottom (S)
 - [x] Feed tab headers: 2-row layout with prompt text + Customize (S)
 - [x] For You: remove Customize from chips row, chips are the customization (S)
-- [~] Fix Customize button always visible — pinned outside scroll area (S)
+- [x] Fix Customize button always visible — pinned outside scroll area (S)
+- [~] Chips label + rename For You to better explain aggregation (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

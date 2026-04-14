@@ -173,7 +173,7 @@ export default function ExplorePage() {
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <span className="text-sm">✨</span><span className="hidden sm:inline">For You</span>
+            <span className="text-sm">✨</span><span className="hidden sm:inline">My Feed</span>
           </Link>
           {TABS.map((tab) => (
             <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
