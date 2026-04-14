@@ -65,7 +65,8 @@
 - [x] For You header matches tab header button style (S)
 - [x] For You header: Customize + Refresh, no Share (S)
 - [x] Email CTA in header, not separate banner — different for guest/user (M)
-- [~] Chill header buttons (no borders) + better hero banner copy (S)
+- [x] Chill header buttons (no borders) + better hero banner copy (S)
+- [~] Header tweaks — hide stats, show prompt, horizontal chips, better hero copy (M)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

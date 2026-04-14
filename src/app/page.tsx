@@ -292,7 +292,7 @@ export default function ForYouPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width, matches tab header style */}
+      {/* Feed header — full width */}
       <div className="border-b border-border bg-bg-card">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3">
@@ -300,11 +300,6 @@ export default function ForYouPage() {
               <h2 className="text-base font-bold text-text flex items-center gap-2">
                 <span className="text-lg">✨</span> For You
               </h2>
-              <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
-                {!loading && dedupedItems.length > 0
-                  ? `${dedupedItems.length} posts · Updated ${timeAgo(dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b).publishedAt)}`
-                  : showAllFeeds ? "All feeds" : `${enabledFeeds.size} feeds selected`}
-              </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {user ? (
@@ -324,6 +319,15 @@ export default function ForYouPage() {
               </button>
             </div>
           </div>
+          {/* Horizontal feed chips */}
+          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+            {FEEDS.map((f) => (
+              <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all ${(showAllFeeds || enabledFeeds.has(f.id)) ? "bg-text/10 text-text" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}>
+                <span>{f.icon}</span>
+                <span>{f.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -333,7 +337,7 @@ export default function ForYouPage() {
           <div className="relative rounded-2xl border border-border bg-bg-card p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-base font-bold text-text mb-1">Create your own feed</h2>
-            <p className="text-sm text-text-muted mb-3 max-w-lg">Type any topic and AI will find the best posts from across the internet. Updated every 15 minutes.</p>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Type any topic and AI will find the best posts from across the internet. Always updating, delivered to your email.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"

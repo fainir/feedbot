@@ -665,9 +665,7 @@ export default function FeedPage() {
                 <span className="text-lg">{activeTab?.icon || "📡"}</span> {displayName}
               </h2>
               <p className="text-xs text-text-muted mt-0.5 line-clamp-1">
-                {!loading && dedupedItems.length > 0
-                  ? `${dedupedItems.length} posts · Updated ${timeAgo(dedupedItems.reduce((a, b) => new Date(a.publishedAt) > new Date(b.publishedAt) ? a : b).publishedAt)}`
-                  : activeTab?.query || communityFeed?.description || ""}
+                {activeTab?.query || communityFeed?.description || ""}
               </p>
               {communityFeed && <p className="text-[11px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
             </div>
