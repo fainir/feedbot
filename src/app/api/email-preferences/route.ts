@@ -30,7 +30,12 @@ export async function POST(req: NextRequest) {
   // Accept both frontend format (enabled/frequency/feeds) and raw DB format
   const enabled = body.enabled ?? body.digest_enabled ?? true;
   const frequency = body.frequency || body.digest_frequency || "daily";
-  const feedIds = body.feeds || body.feed_ids || ["for-you"];
+  const rawFeeds = body.feeds || body.feed_ids || null;
+  // feed_ids column is UUID[] — filter out non-UUID strings like "for-you"
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const feedIds = Array.isArray(rawFeeds)
+    ? rawFeeds.filter((f: string) => uuidRegex.test(f))
+    : null;
 
   const svc = getServiceClient();
   const { error } = await svc
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       digest_enabled: enabled,
       digest_frequency: frequency,
-      feed_ids: feedIds,
+      feed_ids: feedIds && feedIds.length > 0 ? feedIds : null, // null = all feeds
     }, { onConflict: "user_id" });
 
   if (error) return NextResponse.json({ error: "Failed to save", detail: error.message, code: error.code }, { status: 500 });
