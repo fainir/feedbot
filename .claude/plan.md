@@ -57,7 +57,8 @@
 - [x] Signup flows — auto-create feed from prompt, auto-enable email from CTA (S)
 - [x] Fix email flow — fix /api/email-preferences endpoint (S)
 - [x] Fix email sending — use Resend default domain until DNS verified (S)
-- [~] Debug email_preferences table insert failure (S)
+- [x] Debug email_preferences table insert failure — UUID filter fix (S)
+- [~] Email digest shows For You content from system feeds (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

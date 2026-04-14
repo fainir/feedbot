@@ -59,19 +59,23 @@ export async function sendDigests(): Promise<{ sent: number; skipped: number }> 
 
       if (!profile?.email) { skipped++; continue; }
 
-      // Get user's feeds
-      let feedQuery = supabase
-        .from("feeds")
-        .select("id, name")
-        .eq("user_id", pref.user_id)
-        .eq("is_active", true);
+      // Get feeds — user's custom feeds + system feeds (like For You)
+      const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
+      let feeds: { id: string; name: string }[] = [];
 
       if (pref.feed_ids && pref.feed_ids.length > 0) {
-        feedQuery = feedQuery.in("id", pref.feed_ids);
+        // User selected specific feeds
+        const { data } = await supabase.from("feeds").select("id, name").in("id", pref.feed_ids).eq("is_active", true);
+        feeds = data || [];
+      } else {
+        // Default: all system feeds (For You experience)
+        const { data: systemFeeds } = await supabase.from("feeds").select("id, name").eq("user_id", SYSTEM_USER).eq("is_active", true);
+        // Also include user's custom feeds
+        const { data: userFeeds } = await supabase.from("feeds").select("id, name").eq("user_id", pref.user_id).eq("is_active", true);
+        feeds = [...(systemFeeds || []), ...(userFeeds || [])];
       }
 
-      const { data: feeds } = await feedQuery;
-      if (!feeds || feeds.length === 0) { skipped++; continue; }
+      if (feeds.length === 0) { skipped++; continue; }
 
       // Get recent articles since last digest
       const since = pref.last_digest_at || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
