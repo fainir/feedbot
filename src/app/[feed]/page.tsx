@@ -672,8 +672,8 @@ export default function FeedPage() {
                 <Share2 className="h-3.5 w-3.5" />
               </button>
               {!user && (
-                <Link href="/login?signup=true&email=true" className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
-                  <Mail className="h-4 w-4" />Get in email
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-3 w-3" />Get in email
                 </Link>
               )}
             </div>
