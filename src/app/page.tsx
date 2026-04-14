@@ -292,16 +292,18 @@ export default function ForYouPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width */}
+      {/* Feed header — full width, 2 rows */}
       <div className="border-b border-border bg-bg-card">
-        <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-text flex items-center gap-2">
-                <span className="text-lg">✨</span> For You
-              </h2>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
+          {/* Row 1: title left, action buttons right */}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h2 className="text-base font-bold text-text flex items-center gap-2">
+              <span className="text-lg">✨</span> For You
+            </h2>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
               {user ? (
                 <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
                   <Mail className="h-3.5 w-3.5" />
@@ -311,16 +313,10 @@ export default function ForYouPage() {
                   <Mail className="h-3 w-3" />Get in email
                 </Link>
               )}
-              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
-                <RefreshCw className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all">
-                <Sparkles className="h-3 w-3" />Customize
-              </button>
             </div>
           </div>
-          {/* Horizontal feed chips */}
-          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+          {/* Row 2: scrollable chips + Customize at end */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4">
             {FEEDS.map((f) => {
               const active = showAllFeeds || enabledFeeds.has(f.id);
               return (
@@ -331,6 +327,9 @@ export default function ForYouPage() {
                 </button>
               );
             })}
+            <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0">
+              <Sparkles className="h-3 w-3" />Customize
+            </button>
           </div>
         </div>
       </div>
