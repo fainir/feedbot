@@ -672,6 +672,11 @@ export default function FeedPage() {
               {communityFeed && <p className="text-[11px] text-text-muted mt-0.5">by {communityFeed.creator} · {communityFeed.followers} followers</p>}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {!user && (
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-3 w-3" />Get in email
+                </Link>
+              )}
               <button onClick={handleRefresh} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh feed" disabled={refreshing}>
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
@@ -685,20 +690,6 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
-
-      {/* Email CTA card for guests — dismissable */}
-      {!user && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-2xl border border-border bg-bg-card p-4 flex items-center gap-3">
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-text/5 flex items-center justify-center"><Mail className="h-4 w-4 text-text-muted" /></div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-text">Get your feeds in your inbox</p>
-              <p className="text-xs text-text-muted mt-0.5">Best posts sent to your email every morning. Free.</p>
-            </div>
-            <Link href="/login?signup=true&email=true" className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">Sign up</Link>
-          </div>
-        </div>
-      )}
 
       {/* Fixed new articles toast */}
       {newArticlesAvailable > 0 && (
@@ -738,18 +729,7 @@ export default function FeedPage() {
               const hasImage = !!item.image_url;
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
-              const showEmailCta = !user && i === 5;
               return (
-                <>{showEmailCta && (
-                  <div key="email-cta" className="rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 text-center">
-                    <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
-                    <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
-                    <p className="text-xs text-text-muted mb-3">The best posts from your favorite feeds, sent to your email every morning. Free.</p>
-                    <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
-                      <Mail className="h-3 w-3" />Sign up for free
-                    </Link>
-                  </div>
-                )}
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
@@ -787,7 +767,6 @@ export default function FeedPage() {
                     </div>
                   </a>
                 </article>
-                </>
               );
             })}
           </div>
@@ -797,17 +776,7 @@ export default function FeedPage() {
           <LoadMoreSentinel loading={loadingMore} onVisible={loadMore} />
         )}
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length >= 15 && (
-          !user ? (
-            <div className="mt-4 rounded-2xl border border-border bg-bg-card p-5 text-center">
-              <p className="text-sm font-semibold text-text mb-1">Want these posts in your inbox?</p>
-              <p className="text-xs text-text-muted mb-3">Sign up and get your favorite feeds sent to your email every morning.</p>
-              <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
-                <Mail className="h-3 w-3" />Sign up for free
-              </Link>
-            </div>
-          ) : (
-            <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
-          )
+          <p className="text-center py-6 text-xs text-text-muted">You&apos;ve reached the end of this feed</p>
         )}
         {!hasMore && dedupedItems.length > 0 && dedupedItems.length < 15 && (
           <div className="text-center py-8">

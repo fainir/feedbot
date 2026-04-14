@@ -307,10 +307,14 @@ export default function ForYouPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {user && (
+              {user ? (
                 <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Email updates">
                   <Mail className="h-3.5 w-3.5" />
                 </button>
+              ) : (
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-3 w-3" />Get in email
+                </Link>
               )}
               <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -323,10 +327,9 @@ export default function ForYouPage() {
         </div>
       </div>
 
-      {/* Guest banners — under the header */}
+      {/* Hero banner for guests — create feed */}
       {!user && !heroDismissed && (
-        <div className="max-w-2xl mx-auto px-4 pt-3 space-y-3">
-          {/* Hero: value prop + create feed */}
+        <div className="max-w-2xl mx-auto px-4 pt-3">
           <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
@@ -349,16 +352,6 @@ export default function ForYouPage() {
               </button>
             </div>
             <p className="text-[10px] text-text-muted">Browse without signing up. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to create and save your feeds.</p>
-          </div>
-          {/* Email CTA */}
-          <div className="relative rounded-2xl border border-border bg-bg-card p-4 flex items-center gap-3">
-            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-text/5 flex items-center justify-center"><Mail className="h-4 w-4 text-text-muted" /></div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-text">Get your feeds in your inbox</p>
-              <p className="text-xs text-text-muted mt-0.5">Best posts sent to your email every morning. Free.</p>
-            </div>
-            <Link href="/login?signup=true&email=true" className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">Sign up</Link>
           </div>
         </div>
       )}
@@ -413,8 +406,6 @@ export default function ForYouPage() {
         ) : (
           <div className="space-y-4 pt-2">
             {dedupedItems.map((item, i) => {
-              // Inline email CTA for guests after 5th article
-              const showEmailCta = !user && i === 5;
               const src = getSourceInfo(item.source);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);
               const title = cleanTitle(item.title);
@@ -423,16 +414,6 @@ export default function ForYouPage() {
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
               return (
-                <>{showEmailCta && (
-                  <div key="email-cta" className="rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 text-center">
-                    <Mail className="h-5 w-5 mx-auto mb-2 text-text-muted" />
-                    <p className="text-sm font-semibold text-text mb-1">Get your feeds in your inbox</p>
-                    <p className="text-xs text-text-muted mb-3">The best posts from all your feeds, sent to your email every morning. Free.</p>
-                    <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-4 py-2 rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
-                      <Mail className="h-3 w-3" />Sign up for free
-                    </Link>
-                  </div>
-                )}
                 <article key={item.id || i} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                   {ytId ? (
                     <div className="w-full aspect-video">
@@ -471,7 +452,6 @@ export default function ForYouPage() {
                     </div>
                   </a>
                 </article>
-                </>
               );
             })}
           </div>
@@ -482,17 +462,7 @@ export default function ForYouPage() {
           </button>
         )}
         {!hasMore && !loading && dedupedItems.length > 0 && (
-          !user ? (
-            <div className="mt-6 rounded-2xl border border-border bg-bg-card p-6 text-center">
-              <p className="text-sm font-semibold text-text mb-1">New posts every morning in your inbox</p>
-              <p className="text-xs text-text-muted mb-3">Sign up and we&apos;ll send you the best posts from your favorite feeds. No spam, unsubscribe anytime.</p>
-              <Link href="/login?signup=true&email=true" className="inline-flex items-center gap-1.5 bg-text text-bg px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
-                <Mail className="h-3.5 w-3.5" />Get your free email updates
-              </Link>
-            </div>
-          ) : (
-            <p className="text-center py-8 text-xs text-text-muted">You&apos;re all caught up</p>
-          )
+          <p className="text-center py-8 text-xs text-text-muted">You&apos;re all caught up</p>
         )}
       </main>
 
