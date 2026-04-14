@@ -21,7 +21,7 @@ interface FeedItem {
   publishedAt: string;
 }
 
-// All system feeds — any of these can be loaded by slug
+// All system feeds -any of these can be loaded by slug
 const ALL_SYSTEM_FEEDS = [
   { id: "ai", name: "AI & ML", icon: "🤖", query: "artificial intelligence breakthroughs, LLM models, AI startups, machine learning research, GPT Claude Gemini, AI tools and products" },
   { id: "tech", name: "Tech", icon: "💻", query: "tech industry news, product launches, big tech companies, gadgets, consumer technology, tech business" },
@@ -323,7 +323,7 @@ export default function FeedPage() {
     setNotFound(false);
 
     if (activeTab) {
-      // System tab — use query-based API
+      // System tab -use query-based API
       fetchFeed(activeTab.query)
         .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
         .catch(() => setItems([]))
@@ -493,7 +493,7 @@ export default function FeedPage() {
     setDraggedTab(null);
   }, []);
 
-  // Mobile touch DnD — long press to start, drag to reorder
+  // Mobile touch DnD -long press to start, drag to reorder
   const touchState = useRef<{ id: string; startX: number; timer: ReturnType<typeof setTimeout> | null }>({ id: "", startX: 0, timer: null });
 
   const handleTouchStart = useCallback((tabId: string, x: number) => {
@@ -540,15 +540,15 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Single top bar — fixed so it never scrolls away */}
+      {/* Single top bar -fixed so it never scrolls away */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
         </Link>
 
-        {/* Scrollable tabs — drag to reorder, X to remove */}
-        {/* TODO: Add unread count badges per tab — requires tracking last visit timestamp per feed */}
+        {/* Scrollable tabs -drag to reorder, X to remove */}
+        {/* TODO: Add unread count badges per tab -requires tracking last visit timestamp per feed */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
           <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
             <span className="text-sm">✨</span><span className="hidden sm:inline">My Feed</span>
@@ -656,7 +656,7 @@ export default function FeedPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width, 2 rows */}
+      {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg-card">
         <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
           {/* Row 1: icon + title left, action buttons right */}

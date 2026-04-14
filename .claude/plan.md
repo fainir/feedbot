@@ -74,7 +74,8 @@
 - [x] Chips label + rename For You to better explain aggregation (S)
 - [x] Create feed button uses Sparkles icon instead of Plus (S)
 - [x] Smaller chip padding (S)
-- [~] Better guest banner — explain product, more noticeable yet clean (S)
+- [x] Better guest banner — explain product, more noticeable yet clean (S)
+- [~] Replace em dash with hyphen in user-facing text (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

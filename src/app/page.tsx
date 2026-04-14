@@ -163,7 +163,7 @@ export default function ForYouPage() {
       });
     }
 
-    // Story clustering — group by similar titles, keep best + track trending
+    // Story clustering -group by similar titles, keep best + track trending
     const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
     const clusters: typeof urlDeduped = [];
     const clusterKeys = new Map<string, number>();
@@ -247,7 +247,7 @@ export default function ForYouPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Single top bar — fixed so it never scrolls away */}
+      {/* Single top bar -fixed so it never scrolls away */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
           <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
@@ -292,7 +292,7 @@ export default function ForYouPage() {
       </header>
       <div className="h-11" /> {/* Spacer for fixed header */}
 
-      {/* Feed header — full width, 2 rows */}
+      {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg-card">
         <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
           {/* Row 1: title left, action buttons right */}
@@ -332,7 +332,7 @@ export default function ForYouPage() {
         </div>
       </div>
 
-      {/* Hero banner for guests — create feed */}
+      {/* Hero banner for guests -create feed */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-4 pt-3">
           <div className="relative rounded-2xl border-2 border-text/10 bg-gradient-to-b from-bg-card to-bg p-5 sm:p-6">
@@ -341,7 +341,7 @@ export default function ForYouPage() {
               <div className="w-8 h-8 rounded-lg bg-text/5 flex items-center justify-center"><Sparkles className="h-4 w-4 text-text" /></div>
               <h2 className="text-base font-bold text-text">Create a feed about anything</h2>
             </div>
-            <p className="text-sm text-text-muted mb-4 max-w-lg">Describe a topic you care about. Our AI scans thousands of sources across the web and builds a custom feed just for you — always fresh, delivered to your inbox.</p>
+            <p className="text-sm text-text-muted mb-4 max-w-lg">Describe a topic you care about. Our AI scans thousands of sources across the web and builds a custom feed just for you -always fresh, delivered to your inbox.</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
