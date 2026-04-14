@@ -610,7 +610,7 @@ export default function FeedPage() {
             onClick={() => setShowNewFeed(true)}
             className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
           >
-            <Plus className="h-3 w-3" />
+            <Sparkles className="h-3 w-3" />
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>

@@ -71,7 +71,8 @@
 - [x] Feed tab headers: 2-row layout with prompt text + Customize (S)
 - [x] For You: remove Customize from chips row, chips are the customization (S)
 - [x] Fix Customize button always visible — pinned outside scroll area (S)
-- [~] Chips label + rename For You to better explain aggregation (S)
+- [x] Chips label + rename For You to better explain aggregation (S)
+- [~] Create feed button uses Sparkles icon instead of Plus (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
