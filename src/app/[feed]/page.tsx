@@ -399,7 +399,7 @@ export default function FeedPage() {
       <div className="min-h-screen bg-bg text-text">
         <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
           <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-            <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-lg text-[11px] font-black tracking-tighter">MF</span>
+            <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-black tracking-tighter">MF</span>
           </Link>
           <div className="flex-1" />
           <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 ml-0.5 border-l border-border/50">
@@ -541,19 +541,18 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-bg text-text">
       {/* Single top bar -fixed so it never scrolls away */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-12">
         {/* Logo */}
-        <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-lg text-[11px] font-black tracking-tighter">MF</span>
+        <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
+          <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-black tracking-tighter">MF</span>
         </Link>
 
-        {/* Scrollable tabs -drag to reorder, X to remove */}
-        {/* TODO: Add unread count badges per tab -requires tracking last visit timestamp per feed */}
+        {/* Scrollable tabs */}
         <div ref={tabBarRef} className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0 pr-2">
-          <Link href="/" className="px-2.5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <Rss className="h-3 w-3" /><span className="hidden sm:inline">My Feed</span>
+          <Link href="/" className="px-3 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1.5">
+            <Rss className="h-3.5 w-3.5" /><span className="hidden sm:inline">My Feed</span>
           </Link>
-          <div className="w-px h-4 bg-border/50 mx-0.5 flex-shrink-0" />
+          <div className="w-px h-5 bg-border/50 mx-1 flex-shrink-0" />
           {allTabs.map((tab) => (
             <div
               key={tab.id}
@@ -565,7 +564,7 @@ export default function FeedPage() {
               onTouchStart={(e) => handleTouchStart(tab.id, e.touches[0].clientX)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className={`group relative shrink-0 cursor-grab select-none border-b-2 text-xs font-medium transition-all active:cursor-grabbing ${
+              className={`group relative shrink-0 cursor-grab select-none border-b-2 text-sm font-medium transition-all active:cursor-grabbing ${
                 feedSlug === tab.id
                   ? "border-text text-text"
                   : "border-transparent text-text-muted hover:text-text"
@@ -575,7 +574,7 @@ export default function FeedPage() {
                 href={`/${tab.id}`}
                 data-active={feedSlug === tab.id}
                 draggable={false}
-                className="flex items-center gap-1 px-2 py-3 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2.5 py-3.5 whitespace-nowrap"
               >
                 <span className="text-sm">{tab.icon}</span>
                 <span className="hidden sm:inline">{tab.name}</span>
@@ -604,13 +603,13 @@ export default function FeedPage() {
         </div>
 
         {/* Right actions */}
-        <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 ml-0.5 border-l border-border/50">
-          <Link href="/explore" className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3 w-3" />Explore</Link>
+        <div className="flex-shrink-0 flex items-center gap-2 pr-4 pl-3 ml-0.5 border-l border-border/50">
+          <Link href="/explore" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" />Explore</Link>
           <button
             onClick={() => setShowNewFeed(true)}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
           >
-            <Sparkles className="h-3 w-3" />
+            <Sparkles className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Create feed</span>
             <span className="sm:hidden">New</span>
           </button>
@@ -654,7 +653,7 @@ export default function FeedPage() {
           </div>
         </div>
       </header>
-      <div className="h-11" /> {/* Spacer for fixed header */}
+      <div className="h-12" /> {/* Spacer for fixed header */}
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
