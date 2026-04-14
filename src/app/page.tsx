@@ -321,12 +321,16 @@ export default function ForYouPage() {
           </div>
           {/* Horizontal feed chips */}
           <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
-            {FEEDS.map((f) => (
-              <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all ${(showAllFeeds || enabledFeeds.has(f.id)) ? "bg-text/10 text-text" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}>
-                <span>{f.icon}</span>
-                <span>{f.name}</span>
-              </button>
-            ))}
+            {FEEDS.map((f) => {
+              const active = showAllFeeds || enabledFeeds.has(f.id);
+              return (
+                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-all ${active ? "border-text/20 bg-text/10 text-text" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"}`}>
+                  <span>{f.icon}</span>
+                  <span>{f.name}</span>
+                  {active && <Check className="h-3 w-3" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
