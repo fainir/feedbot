@@ -327,9 +327,6 @@ export default function ForYouPage() {
                 </button>
               );
             })}
-            <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0">
-              <Sparkles className="h-3 w-3" />Customize
-            </button>
           </div>
         </div>
       </div>

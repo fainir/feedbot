@@ -68,7 +68,8 @@
 - [x] Chill header buttons (no borders) + better hero banner copy (S)
 - [x] Header tweaks — hide stats, show prompt, horizontal chips, better hero copy (M)
 - [x] Header layout: 2 rows — title+actions top, chips+customize bottom (S)
-- [~] Feed tab headers: 2-row layout with prompt text + Customize (S)
+- [x] Feed tab headers: 2-row layout with prompt text + Customize (S)
+- [~] For You: remove Customize from chips row, chips are the customization (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
