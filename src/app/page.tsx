@@ -360,7 +360,7 @@ export default function ForYouPage() {
       {/* Hero banner for guests -create feed */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-3xl border border-border overflow-hidden shadow-sm p-6 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-800 dark:border-slate-700">
+          <div className={`relative rounded-3xl border overflow-hidden shadow-sm p-6 sm:p-8 ${mounted && theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50 border-border"}`}>
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-5 right-5 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>

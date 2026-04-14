@@ -91,7 +91,7 @@
 - [x] Explore cleanup + mobile icon-only buttons + verify analytics/contact (M)
 - [x] Mobile: dropdown feed selector instead of scrolling tabs (M)
 - [x] Style mobile dropdown as custom selector (S)
-- [~] Fix banner white bg in dark mode (S)
+- [~] Fix banner white bg in dark mode — use theme state (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
