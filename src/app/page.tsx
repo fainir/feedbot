@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -293,7 +293,7 @@ export default function ForYouPage() {
       <div className="h-11" /> {/* Spacer for fixed header */}
 
       {/* Feed header -full width, 2 rows */}
-      <div className="border-b border-border bg-bg-card">
+      <div className="border-b border-border bg-bg">
         <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
           {/* Row 1: title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
@@ -315,9 +315,9 @@ export default function ForYouPage() {
               )}
             </div>
           </div>
-          {/* Row 2: label + wrapping chips */}
-          <div className="flex items-start gap-2 flex-wrap">
-            <span className="text-xs text-text-muted py-1">From:</span>
+          {/* Row 2: label + scrollable chips */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
+            <span className="text-xs text-text-muted whitespace-nowrap flex-shrink-0">From:</span>
             {FEEDS.map((f) => {
               const active = showAllFeeds || enabledFeeds.has(f.id);
               return (
@@ -338,7 +338,7 @@ export default function ForYouPage() {
           <div className="relative rounded-3xl border border-border bg-bg-card shadow-sm p-6 sm:p-8">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-5 right-5 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
-              <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Sparkles className="h-5 w-5 text-text" /></div>
+              <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
               <div>
                 <h2 className="text-xl font-bold text-text mb-1.5">Create a feed about anything</h2>
                 <p className="text-sm text-text-muted leading-relaxed max-w-lg">Describe a topic you care about. Our AI scans thousands of sources across the web and builds a custom feed just for you - always fresh, delivered to your inbox.</p>

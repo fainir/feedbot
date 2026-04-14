@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -657,7 +657,7 @@ export default function FeedPage() {
       <div className="h-11" /> {/* Spacer for fixed header */}
 
       {/* Feed header -full width, 2 rows */}
-      <div className="border-b border-border bg-bg-card">
+      <div className="border-b border-border bg-bg">
         <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
           {/* Row 1: icon + title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
@@ -687,7 +687,7 @@ export default function FeedPage() {
               </p>
             </div>
             <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0">
-              <Sparkles className="h-3 w-3" />Customize
+              <SlidersHorizontal className="h-3 w-3" />Customize
             </button>
           </div>
         </div>
