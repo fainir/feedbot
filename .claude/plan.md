@@ -73,7 +73,8 @@
 - [x] Fix Customize button always visible — pinned outside scroll area (S)
 - [x] Chips label + rename For You to better explain aggregation (S)
 - [x] Create feed button uses Sparkles icon instead of Plus (S)
-- [~] Smaller chip padding (S)
+- [x] Smaller chip padding (S)
+- [~] Better guest banner — explain product, more noticeable yet clean (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
