@@ -169,7 +169,7 @@ export default function ExplorePage() {
       {/* Single top bar — fixed */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-          <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
+          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-lg text-[11px] font-black tracking-tighter">MF</span>
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">

@@ -79,7 +79,8 @@
 - [x] CSS polish from designer reference — spacing, colors, card styles, chip styles (M)
 - [x] Replace Sparkles overuse + chips scroll + header bg fix (S)
 - [x] Smaller chips (S)
-- [~] My Feed icon + revert Customize to Sparkles (S)
+- [x] My Feed icon + revert Customize to Sparkles (S)
+- [~] Feed header matches My Feed style, MF icon fix, chips margin-right alignment (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

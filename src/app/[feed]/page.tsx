@@ -399,7 +399,7 @@ export default function FeedPage() {
       <div className="min-h-screen bg-bg text-text">
         <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
           <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-            <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
+            <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-lg text-[11px] font-black tracking-tighter">MF</span>
           </Link>
           <div className="flex-1" />
           <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 ml-0.5 border-l border-border/50">
@@ -544,7 +544,7 @@ export default function FeedPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-          <span className="flex items-center justify-center w-6 h-6 bg-text text-bg rounded-md text-[10px] font-extrabold tracking-tighter">MF</span>
+          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-lg text-[11px] font-black tracking-tighter">MF</span>
         </Link>
 
         {/* Scrollable tabs -drag to reorder, X to remove */}
@@ -672,8 +672,8 @@ export default function FeedPage() {
                 <Share2 className="h-3.5 w-3.5" />
               </button>
               {!user && (
-                <Link href="/login?signup=true&email=true" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
-                  <Mail className="h-3 w-3" />Get in email
+                <Link href="/login?signup=true&email=true" className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                  <Mail className="h-4 w-4" />Get in email
                 </Link>
               )}
             </div>
