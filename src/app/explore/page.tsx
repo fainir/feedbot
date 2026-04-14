@@ -203,40 +203,10 @@ export default function ExplorePage() {
 
       {/* Explore content */}
       <main id="main-content" className="max-w-5xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Explore Feeds</h1>
-          <p className="text-text-muted text-sm sm:text-base">Public feeds from the community. Follow any feed to add it to your tabs.</p>
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Public Feeds</h1>
+          <p className="text-text-muted text-sm">Browse and follow feeds from the community.</p>
         </div>
-
-        {/* Quick create prompts */}
-        <div className="mb-8">
-          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Create a feed about...</h2>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "AI tools launching this week",
-              "YC startups Demo Day 2026",
-              "React Server Components tutorials",
-              "Indie hackers building in public",
-              "Climate tech breakthroughs",
-              "Open source alternatives to SaaS",
-              "Rust programming language news",
-              "Space mission updates",
-              "TypeScript tips and tricks",
-              "Biotech and drug discovery",
-              "Self-driving cars and autonomous vehicles",
-              "Quantum computing research",
-              "No-code and low-code tools",
-              "Productivity hacks for developers",
-              "AI ethics and safety research",
-              "Web3 and decentralized apps",
-            ].map((prompt) => (
-              <button key={prompt} onClick={() => { setNewPrompt(prompt); setShowNewFeed(true); }} className="text-xs px-3 py-1.5 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 hover:bg-bg-hover/50 transition-all">{prompt}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Unified public feeds grid — curated + community together */}
-        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Public feeds</h2>
         <input type="text" placeholder="Search feeds..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-bg-hover border border-border rounded-xl px-4 py-2.5 text-sm mb-4 focus:outline-none focus:border-text/50" aria-label="Search feeds" />
         <div className="flex items-center gap-2 mb-4">
           {(["default", "popular", "newest"] as const).map((s) => (
