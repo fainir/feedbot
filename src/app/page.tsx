@@ -308,7 +308,7 @@ export default function ForYouPage() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {user ? (
-                <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Email updates">
+                <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
                   <Mail className="h-3.5 w-3.5" />
                 </button>
               ) : (
@@ -316,10 +316,10 @@ export default function ForYouPage() {
                   <Mail className="h-3 w-3" />Get in email
                 </Link>
               )}
-              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh">
+              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
+              <button onClick={() => setShowFilter(!showFilter)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all">
                 <Sparkles className="h-3 w-3" />Customize
               </button>
             </div>
@@ -330,14 +330,14 @@ export default function ForYouPage() {
       {/* Hero banner for guests — create feed */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-2xl border border-border bg-gradient-to-br from-indigo-500/10 via-bg-card to-purple-500/10 p-5 sm:p-6">
+          <div className="relative rounded-2xl border border-border bg-bg-card p-5 sm:p-6">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
-            <h2 className="text-lg font-bold text-text mb-1">Your internet, curated by AI</h2>
-            <p className="text-sm text-text-muted mb-3 max-w-lg">Describe any topic - AI finds the best content, repos, videos, and discussions from across the web. Always updating with fresh finds.</p>
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+            <h2 className="text-base font-bold text-text mb-1">Create your own feed</h2>
+            <p className="text-sm text-text-muted mb-3 max-w-lg">Type any topic and AI will find the best posts from across the internet. Updated every 15 minutes.</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
-                placeholder="What are you interested in? e.g. AI safety research, Rust programming..."
+                placeholder="e.g. React tutorials, SpaceX launches, startup funding..."
                 className="min-w-0 w-full bg-bg border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 placeholder:text-text-muted/50 sm:flex-1"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
@@ -345,13 +345,12 @@ export default function ForYouPage() {
               />
               <button
                 onClick={handleHeroSubmit}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-3 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto sm:py-2.5"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-text px-4 py-2.5 text-sm font-semibold text-bg transition-opacity hover:opacity-90 sm:w-auto"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Sign up to create</span>
+                <span>Create feed</span>
               </button>
             </div>
-            <p className="text-[10px] text-text-muted">Browse without signing up. <Link href="/login?signup=true" className="underline hover:text-text">Sign up</Link> to create and save your feeds.</p>
           </div>
         </div>
       )}

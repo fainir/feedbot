@@ -677,13 +677,13 @@ export default function FeedPage() {
                   <Mail className="h-3 w-3" />Get in email
                 </Link>
               )}
-              <button onClick={handleRefresh} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Refresh feed" disabled={refreshing}>
+              <button onClick={handleRefresh} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
-              <button onClick={handleShareFeed} className="p-2 rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all" aria-label="Share feed">
+              <button onClick={handleShareFeed} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
                 <Share2 className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border text-text-muted hover:text-text hover:border-text/30 transition-all">
+              <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all">
                 <Sparkles className="h-3 w-3" />Customize
               </button>
             </div>

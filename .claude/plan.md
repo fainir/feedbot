@@ -64,7 +64,8 @@
 - [x] Move banners under header, not above (S)
 - [x] For You header matches tab header button style (S)
 - [x] For You header: Customize + Refresh, no Share (S)
-- [~] Email CTA in header, not separate banner — different for guest/user (M)
+- [x] Email CTA in header, not separate banner — different for guest/user (M)
+- [~] Chill header buttons (no borders) + better hero banner copy (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
