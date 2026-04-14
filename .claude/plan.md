@@ -83,7 +83,8 @@
 - [x] Feed header matches My Feed style, MF icon fix, chips margin-right alignment (S)
 - [x] Smaller email button + smaller banner input/button (S)
 - [x] Bigger top nav bar + items (S)
-- [~] Round Create my feed button + lighter banner bg (S)
+- [x] Round Create my feed button + lighter banner bg (S)
+- [~] MF icon tighter — less padding between text and edges (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

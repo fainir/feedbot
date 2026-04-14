@@ -399,7 +399,7 @@ export default function FeedPage() {
       <div className="min-h-screen bg-bg text-text">
         <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-11">
           <Link href="/" className="flex-shrink-0 flex items-center gap-1.5 pl-3 pr-2">
-            <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-black tracking-tighter">MF</span>
+            <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
           </Link>
           <div className="flex-1" />
           <div className="flex-shrink-0 flex items-center gap-1.5 pr-3 pl-2 ml-0.5 border-l border-border/50">
@@ -544,7 +544,7 @@ export default function FeedPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-12">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
-          <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-black tracking-tighter">MF</span>
+          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
         </Link>
 
         {/* Scrollable tabs */}

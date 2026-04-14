@@ -250,7 +250,7 @@ export default function ForYouPage() {
       {/* Single top bar -fixed so it never scrolls away */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-12">
         <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
-          <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-black tracking-tighter">MF</span>
+          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
           <Link href="/" className="px-3 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-text text-text flex items-center gap-1.5">
