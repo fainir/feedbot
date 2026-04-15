@@ -13,81 +13,59 @@ export async function GET() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#000",
+          backgroundColor: "#0f1419",
         }}
       >
         <div
           style={{
+            width: "180px",
+            height: "180px",
+            borderRadius: "44px",
+            backgroundColor: "#ffffff",
             display: "flex",
             alignItems: "center",
-            gap: "16px",
-            marginBottom: "32px",
+            justifyContent: "center",
+            fontSize: "96px",
+            fontWeight: 900,
+            color: "#0f1419",
+            letterSpacing: "-0.04em",
+            marginBottom: "40px",
           }}
         >
-          <div
-            style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "16px",
-              backgroundColor: "#e7e9ea",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-              fontWeight: 800,
-              color: "#000",
-            }}
-          >
-            MF
-          </div>
-          <span
-            style={{
-              fontSize: "48px",
-              fontWeight: 700,
-              color: "#e7e9ea",
-            }}
-          >
-            MyFeed
-          </span>
+          MF
         </div>
         <h1
           style={{
-            fontSize: "64px",
+            fontSize: "56px",
             fontWeight: 800,
             color: "#e7e9ea",
             textAlign: "center",
-            lineHeight: 1.1,
+            lineHeight: 1.2,
             marginBottom: "16px",
           }}
         >
-          Your Internet, Curated by AI
+          MyFeed
         </h1>
         <p
           style={{
-            fontSize: "24px",
+            fontSize: "28px",
             color: "#71767b",
             textAlign: "center",
             maxWidth: "700px",
           }}
         >
-          Describe what you care about. Get a real-time feed from across the
-          entire internet.
+          AI curates custom feeds from any topic you describe
         </p>
-        <div
+        <p
           style={{
-            display: "flex",
-            marginTop: "40px",
-            gap: "32px",
-            color: "#71767b",
-            fontSize: "20px",
+            fontSize: "22px",
+            color: "#536471",
+            textAlign: "center",
+            marginTop: "24px",
           }}
         >
-          <span>Free to start</span>
-          <span>&#183;</span>
-          <span>No RSS needed</span>
-          <span>&#183;</span>
-          <span>30 sec setup</span>
-        </div>
+          myfeed.space
+        </p>
       </div>
     ),
     {

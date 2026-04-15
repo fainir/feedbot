@@ -251,7 +251,7 @@ export default function ForYouPage() {
       {/* Single top bar -fixed so it never scrolls away */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-12">
         <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
-          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[13px] font-black leading-none" style={{ letterSpacing: "-0.12em" }}>MF</span>
+          <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[12px] font-black leading-none" style={{ letterSpacing: "-0.02em" }}>MF</span>
         </Link>
         {/* Mobile: custom dropdown selector */}
         <div className="sm:hidden flex-1 min-w-0 px-2 relative">

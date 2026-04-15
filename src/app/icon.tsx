@@ -16,9 +16,9 @@ export default function Icon() {
           background: "#0f1419",
           color: "#ffffff",
           borderRadius: "30px",
-          fontSize: 80,
+          fontSize: 68,
           fontWeight: 900,
-          letterSpacing: "-0.12em",
+          letterSpacing: "-0.04em",
           lineHeight: 1,
         }}
       >
