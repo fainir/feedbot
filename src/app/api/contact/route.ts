@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       from: "MyFeed <onboarding@resend.dev>",
-      to: "welcometothebestplace@gmail.com",
+      to: "fainir2006@gmail.com",
       reply_to: email,
       subject: `[MyFeed Contact] ${name || "Anonymous"}: ${message.slice(0, 60)}`,
       html: `
@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!res.ok) {
-    const errBody = await res.text().catch(() => "unknown");
-    return NextResponse.json({ error: "Failed to send", detail: errBody }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
