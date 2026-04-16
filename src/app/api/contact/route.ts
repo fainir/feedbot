@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "MyFeed <hi@myfeed.space>",
+      from: "MyFeed <onboarding@resend.dev>",
       to: "welcometothebestplace@gmail.com",
       reply_to: email,
       subject: `[MyFeed Contact] ${name || "Anonymous"}: ${message.slice(0, 60)}`,
