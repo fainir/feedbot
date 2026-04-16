@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
   });
 
   if (!res.ok) {
-    return NextResponse.json({ error: "Failed to send" }, { status: 500 });
+    const errBody = await res.text().catch(() => "unknown");
+    return NextResponse.json({ error: "Failed to send", detail: errBody }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
