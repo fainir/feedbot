@@ -293,7 +293,7 @@ export default function ForYouPage() {
             </div>
           ))}
         </div>
-        <div className="flex-shrink-0 flex items-center gap-2 pr-4 pl-3 ml-0.5 border-l border-border/50">
+        <div className="ml-auto flex-shrink-0 flex items-center gap-2 pr-4 pl-3 border-l border-border/50">
           <Link href="/explore" className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-2 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" /><span className="hidden sm:inline">Explore</span></Link>
           <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-2 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">
             <Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Create feed</span>
