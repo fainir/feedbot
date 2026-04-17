@@ -228,6 +228,7 @@ export default function FeedPage() {
   }, []);
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
+    trackEvent("article_reaction", { reaction, feed: feedSlug });
     if (!user) { toast("Sign up to save your preferences", "info"); return; }
     const prev = userReactions[feedItemId];
     // Optimistic update
@@ -787,7 +788,7 @@ export default function FeedPage() {
                       <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
                     </div>
                   ) : null}
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: feedSlug })}>
                     {!ytId && hasImage && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />

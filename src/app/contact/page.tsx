@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, Github, MessageCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Mail, MessageCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { trackEvent } from "@/components/analytics";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -22,6 +23,7 @@ export default function ContactPage() {
       });
       if (!res.ok) throw new Error();
       setStatus("sent");
+      trackEvent("contact_form_sent");
       setName("");
       setEmail("");
       setMessage("");
@@ -108,10 +110,6 @@ export default function ContactPage() {
           <a href="mailto:hi@myfeed.space" className="flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-text/20 transition-all">
             <Mail className="h-4 w-4 text-text-muted" />
             <span className="text-sm text-text-muted">hi@myfeed.space</span>
-          </a>
-          <a href="https://github.com/fainir/feedbot/issues" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-border bg-bg-card hover:border-text/20 transition-all">
-            <Github className="h-4 w-4 text-text-muted" />
-            <span className="text-sm text-text-muted">GitHub Issues</span>
           </a>
         </div>
 

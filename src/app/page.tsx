@@ -201,6 +201,7 @@ export default function ForYouPage() {
   };
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
+    trackEvent("article_reaction", { reaction, feed: "for-you" });
     if (!user) { toast("Sign up to save your preferences", "info"); return; }
     const prev = userReactions[feedItemId];
     setUserReactions((r) => { const next = { ...r }; if (next[feedItemId] === reaction) delete next[feedItemId]; else next[feedItemId] = reaction; return next; });
@@ -233,6 +234,7 @@ export default function ForYouPage() {
 
   const handleHeroSubmit = useCallback(() => {
     const prompt = newPrompt.trim();
+    trackEvent("hero_create_feed", { has_prompt: !!prompt, logged_in: !!user });
     if (!prompt) {
       setShowNewFeed(true);
       return;
@@ -326,7 +328,7 @@ export default function ForYouPage() {
               <Rss className="h-4 w-4" /> My Feed
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={() => { setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
+              <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               {user ? (
@@ -454,7 +456,7 @@ export default function ForYouPage() {
                       <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
                     </div>
                   ) : null}
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: "for-you" })}>
                     {!ytId && hasImage && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
