@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { createClient } from "@/lib/supabase-browser";
 
 declare global {
   interface Window {
@@ -10,6 +11,8 @@ declare global {
     mixpanel: {
       track: (event: string, props?: Record<string, unknown>) => void;
       identify: (id: string) => void;
+      reset: () => void;
+      register: (props: Record<string, unknown>) => void;
       people: { set: (props: Record<string, unknown>) => void };
       init: (token: string, config?: Record<string, unknown>) => void;
     };
@@ -31,6 +34,38 @@ export function Analytics() {
       window.mixpanel.track("Page View", { path: pathname });
     }
   }, [pathname]);
+
+  // Identify user to Mixpanel on mount + auth changes so events tie to user_id not $device
+  useEffect(() => {
+    if (!MIXPANEL_TOKEN) return;
+    const supabase = createClient();
+
+    const applyIdentity = (user: { id: string; email?: string | null; created_at?: string } | null) => {
+      if (!window.mixpanel) return;
+      if (user) {
+        window.mixpanel.identify(user.id);
+        window.mixpanel.people.set({
+          $email: user.email || undefined,
+          $created: user.created_at || undefined,
+          user_id: user.id,
+        });
+        window.mixpanel.register({ user_type: "signed_in", user_id: user.id });
+      } else {
+        window.mixpanel.register({ user_type: "guest" });
+      }
+    };
+
+    supabase.auth.getUser().then(({ data }) => applyIdentity(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        window.mixpanel?.reset();
+        window.mixpanel?.register({ user_type: "guest" });
+      } else if (session?.user) {
+        applyIdentity(session.user);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <>

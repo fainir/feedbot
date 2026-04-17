@@ -48,12 +48,13 @@ function LoginContent() {
       }
       trackEvent("signup", { method: "email", has_prompt: !!pendingPrompt });
       // Auto-login
-      const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
       if (loginErr) {
         setMessage("Account created! You can now log in.");
         setLoading(false);
         return;
       }
+      if (loginData.user) identifyUser(loginData.user.id, { $email: loginData.user.email, signup_source: pendingPrompt ? "prompt" : "direct" });
       // If there's a pending prompt, create the feed and redirect to it
       if (pendingPrompt) {
         try {
@@ -90,12 +91,13 @@ function LoginContent() {
       window.location.href = "/dashboard";
     } else {
       trackEvent("login", { method: "email" });
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message);
         setLoading(false);
         return;
       }
+      if (data.user) identifyUser(data.user.id, { $email: data.user.email });
       window.location.href = "/dashboard";
     }
   }
