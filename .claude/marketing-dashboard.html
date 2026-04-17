@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyFeed Marketing Dashboard</title>
+  <style>
+    :root {
+      --bg: #fafaf9; --card: #ffffff; --hover: #f5f5f4; --border: #e7e5e4;
+      --text: #1c1917; --muted: #78716c; --accent: #0ea5e9;
+      --ok: #16a34a; --warn: #d97706; --danger: #dc2626; --info: #2563eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0c0a09; --card: #1c1917; --hover: #292524; --border: #292524;
+        --text: #fafaf9; --muted: #a8a29e; --accent: #38bdf8;
+        --ok: #4ade80; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+    header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-box { width: 32px; height: 32px; background: var(--text); color: var(--bg); border-radius: 8px; display: grid; place-items: center; font-weight: 800; letter-spacing: -0.04em; font-size: 11px; }
+    .logo-title { font-weight: 700; font-size: 14px; }
+    .logo-sub { font-size: 11px; color: var(--muted); }
+    .progress { font-size: 11px; color: var(--muted); }
+
+    /* Tabs */
+    nav.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+    nav.tabs::-webkit-scrollbar { display: none; }
+    nav.tabs button { background: none; border: none; color: var(--muted); padding: 10px 12px; font-size: 13px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+    nav.tabs button:hover { color: var(--text); }
+    nav.tabs button.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+    nav.tabs .badge { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* Pillar tagline */
+    .tagline { color: var(--muted); font-size: 13px; padding: 14px 0 4px; }
+
+    /* Task card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+    .card-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px; }
+    .caret { background: none; border: none; color: var(--muted); cursor: pointer; padding: 2px; border-radius: 4px; flex-shrink: 0; font-size: 12px; margin-top: 2px; }
+    .caret:hover { background: var(--hover); color: var(--text); }
+    .card-body { flex: 1; min-width: 0; }
+    .card-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card-title { font-size: 14px; font-weight: 600; margin: 0; }
+    .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--hover); color: var(--muted); white-space: nowrap; }
+    .pill.status-scheduled { background: color-mix(in srgb, var(--info) 15%, transparent); color: var(--info); border-color: color-mix(in srgb, var(--info) 30%, transparent); }
+    .pill.status-doing { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+    .pill.status-done { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+    .pill.status-blocked { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+    .meta { font-size: 11px; color: var(--muted); }
+    .why { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+    .card-meta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+    .status-select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 12px; color: var(--text); font-family: inherit; cursor: pointer; flex-shrink: 0; }
+
+    /* Expanded body */
+    .card-content { border-top: 1px solid var(--border); padding: 14px; background: color-mix(in srgb, var(--bg) 40%, transparent); display: none; }
+    .card.open .card-content { display: block; }
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; }
+    .copy-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 12px; cursor: pointer; font-family: inherit; }
+    .copy-btn:hover { background: var(--hover); }
+    pre.copy { white-space: pre-wrap; word-break: break-word; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; font-size: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 0; line-height: 1.6; }
+    ul.assets { margin: 0; padding-left: 16px; font-size: 12px; }
+    ul.assets li { margin: 4px 0; }
+    .link-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); text-decoration: none; font-size: 12px; margin-right: 6px; margin-top: 6px; }
+    .link-btn:hover { background: var(--hover); }
+    .block { margin-top: 12px; }
+
+    /* Empty state */
+    .empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 640px) {
+      .container { padding: 0 12px; }
+      nav.tabs button { padding: 10px 10px; font-size: 12px; }
+      .card-header { padding: 12px; gap: 8px; }
+      .card-content { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-row">
+      <div class="logo">
+        <div class="logo-box">MF</div>
+        <div>
+          <div class="logo-title">✨ Marketing</div>
+          <div class="logo-sub" id="progress-label">0/0 tasks complete · local-only</div>
+        </div>
+      </div>
+      <div class="progress">
+        <a class="link-btn" href="https://myfeed.space" target="_blank" rel="noreferrer">myfeed.space ↗</a>
+      </div>
+    </div>
+    <div class="container">
+      <nav class="tabs" id="tabs"></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <p class="tagline" id="tagline"></p>
+    <div id="tasks"></div>
+  </main>
+
+  <!-- MARKETING_DATA_START -->
+  <script id="marketing-data" type="application/json">
+  {
+    "pillars": {
+      "launch":       { "label": "Launch Week", "icon": "🚀", "tagline": "One-shot distribution plays. Do these in a concentrated 5–7 day sprint." },
+      "social":       { "label": "Social Cadence", "icon": "📣", "tagline": "Repeatable build-in-public rhythm on X + LinkedIn." },
+      "content":      { "label": "Content & SEO", "icon": "✍️", "tagline": "Evergreen articles that drive search traffic for months." },
+      "communities":  { "label": "Communities", "icon": "🫂", "tagline": "Show up where your people already hang out. Contribute first, promote second." },
+      "onboarding":   { "label": "First-Time Experience", "icon": "🎯", "tagline": "Fix the site so the first 30 seconds sell themselves." },
+      "metrics":      { "label": "Metrics", "icon": "📊", "tagline": "Track what's actually working — open your live dashboards below." }
+    },
+    "tasks": [
+      { "id": "launch-assets", "pillar": "launch", "title": "Ship pre-launch assets", "why": "Every channel below needs the same 4 assets. Front-load this or you'll redo work.", "channel": "Assets", "effort": "M", "scheduled": "Day -2", "assets": [ { "label": "Hero screenshot (1200x630 PNG)", "note": "Clean homepage with a prompt visible in the banner" }, { "label": "Demo GIF (15–30s)", "note": "Type prompt → click Create → feed appears. Kap or Cleanshot X." }, { "label": "1-min Loom walkthrough", "note": "For PH / YC / first commenters. Unlisted." }, { "label": "OG image", "note": "Already exists — verify renders on X/LinkedIn/WhatsApp preview" } ], "metric": "All 4 assets in Drive, tested on a real preview" },
+
+      { "id": "launch-ph", "pillar": "launch", "title": "Product Hunt launch", "why": "Still the highest-leverage single event. 48-hour window, designed for exactly this. Tuesday/Wednesday — avoid Monday, Friday, weekends.", "channel": "Product Hunt", "effort": "L", "scheduled": "Day 1 — Tuesday 12:01 AM PST", "copy": "Tagline: MyFeed — Create custom AI feeds from any prompt\n\nDescription:\nTired of algorithmic feeds and Feedly clutter? Describe a topic in plain English (\"React & Next.js tutorials\", \"SpaceX launches\", \"AI startup funding\") and MyFeed scans 1,000+ sources — Reddit, RSS, Medium, DEV, Bloomberg, YouTube — to build you a custom feed. No login required to browse. Delivered to your inbox daily if you want.\n\nWhat's different:\n• Prompt-to-feed: no source-picking, just describe the topic\n• Guest mode: browse immediately, sign up later\n• Quality over recency: AI scores every article, junk gets filtered\n• Email digests: daily or weekly, pick the feeds you want\n\nFree while I figure out what people want. Would love feedback.\n\nFirst maker comment (post immediately after launch):\nHey PH! 👋 I built MyFeed because I kept opening Feedly in the morning, scrolling past 80% junk, and closing it. Every feed reader assumes you know which sources you want to follow. But what I actually want is a topic — \"AI tools\", \"Python tutorials\" — and I want someone to find the good stuff for me.\n\nSo MyFeed takes a prompt, searches across 1,000+ sources (RSS, Reddit, Medium, YouTube, news), and scores each article with an LLM for quality. You get a feed with only the 6+/10 posts. I use it every morning — it's replaced my Twitter/Feedly/HN morning loop.\n\nThe guest experience is important to me: you can see the magic in 10 seconds without a signup wall.\n\nHappy to answer anything — about the AI pipeline, the sources, the email setup, anything. 🙏", "links": [ { "label": "Submit here", "url": "https://www.producthunt.com/posts/new" }, { "label": "PH launch checklist", "url": "https://www.producthunt.com/launch" } ], "metric": "Top 5 = 1,000+ visits. Top 10 = ~400 visits." },
+
+      { "id": "launch-hn", "pillar": "launch", "title": "Show HN post", "why": "HN delivers technical users who give honest feedback and often become power users. Show HN is specifically for launches. Post Tuesday or Wednesday morning PT.", "channel": "Hacker News", "effort": "M", "scheduled": "Day 1 — Tuesday 9:00 AM PST", "copy": "Title: Show HN: MyFeed – Create custom RSS-style feeds from a plain-English prompt\n\nBody (first comment, as OP):\nHi HN — I built MyFeed because every feed reader I tried assumed I already knew which sources I wanted to follow. What I actually wanted was to describe a topic and get the good posts from anywhere relevant.\n\nHow it works:\n1. You type a prompt like \"Rust systems programming\"\n2. We scan ~1,000 sources (RSS feeds, Reddit, DEV, Medium, Bloomberg, YouTube channels, Hacker News)\n3. Each article is scored with gpt-5-nano (cheap, ~$0.05/1M tokens) for quality + relevance\n4. Junk, ads, engagement-bait, non-English, and below-threshold posts are filtered out\n5. You see the 6+/10 results, ordered by relevance + recency\n\nYou can browse as a guest — no signup wall. Sign up to save feeds and get email digests.\n\nStack: Next.js 15, Supabase, OpenAI Responses API with structured JSON schema, hosted on Railway. Classification is single-pass (not a pipeline) so cost stays under $3/mo even at current scale.\n\nI'd really value feedback on three things:\n1. The first-30-seconds experience — is the value clear?\n2. Feed quality for any prompt you try (please share what you typed and what you got)\n3. Anything you'd want that's obviously missing\n\nhttps://myfeed.space", "links": [ { "label": "Submit", "url": "https://news.ycombinator.com/submit" } ], "metric": "Front page (>30 points in 2h) → 3,000+ visits" },
+
+      { "id": "launch-ih", "pillar": "launch", "title": "Indie Hackers post", "why": "The IH audience converts — they're builders who try products and share. Post a build-story, not a pitch.", "channel": "Indie Hackers", "effort": "M", "scheduled": "Day 2 — Wednesday 10:00 AM EST", "copy": "Title: I built an AI feed reader in 3 months — what I'd do differently\n\nBody:\nI just launched MyFeed (https://myfeed.space) — a feed reader where you type a prompt and get a curated feed from 1,000+ sources. Wanted to share what worked and what didn't.\n\nWhat worked:\n• Starting with a 2-pass AI pipeline (classify then re-rank) → scrapping it for single-pass with JSON schema. 674 lines of code → 180 lines. 11 API calls → 1–5. Cost dropped from ~$15/mo projected to $0.50–3/mo actual.\n• Guest-first UX. No signup wall. Sign-ups went up, not down, because people saw value before committing.\n• Using gpt-5-nano for scoring. Cheap enough to run on every article, structured output means no parsing errors.\n\nWhat didn't:\n• Trying to auto-discover sources via web search. Too noisy, too expensive.\n• Over-engineering the classifier before seeing real data.\n• Waiting to add analytics until \"after launch\". I shipped without Mixpanel and had no idea what was working for 2 weeks.\n\nIf you try it, drop your prompt + result below — I'll use your feedback to prioritize the next week of work.\n\nHappy to share more technical details on the pipeline, the email digest system (Resend), or the stack. AMA.", "links": [ { "label": "Submit post", "url": "https://www.indiehackers.com/post/new" } ], "metric": "50+ upvotes, 10+ comments, 200+ clicks" },
+
+      { "id": "launch-x-thread", "pillar": "launch", "title": "Launch thread on X", "why": "Thread format lets you tell a story. Pin to profile for 2 weeks.", "channel": "X (Twitter)", "effort": "M", "scheduled": "Day 1 — 9:30 AM local", "copy": "Tweet 1 (hook):\nlaunching MyFeed today 🎉\n\ndescribe a topic in plain english.\nget a curated feed from 1,000+ sources.\nno signup to browse.\n\nmyfeed.space\n\n[attach demo GIF]\n\nTweet 2:\nevery feed reader assumes you know the sources you want.\n\nbut I don't want to maintain an OPML file.\nI want to say \"AI tools\" and get the good stuff.\n\nso MyFeed takes a prompt → LLM scores every article across Reddit/RSS/DEV/Medium/YouTube → only 6+/10 posts get through.\n\nTweet 3:\nunder the hood it's cheap:\n• gpt-5-nano ($0.05/1M tokens)\n• single-pass classify w/ JSON schema\n• 180 lines of TS\n\ncosts $0.50–3/mo total right now.\n\noriginally I had a 2-pass pipeline (674 lines, 11 API calls). scrapped it. simple wins.\n\nTweet 4:\nthe thing I'm most proud of: the guest experience.\n\nyou hit myfeed.space and you see 15 curated feeds populated with fresh posts. no \"create an account to continue\". the value is immediately visible.\n\nsignups go UP, not down, when you remove the wall.\n\nTweet 5:\nwould love your feedback, especially:\n• the first-30-seconds experience\n• feed quality for a prompt you care about\n• anything obviously missing\n\nreply/DM with your prompt + result — I'll iterate on real usage.\n\nmyfeed.space\n\nTweet 6 (pin this):\nmaking MyFeed is a build-in-public project — I'll keep sharing:\n• what's actually working post-launch\n• pipeline iterations\n• user-requested features\n• the real metrics (signups, feeds created, email opt-ins, cost)\n\nfollow along if you like that kind of thing.", "metric": "500+ impressions per tweet, 30+ clicks" },
+
+      { "id": "launch-linkedin", "pillar": "launch", "title": "LinkedIn launch post", "why": "Different audience than X — more corporate, fewer builders, but higher trust. Tell the 'why' story.", "channel": "LinkedIn", "effort": "S", "scheduled": "Day 1 — 11:00 AM local", "copy": "Launching MyFeed today — a feed reader where you describe a topic and get a curated feed from 1,000+ sources.\n\nThe problem I kept hitting:\n- Feedly wanted me to manually pick RSS feeds.\n- Twitter's algorithm showed me what it wanted me to see.\n- Newsletter subscriptions piled up unread.\n\nWhat I actually wanted: \"show me the 10 best posts this week about [topic].\"\n\nSo MyFeed does that.\n\nYou type \"AI tools\" or \"Python web dev\" or \"SpaceX launches\" and it scans Reddit, DEV, Medium, blogs, Bloomberg, YouTube channels, and more. Each article is scored by an LLM for quality + relevance. Only 6+/10 posts get through.\n\nNo signup needed to browse. Daily email digest if you want.\n\nFree while I figure out what people actually need.\n\n🔗 myfeed.space\n\nIf you try it, I'd genuinely value:\n— your prompt and whether the result was good\n— what feels slow or confusing\n— what's missing that would make you come back tomorrow\n\nWill share build-in-public lessons as I go.", "metric": "200+ impressions, 10+ clicks, 2+ meaningful comments" },
+
+      { "id": "launch-reddit-sideproject", "pillar": "launch", "title": "r/SideProject launch", "why": "Most SideProject-friendly subreddit. Clear rules: show don't tell, include a demo.", "channel": "r/SideProject", "effort": "S", "scheduled": "Day 2", "copy": "Title: I built MyFeed — type a prompt, get a curated feed from 1,000+ sources (no signup to try)\n\nBody:\nHey r/SideProject 👋\n\nI made MyFeed because every RSS reader assumed I already knew which sources I wanted. I just wanted to describe a topic and get the good stuff.\n\nType \"Python web dev tutorials\" or \"startup funding rounds\" or \"AI tools\" — it scans Reddit, DEV, Medium, RSS, YouTube channels, Bloomberg, and scores each article with an LLM for quality. Only 6+/10 posts get through.\n\nNo signup needed to browse. Email digest if you want.\n\nDemo: [paste GIF]\n\nStack: Next.js 15, Supabase, OpenAI gpt-5-nano, Railway. Total cost so far: ~$3/mo.\n\n🔗 https://myfeed.space\n\nWould love to hear:\n• What prompt you tried and whether the result was good\n• What's missing\n• What feels slow\n\nI'll reply to every comment.", "links": [ { "label": "r/SideProject rules", "url": "https://www.reddit.com/r/SideProject/about/rules" } ], "metric": "30+ upvotes, 10+ comments" },
+
+      { "id": "launch-reddit-interneticbeautiful", "pillar": "launch", "title": "r/InternetIsBeautiful", "why": "1.7M members. Hits front page of Reddit if it sticks.", "channel": "r/InternetIsBeautiful", "effort": "S", "scheduled": "Day 3", "copy": "Title: MyFeed — describe a topic in English, get a curated feed built from 1,000+ sources\n\nBody (short, per subreddit norms):\nNo signup to browse. AI scores each article, junk is filtered out. Free.\n\nTry a prompt → myfeed.space\n\n[demo GIF]", "links": [ { "label": "Rules", "url": "https://www.reddit.com/r/InternetIsBeautiful/about/rules" } ], "metric": "100+ upvotes = front page consideration" },
+
+      { "id": "launch-reddit-rss", "pillar": "launch", "title": "r/rss + r/selfhosted", "why": "Small but specifically interested audiences. High conversion rate.", "channel": "r/rss, r/selfhosted, r/Feedly", "effort": "S", "scheduled": "Day 3–4", "copy": "For r/rss:\nTitle: MyFeed — prompt-based alternative to manually curating RSS feeds\n\nBody:\nBuilt this because I kept bouncing off Feedly/Inoreader setup (picking feeds, OPML, folders). Wanted to just describe what I care about.\n\nYou type \"AI tools\" or \"homelab\" or \"self-hosted apps\" and it aggregates from 1,000+ RSS feeds + Reddit + Medium + DEV + YouTube, with LLM quality filtering.\n\nDoesn't replace an RSS reader if you love manual curation — it's for the \"I just want the good stuff about X\" use case.\n\nmyfeed.space — free, no signup to browse. Feedback welcome.\n\nFor r/selfhosted:\nTitle: MyFeed (not self-hosted, but FYI) — AI-curated feeds, might replace the \"discovery\" side of your setup\n\nBody:\nDisclaimer: hosted product, not self-hostable yet. If that's a dealbreaker, skip.\n\nIf you use Miniflux/Tiny Tiny RSS etc. for the feeds you KNOW you want, MyFeed might fit for the \"help me find new stuff on topic X\" use case. You describe a topic, LLM aggregates + filters from 1,000+ sources.\n\nWould self-hostable be interesting? Trying to gauge demand before investing.\n\nmyfeed.space", "metric": "20+ upvotes each, 5+ real-feedback comments" },
+
+      { "id": "launch-hn-ask", "pillar": "launch", "title": "Follow-up Ask HN (Day 7)", "why": "After first week, post an 'Ask HN' — drives engagement, doesn't feel spammy, establishes you as a thoughtful builder.", "channel": "Hacker News", "effort": "S", "scheduled": "Day 7", "copy": "Title: Ask HN: what do you actually use instead of algorithmic feeds in 2026?\n\nBody:\nI've been building a feed reader (MyFeed — won't spam the link, it's in my profile) and the hardest thing is understanding how people actually consume information now. Twitter/X is algorithmic. Feedly/RSS requires manual curation most people won't do. Newsletters pile up. TikTok is a scroll trap.\n\nFor those of you who've actively rejected algorithmic feeds — what do you use instead, and why does it work? Especially curious about:\n- How you discover new sources\n- How you filter signal from noise without an algorithm\n- What trade-offs you made", "metric": "Front page = 500+ visits even without direct link" },
+
+      { "id": "social-bio", "pillar": "social", "title": "Update X + LinkedIn bios to build-in-public mode", "why": "Anyone who lands on your profile from a launch post should immediately understand what you're doing and why to follow.", "channel": "X, LinkedIn", "effort": "S", "scheduled": "Before launch", "copy": "X bio:\nbuilding MyFeed — AI feed reader where you type a prompt, get the good stuff from 1,000+ sources. build-in-public 🛠️ myfeed.space\n\nPinned tweet: launch thread\n\nLinkedIn headline:\nBuilding MyFeed — an AI feed reader for people tired of algorithmic slop | Ex-[your past role]\n\nLinkedIn about:\nI'm building MyFeed (myfeed.space) — a feed reader where you describe a topic and get a curated feed from 1,000+ sources, scored for quality by an LLM. Guest-first UX. Email digests. $0.50–3/mo to run.\n\nBackground: [your 2-sentence career history, relevant to why you can build this].\n\nWhy I'm building in public: faster feedback, more trust, forces me to ship real things. Following along if you want to see what happens when a solo founder tries to out-ship a category.", "metric": "Profile visits post-launch convert to site" },
+
+      { "id": "social-cadence", "pillar": "social", "title": "Daily build-in-public post cadence", "why": "1 post/day on X, 2/week on LinkedIn. This is the job for the next 90 days. Pick 3 post types and rotate.", "channel": "X, LinkedIn", "effort": "M", "scheduled": "Every day", "copy": "=== THE 5 POST TYPES ===\n\nType 1: Build update (daily)\n\"shipped [thing] today. [screenshot/gif].\nwhat it does: [one line]\nwhy it matters: [one line]\nwhat's next: [one line]\"\n\nType 2: Metric share (weekly, Fridays)\n\"week [N] of building MyFeed in public:\n• signups: [x]\n• feeds created: [y]\n• email opt-ins: [z]\n• cost: $[c]/mo\nwhat I'm changing next week: [thing]\"\n\nType 3: Mistake / lesson (weekly)\n\"I had a [2-pass LLM pipeline / X / Y] for 2 weeks.\nit was 674 lines.\nreplaced with single-pass + json schema → 180 lines, 20x cheaper.\nlesson: [one line]\"\n\nType 4: Screenshot + story (2x/week)\nScreenshot of a real feature, 2–3 sentences on why it exists, what problem it solves, one tweet-sized lesson.\n\nType 5: Reply-guy value (daily, passive)\nSet 3 X lists: \"feed readers\", \"indie builders\", \"AI tools\". Reply thoughtfully to 3 posts a day. No \"check out my product\" — just be useful. Product link in bio does the work.\n\n=== 30 DRAFT POSTS ===\n\nDay 1: [pinned launch thread]\nDay 2: \"day 2 post-launch. [X] signups, [Y] feeds created. biggest surprise: [one observation from Mixpanel]\"\nDay 3: \"I kept getting spam/SEO-bait in the feed. added this prompt line to the classifier: 'skip entirely: personal diaries, SEO bait, affiliate lists'. fixed 80% of it. [screenshot before/after]\"\nDay 4: \"turns out guest-mode is doing most of the work. [X]% of visitors create a feed before logging in. removing the signup wall was the best decision.\"\nDay 5: \"email digest code path — 40 lines of TS + Resend + a supabase cron. shipping emails is so much simpler than it used to be.\"\nDay 6: \"cost breakdown week 1: $[amount]. mostly openai classification. gpt-5-nano is stupidly cheap.\"\nDay 7: [weekly metrics post]\nDay 15: \"halfway through month 1. what I learned: [3 bullets]. what I'm doing next: [3 bullets].\"\nDay 22: \"asked friends to try MyFeed. 3 of them couldn't figure out what to type. added a 'popular prompts' row under the input. 80% of new feeds now come from those chips.\"\nDay 30: retrospective thread", "metric": "Follower growth 50/week, 1 post >500 impressions weekly" },
+
+      { "id": "social-weekly-digest", "pillar": "social", "title": "Post weekly metric digests publicly (Fridays)", "why": "Public metrics force honesty, attract fellow builders, and give you a recurring content hook.", "channel": "X, LinkedIn", "effort": "S", "scheduled": "Every Friday", "copy": "Week [N] building MyFeed in public 📊\n\nsignups: [x] (+y from last week)\nfeeds created: [x]\ndaily active: [x]\nemail opt-ins: [x]\ntop feed: [name]\ncost: $[x]/mo\n\nwhat surprised me: [one sentence]\nwhat I'm changing: [one sentence]\n\nmyfeed.space", "metric": "Reply rate climbs as audience grows" },
+
+      { "id": "social-reply-guy", "pillar": "social", "title": "3 thoughtful replies/day in your niche", "why": "Unnatural-looking promotional posts fail. Thoughtful replies under bigger accounts expose you to their audience without feeling like ads.", "channel": "X", "effort": "S", "scheduled": "Daily, 15 min/day", "copy": "Target accounts (replace with your actual niche):\n• @rauchg, @leeerob (Next.js)\n• @ArvidKahl, @levelsio (indie SaaS)\n• @simonw, @marvinvon (AI tooling)\n• @feedly, @inoreader (competitors — reply with nuance, not attacks)\n\nRules:\n1. Reply only if you have a genuine thought. No \"great post!\"\n2. Share a concrete experience from building MyFeed when relevant.\n3. Never link your product in a reply. Your bio does that.\n4. Screenshot/quote-tweet big posts with your own angle.\n\nBad: \"Great point! Check out MyFeed at myfeed.space\"\nGood: \"This resonates — I hit the same wall building MyFeed. My solution was [specific thing]. Still not sure it's right because [honest doubt].\"", "metric": "2+ new followers per day from replies" },
+
+      { "id": "content-feedly-alternative", "pillar": "content", "title": "Blog: 'Feedly alternatives in 2026: honest comparison'", "why": "'Feedly alternative' is a high-intent search query. A fair comparison article ranks well and converts.", "channel": "Blog + myfeed.space/blog", "effort": "L", "scheduled": "Week 1 post-launch", "copy": "# Feedly alternatives in 2026: honest comparison (written by the founder of one of them)\n\n## TL;DR\nIf you love manual curation, stick with Feedly or move to Inoreader. If you want to describe a topic and have an AI aggregate for you, MyFeed is probably what you want. Skip Reeder if you need cross-device sync without iCloud.\n\n## What Feedly does well\n- Manual curation is unbeatable if you know your sources.\n- Pro tier (AI summaries) is legit.\n- OPML import is still the gold standard.\n\n## Where Feedly falls short for me\n- Source picking is a barrier for new users.\n- AI features are locked behind Pro.\n- Mobile reading experience feels dated.\n\n## Alternatives worth trying\n| Tool | Best for | Trade-off |\n| Inoreader | Power users who want filters | Complex UI |\n| Reeder | Apple ecosystem readers | Apple-only sync |\n| NetNewsWire | Free + open-source fans | No cloud sync |\n| Miniflux | Self-hosters | Requires server |\n| MyFeed | \"Just describe what I want\" users | Not self-hostable (yet) |\n\n## When MyFeed is the right pick\n(Describe your product honestly — who it's NOT for too.)\n\n## My biased conclusion\n(End with a link and a \"try in 30 seconds, no signup\" CTA.)\n\nWord count target: 1,800–2,500.\nPublish on myfeed.space/blog/feedly-alternatives-2026.\nSchema.org markup for comparison table.\nInternal links to product pages.", "metric": "Rank top 10 for 'feedly alternative' in 3 months, 500+ visits/mo" },
+
+      { "id": "content-how-i-built", "pillar": "content", "title": "Technical post: 'How I built MyFeed with 180 lines of TS and $3/mo'", "why": "HN/Lobsters/Reddit love detailed technical writeups. Builds credibility, drives tech-forward users who give feedback.", "channel": "Blog + HN/Lobsters", "effort": "L", "scheduled": "Week 2", "copy": "Hook: I replaced a 674-line 2-pass AI classifier with 180 lines and cut costs 20x. Here's how.\n\nOutline:\n1. The problem (matching articles to user feed prompts)\n2. Attempt #1: 2-pass pipeline (classify → re-rank). Why it was wrong.\n3. Attempt #2: single-pass with JSON schema. Why it works.\n4. The cost math (gpt-5-nano, batch sizes, skip-already-classified)\n5. What I'd do differently\n\nInclude: code snippets, actual cost numbers, Mixpanel charts.\nPublish on Dev.to + myfeed.space/blog + post to HN as Show HN style.", "metric": "100+ HN points or front page Lobsters" },
+
+      { "id": "content-seo-pages", "pillar": "content", "title": "Programmatic SEO: /feeds/[topic] pages", "why": "Every category feed has a URL. Optimize those for SEO. Scales to hundreds of long-tail queries.", "channel": "myfeed.space", "effort": "M", "scheduled": "Week 2", "copy": "Implementation:\n- Each feed page (/ai, /tech, /startups, etc.) gets:\n  - <title>: \"AI news aggregator — curated by MyFeed\"\n  - <meta description>: \"500+ AI news articles curated daily from Reddit, DEV, Medium, Bloomberg, YouTube. Free, no signup.\"\n  - <h1>: \"AI & ML\"\n  - JSON-LD ItemList schema with top 10 articles\n- Sitemap.xml lists every public feed slug\n- Internal links from blog posts to relevant feeds\n- Create 20 more feeds for long-tail queries: /react, /python, /ml, /devops, /crypto-news, /climate, etc.\n\nDon't go overboard — 30 well-optimized pages > 300 thin pages.", "metric": "+200 indexed pages in GSC, 100+ clicks/day from organic in 90 days" },
+
+      { "id": "content-comparison", "pillar": "content", "title": "Comparison pages (vs Feedly, vs Inoreader, vs Reeder)", "why": "High commercial intent. People searching 'MyFeed vs Feedly' are evaluating. Give them an honest table.", "channel": "myfeed.space/compare", "effort": "M", "scheduled": "Week 3", "copy": "Pages:\n- /compare/myfeed-vs-feedly\n- /compare/myfeed-vs-inoreader\n- /compare/myfeed-vs-reeder\n\nTemplate per page:\n- H1: \"MyFeed vs [Competitor]: honest comparison (2026)\"\n- When to pick each (honest)\n- Feature comparison table\n- Pricing comparison\n- \"Try MyFeed free\" CTA", "metric": "Rank page 1 for each comparison in 6 months" },
+
+      { "id": "content-youtube", "pillar": "content", "title": "YouTube: 2-min demo video", "why": "A real video on the landing page lifts conversion. YouTube doubles as a discovery channel.", "channel": "YouTube + hero", "effort": "M", "scheduled": "Week 1", "copy": "Script (2 min):\n0:00 — problem (Feedly clutter, Twitter algorithm, newsletter piles)\n0:20 — demo: type prompt, get feed\n0:50 — how it works (sources, LLM scoring, guest mode)\n1:20 — email digest\n1:40 — \"try at myfeed.space, no signup\"\n2:00 — end card: subscribe for build-in-public updates\n\nEmbed on homepage ABOVE the fold (replace static screenshot).\nTitle: \"MyFeed demo — AI feed reader from a prompt (60 seconds)\"\nDescription: lots of keywords, link to site, link to PH/HN launches.", "metric": "1,000 views in first month. Homepage conversion +10–20%" },
+
+      { "id": "community-indie-discord", "pillar": "communities", "title": "Join 5 active indie/SaaS Discord servers", "why": "More intimate than Twitter. Regular presence = people root for you. Contribute before you pitch.", "channel": "Discord", "effort": "S", "scheduled": "Week 1", "copy": "Join:\n• Indie Hackers Discord (official)\n• MegaMaker (Justin Jackson's community — paid but worth it)\n• WIP Chat (need to apply)\n• Starter Story Discord\n• Buildspace (if still active)\n\nRules:\n1. Lurk 3 days. Get the vibe. Who's helpful, who's a spam bot.\n2. Introduce yourself in #introductions with one paragraph. Link to product only if asked.\n3. Answer 5 questions before asking any. Screenshot wins → post in #wins once a week.\n4. Never paste launch links cold. Ask if a channel is OK first.", "metric": "30+ meaningful interactions/week" },
+
+      { "id": "community-newsletters", "pillar": "communities", "title": "Get featured in indie newsletters", "why": "Each feature = 200–5,000 eyeballs from people actively looking for products to try.", "channel": "Newsletter submissions", "effort": "M", "scheduled": "Weeks 1–4 rolling", "copy": "Submit to (free submission forms, no payment needed):\n• Hacker Newsletter (hackernewsletter.com)\n• Refind weekly (refind.com)\n• Indie Hackers Weekly\n• Sidebar.io (design/dev)\n• BetaList (betalist.com)\n• Savvycal \"Tools we love\" if applicable\n• Ben's Bites (AI newsletter)\n• Product Hunt Daily Digest (automatic if you launch)\n• The Hustle Finds\n• Growth.Design newsletter\n\nPaid (consider ONLY after you have traction):\n• Morning Brew Recommends\n• TLDR Newsletter sponsorships\n• Refind boosts\n\nTemplate for each submission:\nName: MyFeed\nTagline: Create custom AI feeds from any prompt\nURL: https://myfeed.space\nDescription: [50–100 words, tailored to each newsletter's audience]\nDemo: [link to Loom]\nWhy now: \"Launched on PH on [date], got to #[rank]\"", "metric": "Featured in 3+ newsletters in month 1" },
+
+      { "id": "community-awesome", "pillar": "communities", "title": "Add MyFeed to relevant GitHub 'awesome' lists", "why": "Evergreen traffic. Some awesome lists have 30k+ stars.", "channel": "GitHub PRs", "effort": "S", "scheduled": "Week 2", "copy": "Search for and submit PRs to:\n• awesome-rss-readers\n• awesome-feed-readers\n• awesome-saas\n• awesome-web-tools\n• awesome-ai-tools\n• awesome-productivity\n\nPR format:\nAdd line alphabetically: \"[MyFeed](https://myfeed.space) — AI-curated feeds from a plain-English prompt, free tier available.\"\n\nFollow contribution guidelines strictly. Some require a justification comment.", "metric": "5+ merged PRs in month 1" },
+
+      { "id": "community-reply-value", "pillar": "communities", "title": "Answer 'what feed reader should I use?' questions", "why": "Evergreen keyword on Quora, Reddit, StackExchange. One good answer ranks for years.", "channel": "Quora, Reddit, SE", "effort": "S", "scheduled": "Ongoing", "copy": "Search queries to set alerts for:\n• \"feedly alternative\"\n• \"best rss reader\"\n• \"ai feed reader\"\n• \"curated news app\"\n• \"news without algorithm\"\n\nTemplate answer:\n\"Depends on what you need:\n- Know your sources, want manual curation: Feedly/Inoreader.\n- Want to describe a topic and get the good stuff: MyFeed (I built this — myfeed.space). It's free and you don't need an account to try.\n- Apple ecosystem only: Reeder.\n- Self-host: Miniflux.\n\nIf you try MyFeed, drop a comment with your prompt and whether the result was good. Iterating on real feedback.\"", "metric": "1 answer/week, 5+ upvotes each" },
+
+      { "id": "community-influencers", "pillar": "communities", "title": "Reach out to 10 relevant micro-influencers", "why": "10k-follower accounts in your niche convert better than 500k celebrity accounts. DM with value, not asks.", "channel": "X, YouTube DMs, email", "effort": "M", "scheduled": "Week 2", "copy": "Targets (people who post about productivity / indie SaaS / tools):\n• Tech YouTubers who review tools (search \"feedly review\" on YT, filter recent)\n• Newsletter operators (~5k subs) in tech/AI\n• Reddit mods of r/rss, r/Feedly (they're power users)\n\nTemplate DM:\n\"Hey [name] — saw your post on [specific thing they made recently]. I built MyFeed, a prompt-based feed reader that might interest your audience. Won't pitch hard — just wanted to offer early access + my time if you want to cover it. Happy to be a source for any 'feed reader alternatives' piece too. Link: myfeed.space. No worries if not a fit.\"\n\n10 DMs → 2 replies → 1 feature = great ROI.", "metric": "1 micro-influencer feature in month 1" },
+
+      { "id": "onboard-popular-prompts", "pillar": "onboarding", "title": "Add 'popular prompts' chips below hero input", "why": "Biggest guest-experience improvement. Users see the input and freeze — they don't know what to type. Pre-filled examples solve this.", "channel": "Site", "effort": "S", "copy": "Design:\nUnder the \"Create my feed\" input, a horizontal scroll of chips:\n\"React + Next.js\" · \"AI tools\" · \"SpaceX\" · \"Python tutorials\" · \"Startup funding\" · \"Climate tech\" · \"Rust\" · \"Prompt engineering\"\n\nClicking a chip → fills input + auto-submits.\nTrack event: hero_prompt_chip_click { prompt }\n\nMeasurement:\n% of feed creations originated from a chip. If >50%, this was the right call.", "metric": "Hero → feed creation conversion up 30%+" },
+
+      { "id": "onboard-demo-video", "pillar": "onboarding", "title": "Embed 30s autoplaying demo above the fold", "why": "Landing copy tells, video shows. Autoplaying, muted, looping = best for showing the magic moment.", "channel": "Site", "effort": "M", "copy": "Implementation:\n- Record a 15–30s GIF/MP4: user types prompt → hits enter → feed appears.\n- Place it ABOVE the feed grid on the homepage.\n- Autoplay, muted, loop, no controls.\n- Mobile: smaller aspect, or hidden if it slows LCP.\n- Fallback static image for prefers-reduced-motion.\n\nTrack: hero_video_impression, hero_video_watch_complete", "metric": "Homepage → feed-create conversion up 15%+" },
+
+      { "id": "onboard-empty-state", "pillar": "onboarding", "title": "Fix empty-feed state with retry + prompt-tuning tips", "why": "If a new custom feed returns 0 articles in the first 30s, users bounce. Currently there's no guidance.", "channel": "Site — /my/[id]", "effort": "M", "copy": "Replace empty state with:\n- Spinner + \"Finding posts… usually takes 15–45s\"\n- Progress text: \"Scanning 1,000 sources…\"\n- If 0 results after 60s: \"No great matches yet. Your prompt might be too specific — try broadening it, e.g. 'Python web dev' instead of 'Django 5.1 async ORM patterns'.\"\n- Provide an \"Edit prompt\" button right in the empty state.\n- Show what was searched.", "metric": "Drop-off at first-feed-view cut in half" },
+
+      { "id": "onboard-signup-timing", "pillar": "onboarding", "title": "Soft signup prompt after 3 article interactions", "why": "Don't ask for signup until after value is received. After 3 likes/reactions, show a gentle inline card offering email digest.", "channel": "Site", "effort": "M", "copy": "Trigger: user has reacted/saved 3+ articles in a session.\nPlacement: inline card in the feed (not a modal).\nCopy: \"Enjoying this feed? Get it in your inbox daily. [Enter email + send me digests]\"\nOne field: email. One button. Auto-create account. Auto-enable digest.\nIf dismissed, don't show again for 7 days (localStorage + user id).\n\nTrack: soft_signup_shown, soft_signup_dismissed, soft_signup_completed", "metric": "30%+ of active sessions convert to email signup" },
+
+      { "id": "onboard-share", "pillar": "onboarding", "title": "Shareable feed URLs + 'Share this feed' CTA", "why": "A custom feed is a shareable artifact. 'Look at the feed I made for [topic]' is inherently viral.", "channel": "Site — /my/[id], feed page", "effort": "M", "copy": "Implementation:\n- When a custom feed is public-readable, add a Share button.\n- Share opens a sheet with: copy link, post to X (pre-filled tweet), post to LinkedIn.\n- Pre-filled tweet: \"I made a custom MyFeed for [prompt] — the AI curates the good stuff from 1,000+ sources. [link]\"\n\nAlso: make custom feeds public by default (owner can make private), so any shared link works without auth.", "metric": "5%+ of feed creations result in a shared link" },
+
+      { "id": "onboard-welcome-email", "pillar": "onboarding", "title": "Welcome email sequence", "why": "First 72 hours after signup is when retention is won or lost. A 3-email sequence dramatically improves D7 retention.", "channel": "Email — Resend", "effort": "M", "copy": "Email 1 (immediate):\nSubject: Welcome to MyFeed — your first feed is ready\nBody: \"Your [prompt] feed is live at [link]. Here's how to get the most out of it: [3 tips]. Reply to this email if you hit anything confusing — it goes to my personal inbox.\"\n\nEmail 2 (day 2):\nSubject: 3 prompts other people are loving right now\nBody: \"The top community-created feeds this week: [3 examples with links]. Try any of them — no extra signup needed.\"\n\nEmail 3 (day 5):\nSubject: Want daily digests? I can send one.\nBody: \"You haven't enabled email digests yet. Takes one click: [CTA]. You can unsubscribe anytime.\"\n\nBuild with Resend + Supabase cron (you already have both).\nA/B test subject lines.", "metric": "D7 retention up to 35%+" },
+
+      { "id": "onboard-landing-rewrite", "pillar": "onboarding", "title": "Rewrite landing headline for clarity", "why": "'Your Internet, Curated by AI' is poetic but vague. 'Create custom AI feeds from any topic' is clearer. Test both.", "channel": "Site", "effort": "S", "copy": "Test variants (split-test with simple localStorage-bucketed users):\nA (current): \"Your Internet, Curated by AI\"\nB: \"Create custom feeds from any topic — AI does the curation\"\nC: \"Describe a topic, get a curated feed from 1,000+ sources\"\nD: \"The feed reader where you type a prompt instead of picking sources\"\n\nWinner = whichever has highest CTR on \"Create my feed\".\nTrack: headline_variant_seen, headline_variant_converted", "metric": "Hero CTR +20%" },
+
+      { "id": "onboard-proof", "pillar": "onboarding", "title": "Add social proof ('join N others reading')", "why": "If you have ANY signups at all, surface the number. Even 'Used by 143 people this week' beats 'Free to try'.", "channel": "Site — hero", "effort": "S", "copy": "Placement: small line under the create-feed banner.\nDynamic (read from Supabase daily aggregate):\n\"Join 143 people reading custom feeds this week\"\n\"2,104 articles curated in the last 24 hours\"\n\"Top feed today: AI & ML (412 readers)\"\n\nOr static trust badges:\n• \"As seen on Product Hunt\" (after PH launch)\n• \"Featured in [newsletter]\" (after feature)\n\nAvoid fake numbers. Real ones — even small — build trust.", "metric": "Intangible but lifts trust" },
+
+      { "id": "metrics-funnels", "pillar": "metrics", "title": "Define 3 core Mixpanel funnels", "why": "Most analytics dashboards are vanity. Define 3 funnels that actually predict success: Activation, Retention, Referral.", "channel": "Mixpanel", "effort": "S", "copy": "Funnels to build in Mixpanel (project 4014893):\n\n1. Activation: Page View → feed_refresh or article_click → signup\n   Goal: 15%+ of visitors convert to signup.\n\n2. Custom feed creation: Page View → hero_create_feed → feed_created successfully\n   Goal: 20% of visitors create a custom feed.\n\n3. Retention: signup → returns within 7 days with article_click\n   Goal: 35%+ D7 retention.\n\nAdditional metrics to watch weekly:\n- Email opt-in rate among signed-up users\n- Article reaction rate per session\n- Top-5 prompts used in custom feed creation", "links": [ { "label": "Mixpanel MyFeed project", "url": "https://mixpanel.com/project/4014893" } ] },
+
+      { "id": "metrics-dashboards", "pillar": "metrics", "title": "Daily dashboards to open each morning", "why": "This viewer is local — it doesn't have live creds. Open the real dashboards in tabs.", "effort": "S", "links": [ { "label": "Mixpanel events", "url": "https://mixpanel.com/project/4014893/view/4511035/app/events" }, { "label": "Supabase dashboard", "url": "https://supabase.com/dashboard" }, { "label": "Railway logs", "url": "https://railway.com/project/11651272-e60f-4a31-a7ef-e5fccac40bb6" }, { "label": "Google Analytics", "url": "https://analytics.google.com/" }, { "label": "Resend", "url": "https://resend.com/emails" } ] }
+    ]
+  }
+  </script>
+  <!-- MARKETING_DATA_END -->
+
+  <script>
+    const PILLAR_ORDER = ["launch", "social", "content", "communities", "onboarding", "metrics"];
+    const STATUS_ORDER = ["todo", "scheduled", "doing", "done", "blocked"];
+    const STATUS_LABEL = { todo: "To do", scheduled: "Scheduled", doing: "Doing", done: "Done", blocked: "Blocked" };
+    const STORAGE_KEY = "myfeed-marketing-status";
+
+    const data = JSON.parse(document.getElementById("marketing-data").textContent);
+    const getStatuses = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; } };
+    const setStatus = (id, s) => { const m = getStatuses(); m[id] = s; localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); };
+
+    let activePillar = PILLAR_ORDER[0];
+
+    function countsPerPillar() {
+      const statuses = getStatuses();
+      const c = {};
+      PILLAR_ORDER.forEach(p => c[p] = { total: 0, done: 0 });
+      data.tasks.forEach(t => {
+        c[t.pillar].total++;
+        if ((statuses[t.id] || t.status || "todo") === "done") c[t.pillar].done++;
+      });
+      return c;
+    }
+
+    function renderTabs() {
+      const el = document.getElementById("tabs");
+      const c = countsPerPillar();
+      el.innerHTML = "";
+      PILLAR_ORDER.forEach(p => {
+        const meta = data.pillars[p];
+        const btn = document.createElement("button");
+        btn.className = p === activePillar ? "active" : "";
+        btn.innerHTML = `<span>${meta.icon}</span><span>${meta.label}</span><span class="badge">${c[p].done}/${c[p].total}</span>`;
+        btn.onclick = () => { activePillar = p; render(); };
+        el.appendChild(btn);
+      });
+      let totalDone = 0, total = 0;
+      Object.values(c).forEach(v => { totalDone += v.done; total += v.total; });
+      document.getElementById("progress-label").textContent = `${totalDone}/${total} tasks complete · local-only`;
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[ch]); }
+
+    function renderTasks() {
+      const el = document.getElementById("tasks");
+      document.getElementById("tagline").textContent = data.pillars[activePillar].tagline;
+      const statuses = getStatuses();
+      const tasks = data.tasks
+        .filter(t => t.pillar === activePillar)
+        .sort((a, b) => {
+          const sa = statuses[a.id] || a.status || "todo";
+          const sb = statuses[b.id] || b.status || "todo";
+          return STATUS_ORDER.indexOf(sa) - STATUS_ORDER.indexOf(sb);
+        });
+
+      if (tasks.length === 0) {
+        el.innerHTML = '<p class="empty">No tasks in this pillar yet.</p>';
+        return;
+      }
+
+      el.innerHTML = tasks.map(t => {
+        const status = statuses[t.id] || t.status || "todo";
+        const copyBlock = t.copy ? `
+          <div class="block">
+            <div class="copy-row">
+              <p class="section-label">Copy to paste</p>
+              <button class="copy-btn" data-copy-id="${t.id}">Copy</button>
+            </div>
+            <pre class="copy">${escapeHtml(t.copy)}</pre>
+          </div>` : "";
+        const assetsBlock = (t.assets && t.assets.length) ? `
+          <div class="block">
+            <p class="section-label">Assets needed</p>
+            <ul class="assets">
+              ${t.assets.map(a => `<li><strong>${escapeHtml(a.label)}</strong>${a.note ? ' — <span class="meta">' + escapeHtml(a.note) + '</span>' : ''}${a.url ? ` <a href="${a.url}" target="_blank" rel="noreferrer">↗</a>` : ''}</li>`).join("")}
+            </ul>
+          </div>` : "";
+        const linksBlock = (t.links && t.links.length) ? `
+          <div class="block">
+            ${t.links.map(l => `<a class="link-btn" href="${l.url}" target="_blank" rel="noreferrer">${escapeHtml(l.label)} ↗</a>`).join("")}
+          </div>` : "";
+        const metaRow = [
+          t.scheduled ? `🕒 ${escapeHtml(t.scheduled)}` : null,
+          t.metric ? `🎯 ${escapeHtml(t.metric)}` : null,
+        ].filter(Boolean).join(" · ");
+
+        return `
+          <article class="card" data-id="${t.id}">
+            <header class="card-header">
+              <button class="caret" data-toggle="${t.id}" aria-label="Expand">▸</button>
+              <div class="card-body">
+                <div class="card-title-row">
+                  <h3 class="card-title">${escapeHtml(t.title)}</h3>
+                  <span class="pill status-${status}">${STATUS_LABEL[status]}</span>
+                  ${t.channel ? `<span class="meta">· ${escapeHtml(t.channel)}</span>` : ""}
+                  ${t.effort ? `<span class="meta">· ${t.effort}</span>` : ""}
+                </div>
+                <p class="why">${escapeHtml(t.why || "")}</p>
+                ${metaRow ? `<div class="card-meta-row">${metaRow}</div>` : ""}
+              </div>
+              <select class="status-select" data-status-id="${t.id}" aria-label="Task status">
+                ${STATUS_ORDER.map(s => `<option value="${s}" ${s === status ? "selected" : ""}>${STATUS_LABEL[s]}</option>`).join("")}
+              </select>
+            </header>
+            <div class="card-content">
+              ${copyBlock}
+              ${assetsBlock}
+              ${linksBlock}
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      // wire events
+      el.querySelectorAll("[data-toggle]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.toggle;
+          const card = el.querySelector(`.card[data-id="${id}"]`);
+          card.classList.toggle("open");
+          btn.textContent = card.classList.contains("open") ? "▾" : "▸";
+        };
+      });
+      el.querySelectorAll("[data-status-id]").forEach(sel => {
+        sel.onchange = () => { setStatus(sel.dataset.statusId, sel.value); renderTabs(); renderTasks(); };
+      });
+      el.querySelectorAll("[data-copy-id]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.copyId;
+          const task = data.tasks.find(t => t.id === id);
+          if (task && task.copy) {
+            await navigator.clipboard.writeText(task.copy);
+            const orig = btn.textContent;
+            btn.textContent = "✓ Copied";
+            setTimeout(() => btn.textContent = orig, 1500);
+          }
+        };
+      });
+    }
+
+    function render() { renderTabs(); renderTasks(); }
+    render();
+  </script>
+</body>
+</html>
