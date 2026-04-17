@@ -342,20 +342,30 @@ export default function ForYouPage() {
               )}
             </div>
           </div>
-          {/* Row 2: label + scrollable chips */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <span className="text-xs text-text-muted whitespace-nowrap flex-shrink-0">From:</span>
-            {FEEDS.map((f) => {
-              const active = showAllFeeds || enabledFeeds.has(f.id);
-              return (
-                <button key={f.id} onClick={() => toggleFeed(f.id)} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] whitespace-nowrap border transition-all ${active ? "border-border bg-bg-card text-text shadow-sm" : "border-transparent text-text-muted hover:text-text hover:bg-bg-hover"}`}>
-                  <span>{f.icon}</span>
-                  <span>{f.name}</span>
-                  {active && <Check className="h-3 w-3" />}
+          {/* Row 2: compact summary + Customize toggle */}
+          {(() => {
+            const activeFeeds = showAllFeeds ? FEEDS : FEEDS.filter((f) => enabledFeeds.has(f.id));
+            const previewIcons = activeFeeds.slice(0, 5).map((f) => f.icon).join(" ");
+            const total = FEEDS.length;
+            const count = activeFeeds.length;
+            const summary = count === total ? `All ${total} topics` : `${count} of ${total} topics`;
+            return (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 text-xs text-text-muted">
+                  <span className="text-sm leading-none truncate" aria-hidden="true">{previewIcons}</span>
+                  <span className="truncate">{summary}</span>
+                </div>
+                <button
+                  onClick={() => setShowFilter((v) => !v)}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
+                  aria-expanded={showFilter}
+                >
+                  <SlidersHorizontal className="h-3 w-3" />
+                  <span>{showFilter ? "Done" : "Customize"}</span>
                 </button>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
