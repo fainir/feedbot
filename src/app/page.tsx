@@ -342,19 +342,16 @@ export default function ForYouPage() {
               )}
             </div>
           </div>
-          {/* Row 2: compact summary + Customize toggle */}
+          {/* Row 2: explanatory subtitle + Customize toggle */}
           {(() => {
-            const activeFeeds = showAllFeeds ? FEEDS : FEEDS.filter((f) => enabledFeeds.has(f.id));
-            const previewIcons = activeFeeds.slice(0, 5).map((f) => f.icon).join(" ");
             const total = FEEDS.length;
-            const count = activeFeeds.length;
-            const summary = count === total ? `All ${total} topics` : `${count} of ${total} topics`;
+            const count = showAllFeeds ? total : FEEDS.filter((f) => enabledFeeds.has(f.id)).length;
+            const sourceText = count === total ? `${total} topic feeds` : `${count} of ${total} topic feeds`;
             return (
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0 text-xs text-text-muted">
-                  <span className="text-sm leading-none truncate" aria-hidden="true">{previewIcons}</span>
-                  <span className="truncate">{summary}</span>
-                </div>
+                <p className="text-xs text-text-muted min-w-0 truncate">
+                  Top stories blended from <span className="text-text">{sourceText}</span>
+                </p>
                 <button
                   onClick={() => setShowFilter((v) => !v)}
                   className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
