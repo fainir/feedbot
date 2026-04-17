@@ -342,23 +342,23 @@ export default function ForYouPage() {
               )}
             </div>
           </div>
-          {/* Row 2: explanatory subtitle + Customize toggle */}
+          {/* Row 2: explanatory subtitle + inline Customize toggle */}
           {(() => {
             const total = FEEDS.length;
             const count = showAllFeeds ? total : FEEDS.filter((f) => enabledFeeds.has(f.id)).length;
             const sourceText = count === total ? `${total} topic feeds` : `${count} of ${total} topic feeds`;
             return (
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1 min-w-0">
                 <p className="text-xs text-text-muted min-w-0 truncate">
                   Top stories blended from <span className="text-text">{sourceText}</span>
                 </p>
                 <button
                   onClick={() => setShowFilter((v) => !v)}
-                  className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
+                  className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all"
                   aria-expanded={showFilter}
                 >
                   <Sparkles className="h-3 w-3" />
-                  <span>{showFilter ? "Done" : "Customize"}</span>
+                  {showFilter ? "Done" : "Customize"}
                 </button>
               </div>
             );
