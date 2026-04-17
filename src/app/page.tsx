@@ -256,16 +256,16 @@ export default function ForYouPage() {
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[12px] font-black leading-none" style={{ letterSpacing: "-0.02em" }}>MF</span>
         </Link>
         {/* Mobile: custom dropdown selector */}
-        <div className="sm:hidden flex-1 min-w-0 px-2 relative">
-          <button onClick={() => setShowFeedPicker(!showFeedPicker)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-hover/50 border border-border/50 text-sm font-semibold text-text w-full">
+        <div className="sm:hidden min-w-0 px-2 relative">
+          <button onClick={() => setShowFeedPicker(!showFeedPicker)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-hover/50 border border-border/50 text-sm font-semibold text-text max-w-[60vw]">
             <Rss className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">My Feed</span>
-            <ChevronDown className={`h-3.5 w-3.5 ml-auto flex-shrink-0 text-text-muted transition-transform ${showFeedPicker ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-text-muted transition-transform ${showFeedPicker ? "rotate-180" : ""}`} />
           </button>
           {showFeedPicker && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowFeedPicker(false)} />
-              <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-bg-card border border-border rounded-xl shadow-lg max-h-80 overflow-y-auto py-1">
+              <div className="absolute left-0 top-full mt-1 z-50 bg-bg-card border border-border rounded-xl shadow-lg max-h-80 overflow-y-auto py-1 w-max min-w-[220px] max-w-[90vw]">
                 <Link href="/" onClick={() => setShowFeedPicker(false)} className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-text bg-bg-hover/50">
                   <Rss className="h-3.5 w-3.5" />My Feed
                 </Link>
