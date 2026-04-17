@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* App convention: default = dark (no class), html.light = light.
+   Make Tailwind's dark: variant fire whenever html does NOT have .light.
+   Without this, dark: uses @media (prefers-color-scheme) which conflicts
+   with the app's class-based theme toggle. */
+@custom-variant dark (&:where(html:not(.light) *, html:not(.light)));
+
 @theme {
   /* Dark mode (default) — X.com style */
   --color-primary: #ffffff;
