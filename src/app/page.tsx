@@ -321,7 +321,7 @@ export default function ForYouPage() {
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
-        <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 pb-2">
           {/* Row 1: title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
             <h2 className="text-base font-bold text-text flex items-center gap-2">
@@ -399,8 +399,8 @@ export default function ForYouPage() {
 
       {/* Hero banner for guests -create feed */}
       {!user && !heroDismissed && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="relative rounded-3xl border border-border overflow-hidden shadow-sm p-6 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:bg-none dark:bg-bg-hover">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
+          <div className="relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:bg-none dark:bg-bg-hover">
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-5 right-5 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
@@ -430,13 +430,13 @@ export default function ForYouPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-4 pt-2">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
       </div>
 
       {/* Feed content */}
-      <main id="main-content" className="max-w-2xl mx-auto px-4 pb-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-3 sm:px-4 pb-4 sm:pb-6">
         {loading ? (
-          <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
+          <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
               {i <= 2 && <div className="w-full aspect-[2.5/1] bg-bg-hover" />}
               <div className="p-4"><div className="flex items-center gap-2 mb-3"><div className="w-4 h-4 rounded-full bg-bg-hover" /><div className="h-3 bg-bg-hover rounded w-16" /></div><div className="h-5 bg-bg-hover rounded w-4/5 mb-2" /><div className="h-3 bg-bg-hover rounded w-full" /></div>
@@ -448,7 +448,7 @@ export default function ForYouPage() {
             <p className="text-xs text-text-muted mt-1">Fresh picks keep rolling in automatically</p>
           </div>
         ) : (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);

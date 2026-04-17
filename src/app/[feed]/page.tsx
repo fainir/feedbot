@@ -708,7 +708,7 @@ export default function FeedPage() {
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
-        <div className="max-w-2xl mx-auto px-4 pt-3 pb-2">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 pb-2">
           {/* Row 1: icon + title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
             <h2 className="text-base font-bold text-text flex items-center gap-2 min-w-0">
@@ -753,9 +753,9 @@ export default function FeedPage() {
       )}
 
       {/* Feed */}
-      <main id="main-content" className="max-w-2xl mx-auto px-4 pb-6">
+      <main id="main-content" className="max-w-2xl mx-auto px-3 sm:px-4 pb-4 sm:pb-6">
         {loading ? (
-          <div className="space-y-4 pt-2">{[1,2,3,4].map((i) => (
+          <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">{[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse rounded-2xl border border-border overflow-hidden bg-bg-card">
               {i <= 2 && <div className="w-full aspect-[2.5/1] bg-bg-hover" />}
               <div className="p-4">
@@ -772,7 +772,7 @@ export default function FeedPage() {
             <p className="text-xs text-text-muted mt-1">Content updates continuously</p>
           </div>
         ) : (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">
             {dedupedItems.map((item, i) => {
               const src = getSourceInfo(item.source);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);
