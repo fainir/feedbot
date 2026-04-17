@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss, ChevronDown } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -150,6 +150,27 @@ const PROMPT_EXAMPLES = [
   "Climate change research, renewable energy news",
 ];
 
+function useScrollFade() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(true);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      setAtStart(el.scrollLeft <= 2);
+      setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, []);
+  return { ref, atStart, atEnd };
+}
+
 export default function FeedPage() {
   const params = useParams();
   const feedSlug = (params.feed as string) || "tech";
@@ -172,7 +193,10 @@ export default function FeedPage() {
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [showFeedPicker, setShowFeedPicker] = useState(false);
+  const desktopTabs = useScrollFade();
+  const mobileTabs = useScrollFade();
+  const [hideTopRow, setHideTopRow] = useState(false);
+  const lastScrollY = useRef(0);
   const [newPrompt, setNewPrompt] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -187,6 +211,20 @@ export default function FeedPage() {
     setMounted(true);
     window.scrollTo(0, 0);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  }, []);
+
+  // Collapse top bar on scroll down (mobile only — CSS gates on sm:)
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastScrollY.current;
+      if (y < 48) setHideTopRow(false);
+      else if (delta > 6) setHideTopRow(true);
+      else if (delta < -6) setHideTopRow(false);
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Scroll active tab into view on mount
@@ -561,38 +599,17 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      {/* Single top bar -fixed so it never scrolls away */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border flex items-center h-12">
+      {/* Top bar -fixed. On mobile, slides up to hide row 1 on scroll down. */}
+      <header className={`fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border transition-transform duration-200 will-change-transform ${hideTopRow ? "-translate-y-12" : "translate-y-0"} sm:!translate-y-0`}>
+        <div className="flex items-center h-12">
         {/* Logo */}
-        <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-4 pr-3">
+        <Link href="/" className="flex-shrink-0 flex items-center gap-2 pl-3 sm:pl-4 pr-2 sm:pr-3">
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[12px] font-black leading-none" style={{ letterSpacing: "-0.02em" }}>MF</span>
         </Link>
 
-        {/* Mobile: custom dropdown selector */}
-        <div className="sm:hidden min-w-0 px-2 relative">
-          <button onClick={() => setShowFeedPicker(!showFeedPicker)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-hover/50 border border-border/50 text-sm font-semibold text-text max-w-[60vw]">
-            <span className="flex-shrink-0">{activeTab?.icon || "📡"}</span>
-            <span className="truncate">{activeTab?.name || communityFeed?.name || feedSlug}</span>
-            <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-text-muted transition-transform ${showFeedPicker ? "rotate-180" : ""}`} />
-          </button>
-          {showFeedPicker && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowFeedPicker(false)} />
-              <div className="absolute left-0 top-full mt-1 z-50 bg-bg-card border border-border rounded-xl shadow-lg max-h-80 overflow-y-auto py-1 w-max min-w-[220px] max-w-[90vw]">
-                <Link href="/" onClick={() => setShowFeedPicker(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
-                  <Rss className="h-3.5 w-3.5" />My Feed
-                </Link>
-                {allTabs.map((tab) => (
-                  <Link key={tab.id} href={`/${tab.id}`} onClick={() => setShowFeedPicker(false)} className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors ${feedSlug === tab.id ? "font-semibold text-text bg-bg-hover/50" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}>
-                    <span>{tab.icon}</span>{tab.name}
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        {/* Desktop: horizontal tabs */}
-        <div ref={tabBarRef} className="hidden sm:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-0 min-w-0 pr-2">
+        {/* Desktop: horizontal tabs with scroll fade */}
+        <div className="hidden sm:block relative flex-1 min-w-0 h-12">
+          <div ref={(el) => { tabBarRef.current = el; desktopTabs.ref.current = el; }} className="flex overflow-x-auto scrollbar-hide items-center gap-0 h-full pr-2">
           <Link href="/" className="px-3 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-text hover:bg-bg-hover transition-colors flex items-center gap-1.5">
             <Rss className="h-3.5 w-3.5" />My Feed
           </Link>
@@ -652,20 +669,23 @@ export default function FeedPage() {
               </button>
             </div>
           ))}
+          </div>
+          {!desktopTabs.atStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-bg-card to-transparent" />}
+          {!desktopTabs.atEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-card to-transparent" />}
         </div>
 
         {/* Right actions */}
-        <div className="ml-auto flex-shrink-0 flex items-center gap-2 pr-4 pl-3 border-l border-border/50">
-          <Link href="/explore" className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-2 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" /><span className="hidden sm:inline">Explore</span></Link>
+        <div className="ml-auto sm:ml-0 flex-shrink-0 flex items-center gap-1 sm:gap-2 pr-2 sm:pr-4 pl-2 sm:pl-3 sm:border-l sm:border-border/50">
+          <Link href="/explore" className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-1.5 sm:p-2 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" /><span className="hidden sm:inline">Explore</span></Link>
           <button
             onClick={() => setShowNewFeed(true)}
-            className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-2 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
+            className="flex items-center gap-1.5 sm:px-3 sm:py-1.5 p-1.5 sm:p-2 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Create feed</span>
           </button>
           <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)} className="p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
+            <button onClick={() => setShowMenu(!showMenu)} className="p-1 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
             {showMenu && (
@@ -703,8 +723,25 @@ export default function FeedPage() {
             )}
           </div>
         </div>
+        </div>
+        {/* Mobile second row: scrollable tabs */}
+        <div className="sm:hidden relative border-t border-border/50">
+          <div ref={mobileTabs.ref} className="flex overflow-x-auto scrollbar-hide items-center gap-0 h-11">
+            <Link href="/" className="px-3 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text flex items-center gap-1.5 flex-shrink-0 h-full">
+              <Rss className="h-3.5 w-3.5" />My Feed
+            </Link>
+            <div className="w-px h-4 bg-border/50 mx-1 flex-shrink-0" />
+            {allTabs.map((tab) => (
+              <Link key={tab.id} href={`/${tab.id}`} className={`shrink-0 flex items-center gap-1.5 px-2.5 py-2.5 text-xs whitespace-nowrap border-b-2 transition-colors h-full ${feedSlug === tab.id ? "border-text text-text font-semibold" : "border-transparent text-text-muted hover:text-text font-medium"}`}>
+                <span>{tab.icon}</span>{tab.name}
+              </Link>
+            ))}
+          </div>
+          {!mobileTabs.atStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-bg-card to-transparent" />}
+          {!mobileTabs.atEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-bg-card to-transparent" />}
+        </div>
       </header>
-      <div className="h-12" /> {/* Spacer for fixed header */}
+      <div className="h-[5.75rem] sm:h-12" /> {/* Spacer: h-12 + h-11 + border on mobile, h-12 on desktop */}
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
