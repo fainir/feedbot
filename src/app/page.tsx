@@ -357,7 +357,7 @@ export default function ForYouPage() {
                   className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-xs text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
                   aria-expanded={showFilter}
                 >
-                  <SlidersHorizontal className="h-3 w-3" />
+                  <Sparkles className="h-3 w-3" />
                   <span>{showFilter ? "Done" : "Customize"}</span>
                 </button>
               </div>
