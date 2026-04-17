@@ -385,7 +385,7 @@ export default function ForYouPage() {
               <input
                 type="text"
                 placeholder="e.g. React tutorials, SpaceX launches, startup funding..."
-                className="min-w-0 w-full bg-bg-hover border-none rounded-full px-5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-text/20 placeholder:text-text-muted/40 sm:flex-1"
+                className="min-w-0 w-full bg-bg-card border border-border rounded-full px-5 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-text/20 focus:border-text/40 placeholder:text-text-muted/70 sm:flex-1 transition-colors"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleHeroSubmit(); }}
