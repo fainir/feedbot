@@ -1,0 +1,51 @@
+name: Ingest cron
+
+on:
+  schedule:
+    # Every hour at :05 — scans sources, classifies, inserts new articles
+    - cron: "5 * * * *"
+    # Daily digest email at 08:00 UTC
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which endpoint to hit
+        required: true
+        default: scan-and-match
+        type: choice
+        options:
+          - scan-and-match
+          - refresh-feeds
+          - digest
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Pick endpoint from schedule or manual input
+        id: pick
+        run: |
+          if [ -n "${{ github.event.inputs.target }}" ]; then
+            echo "path=${{ github.event.inputs.target }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 8 * * *" ]; then
+            echo "path=digest" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=scan-and-match" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Hit cron endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PATH_: ${{ steps.pick.outputs.path }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
+            exit 1
+          fi
+          echo "POST https://myfeed.space/api/cron/$PATH_"
+          curl --fail --silent --show-error \
+            --max-time 540 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -X POST \
+            "https://myfeed.space/api/cron/$PATH_"
+          echo
