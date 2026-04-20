@@ -42,10 +42,9 @@ jobs:
             echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
             exit 1
           fi
-          echo "POST https://myfeed.space/api/cron/$PATH_"
+          echo "GET https://myfeed.space/api/cron/$PATH_"
           curl --fail --silent --show-error \
             --max-time 540 \
             -H "Authorization: Bearer $CRON_SECRET" \
-            -X POST \
             "https://myfeed.space/api/cron/$PATH_"
           echo
