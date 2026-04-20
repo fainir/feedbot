@@ -117,10 +117,12 @@ async function classify(supabase: SupabaseClient) {
     `${i}: "${f.query_text || f.name}"`
   ).join("\n");
 
-  // Process in batches of 100 (fewer calls = less repeated feed list = cheaper)
-  const BATCH = 100;
+  // Process in batches of 50 (shorter = more reliable, less context to overwhelm model)
+  const BATCH = 50;
   const allMatches: { articleIdx: number; feedIdx: number; quality: number; summary: string }[] = [];
   let apiCalls = 0;
+  const debugErrors: string[] = [];
+  const debugResponses: string[] = [];
 
   for (let i = 0; i < newArticles.length; i += BATCH) {
     const batch = newArticles.slice(i, i + BATCH);
@@ -131,62 +133,35 @@ async function classify(supabase: SupabaseClient) {
 
     try {
       apiCalls++;
-      const prompt = `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.
+      const prompt = `You are matching news articles to reader feeds. Return JSON only.
 
-Feeds:
+FEEDS (index: description):
 ${feedList}
 
-Articles:
+ARTICLES (index|title|summary|source):
 ${articleList}
 
-For each article that matches any feed (even loosely):
-- Pick 1-3 feeds and rate quality (1-10). 7+ = great match. Below 4 = skip.
-- Write a clean 1-sentence summary (max 120 chars) that tells the reader what's interesting about the article.
+For each article, find 1-3 feeds it belongs in. Be generous — include if loosely relevant.
+Skip only: spam, ads, non-English.
 
-Be GENEROUS — if an article is plausibly relevant to a feed topic, include it with a lower quality score.
-Skip ONLY: obvious spam, ads, pure promos, non-English, empty content.`;
+Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"one sentence summary"},...]}`;
 
       const response = await client.chat.completions.create({
         model: AI_MODEL,
         messages: [{ role: "user", content: prompt }],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "matches",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                m: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      a: { type: "integer" },
-                      f: { type: "array", items: { type: "integer" } },
-                      q: { type: "integer" },
-                      s: { type: "string" },
-                    },
-                    required: ["a", "f", "q", "s"],
-                    additionalProperties: false,
-                  },
-                },
-              },
-              required: ["m"],
-              additionalProperties: false,
-            },
-          },
-        },
+        response_format: { type: "json_object" },
       });
 
       const rawContent = response.choices[0]?.message?.content;
+      debugResponses.push(`batch${i}: ${(rawContent || "null").slice(0, 200)}`);
       if (!rawContent) {
-        console.error(`Classify batch ${i}: empty response from model`);
+        debugErrors.push(`batch${i}: null content, refusal=${response.choices[0]?.message?.refusal}`);
         continue;
       }
-      const parsed = JSON.parse(rawContent) as { m: { a: number; f: number[]; q: number; s: string }[] };
-      console.log(`Classify batch ${i}: model returned ${parsed.m?.length ?? 0} matches`);
-      for (const match of parsed.m) {
+      const parsed = JSON.parse(rawContent) as { m?: { a: number; f: number[]; q: number; s: string }[] };
+      const matchList = parsed.m || [];
+      console.log(`Classify batch ${i}: model returned ${matchList.length} matches`);
+      for (const match of matchList) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
         const quality = typeof match.q === "number" ? match.q : 5;
@@ -200,6 +175,7 @@ Skip ONLY: obvious spam, ads, pure promos, non-English, empty content.`;
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      debugErrors.push(`batch${i}: ${msg}`);
       console.error(`Classify batch ${i} failed: ${msg}`, e);
     }
   }
@@ -247,7 +223,7 @@ Skip ONLY: obvious spam, ads, pure promos, non-English, empty content.`;
 
   await setScanState(supabase, "last_classified_at", now);
 
-  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size };
+  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
 }
 
 // ════════════════════════════════════════════════════════════════
