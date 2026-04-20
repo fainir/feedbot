@@ -131,12 +131,27 @@ async function classify(supabase: SupabaseClient) {
 
     try {
       apiCalls++;
-      const response = await client.responses.create({
+      const prompt = `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.
+
+Feeds:
+${feedList}
+
+Articles:
+${articleList}
+
+For each article that matches any feed (even loosely):
+- Pick 1-3 feeds and rate quality (1-10). 7+ = great match. Below 4 = skip.
+- Write a clean 1-sentence summary (max 120 chars) that tells the reader what's interesting about the article.
+
+Be GENEROUS — if an article is plausibly relevant to a feed topic, include it with a lower quality score.
+Skip ONLY: obvious spam, ads, pure promos, non-English, empty content.`;
+
+      const response = await client.chat.completions.create({
         model: AI_MODEL,
-        input: `Each feed below is a user's description of what they want to read. Match articles to feeds where the user would genuinely want to see that article.\n\nFeeds:\n${feedList}\n\nArticles:\n${articleList}\n\nFor each article:\n- Pick 1-3 feeds and rate quality (1-10). 8+ = must-read. Below 5 = don't include.\n- Write a clean 1-sentence summary (max 120 chars) that tells the reader what's interesting about the article.\n\nSkip entirely (no match): spam, ads, promos, non-English, personal diaries, SEO bait, product pages, clickbait.`,
-        text: {
-          format: {
-            type: "json_schema",
+        messages: [{ role: "user", content: prompt }],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
             name: "matches",
             strict: true,
             schema: {
@@ -147,9 +162,9 @@ async function classify(supabase: SupabaseClient) {
                   items: {
                     type: "object",
                     properties: {
-                      a: { type: "number" },
-                      f: { type: "array", items: { type: "number" } },
-                      q: { type: "number" },
+                      a: { type: "integer" },
+                      f: { type: "array", items: { type: "integer" } },
+                      q: { type: "integer" },
                       s: { type: "string" },
                     },
                     required: ["a", "f", "q", "s"],
@@ -164,12 +179,18 @@ async function classify(supabase: SupabaseClient) {
         },
       });
 
-      const parsed = JSON.parse(response.output_text) as { m: { a: number; f: number[]; q: number; s: string }[] };
+      const rawContent = response.choices[0]?.message?.content;
+      if (!rawContent) {
+        console.error(`Classify batch ${i}: empty response from model`);
+        continue;
+      }
+      const parsed = JSON.parse(rawContent) as { m: { a: number; f: number[]; q: number; s: string }[] };
+      console.log(`Classify batch ${i}: model returned ${parsed.m?.length ?? 0} matches`);
       for (const match of parsed.m) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
         const quality = typeof match.q === "number" ? match.q : 5;
-        if (quality < 6) continue;
+        if (quality < 5) continue;
         const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
@@ -178,7 +199,8 @@ async function classify(supabase: SupabaseClient) {
         }
       }
     } catch (e) {
-      console.error(`Classify batch ${i} failed:`, e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Classify batch ${i} failed: ${msg}`, e);
     }
   }
 
