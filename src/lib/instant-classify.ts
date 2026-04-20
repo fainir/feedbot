@@ -8,7 +8,7 @@ function getClient(): OpenAI | null {
   return _client;
 }
 
-const AI_MODEL = process.env.OPENAI_MODEL || "gpt-5-nano";
+const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 /**
  * Instantly classify recent articles from article_pool against a single feed's prompt.
@@ -38,38 +38,16 @@ export async function instantClassify(
   }).join("\n");
 
   try {
-    const response = await client.responses.create({
+    const prompt = `A user wants: "${feedPrompt}"\n\nArticles:\n${articleList}\n\nReturn the indices of articles this user would want. Only include clearly relevant articles, skip spam/off-topic. For each, write a 1-sentence summary.\n\nReturn JSON: {"m":[{"a":index,"s":"summary"},...]}`;
+    const response = await client.chat.completions.create({
       model: AI_MODEL,
-      input: `A user wants: "${feedPrompt}"\n\nArticles:\n${articleList}\n\nReturn the indices of articles this user would want. Only include clearly relevant articles, skip spam/off-topic. For each, write a 1-sentence summary.`,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "matches",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              m: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    a: { type: "number" },
-                    s: { type: "string" },
-                  },
-                  required: ["a", "s"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["m"],
-            additionalProperties: false,
-          },
-        },
-      },
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
     });
 
-    const parsed = JSON.parse(response.output_text) as { m: { a: number; s: string }[] };
+    const rawContent = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(rawContent) as { m?: { a: number; s: string }[] };
+    if (!parsed.m) return 0;
 
     // Validate indices and build insert rows
     const seenUrls = new Set<string>();

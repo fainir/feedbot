@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos } from "@/lib/global-scanner";
 
@@ -17,14 +17,14 @@ function isAuthorized(request: NextRequest): boolean {
   }
 }
 
-let _client: Anthropic | null = null;
-function getClient(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _client: OpenAI | null = null;
+function getClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) return null;
+  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return _client;
 }
 
-const AI_MODEL = process.env.CLASSIFY_MODEL || "claude-haiku-4-5-20251001";
+const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 type SupabaseClient = ReturnType<typeof getServiceClient>;
 
@@ -71,7 +71,7 @@ async function scan(supabase: SupabaseClient) {
 
 async function classify(supabase: SupabaseClient) {
   const client = getClient();
-  if (!client) return { error: "No ANTHROPIC_API_KEY" };
+  if (!client) return { error: "No OPENAI_API_KEY" };
 
   // Get all active feeds (id + name + prompt)
   const { data: feeds } = await supabase
@@ -146,16 +146,16 @@ Skip only: spam, ads, non-English.
 
 Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"one sentence summary"},...]}`;
 
-      const response = await client.messages.create({
+      const response = await client.chat.completions.create({
         model: AI_MODEL,
-        max_tokens: 4096,
         messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
       });
 
-      const rawContent = response.content[0]?.type === "text" ? response.content[0].text : null;
+      const rawContent = response.choices[0]?.message?.content;
       debugResponses.push(`batch${i}: ${(rawContent || "null").slice(0, 200)}`);
       if (!rawContent) {
-        debugErrors.push(`batch${i}: no text content in response`);
+        debugErrors.push(`batch${i}: no content in response`);
         continue;
       }
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
