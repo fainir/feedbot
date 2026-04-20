@@ -46,21 +46,27 @@ async function scan(supabase: SupabaseClient) {
 
   try { results.global = await scanGlobal(); } catch (e) { console.error("Global scan failed:", e); }
 
-  try {
-    const { data: feeds } = await supabase.from("feeds").select("id, query_text, last_refreshed_at").eq("is_active", true);
-    if (feeds && feeds.length > 0) {
-      const sorted = [...feeds].sort((a, b) => {
-        const at = (a as Record<string, unknown>).last_refreshed_at as string | null;
-        const bt = (b as Record<string, unknown>).last_refreshed_at as string | null;
-        if (!at && !bt) return 0; if (!at) return -1; if (!bt) return 1;
-        return at.localeCompare(bt);
-      });
-      const queries = sorted.map(f => f.query_text).filter(Boolean).slice(0, 20);
-      if (queries.length > 0) results.brave = await scanBrave(queries);
-    }
-  } catch (e) { console.error("Brave scan failed:", e); }
+  // Only run Brave in the first 15-minute window of each hour (minutes 0–14)
+  // to stay within the 2000/month free-plan quota across 4 runs/hour.
+  const runBrave = new Date().getMinutes() < 15;
 
-  try { results.videos = await scanBraveVideos(); } catch (e) { console.error("Video scan failed:", e); }
+  if (runBrave) {
+    try {
+      const { data: feeds } = await supabase.from("feeds").select("id, query_text, last_refreshed_at").eq("is_active", true);
+      if (feeds && feeds.length > 0) {
+        const sorted = [...feeds].sort((a, b) => {
+          const at = (a as Record<string, unknown>).last_refreshed_at as string | null;
+          const bt = (b as Record<string, unknown>).last_refreshed_at as string | null;
+          if (!at && !bt) return 0; if (!at) return -1; if (!bt) return 1;
+          return at.localeCompare(bt);
+        });
+        const queries = sorted.map(f => f.query_text).filter(Boolean).slice(0, 20);
+        if (queries.length > 0) results.brave = await scanBrave(queries);
+      }
+    } catch (e) { console.error("Brave scan failed:", e); }
+
+    try { results.videos = await scanBraveVideos(); } catch (e) { console.error("Video scan failed:", e); }
+  }
 
   return results;
 }

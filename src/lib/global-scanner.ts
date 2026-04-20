@@ -162,6 +162,51 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   { url: "https://medium.com/feed/tag/travel", category: "travel" },
   { url: "https://news.google.com/rss/search?q=travel+destination&hl=en-US&gl=US&ceid=US:en", category: "travel" },
 
+  // ── Tech (additional) ──
+  { url: "https://www.wired.com/feed/rss", category: "technology" },
+  { url: "https://techcrunch.com/feed/", category: "technology" },
+  { url: "https://www.zdnet.com/news/rss.xml", category: "technology" },
+  { url: "https://hnrss.org/show", category: "technology" },
+  { url: "https://www.404media.co/rss/", category: "technology" },
+  { url: "https://github.blog/feed/", category: "technology" },
+
+  // ── AI (additional) ──
+  { url: "https://www.technologyreview.com/feed/", category: "ai" },
+  { url: "https://venturebeat.com/category/ai/feed/", category: "ai" },
+  { url: "https://huggingface.co/blog/feed.xml", category: "ai" },
+  { url: "https://research.google/blog/rss/", category: "ai" },
+  { url: "https://openai.com/news/rss/", category: "ai" },
+
+  // ── Programming (additional) ──
+  { url: "https://www.reddit.com/r/webdev/top/.rss?t=day", category: "programming" },
+  { url: "https://www.reddit.com/r/learnprogramming/top/.rss?t=day", category: "programming" },
+  { url: "https://www.reddit.com/r/node/top/.rss?t=day", category: "programming" },
+  { url: "https://javascriptweekly.com/rss/", category: "programming" },
+  { url: "https://go.dev/blog/feed.atom", category: "programming" },
+  { url: "https://blog.rust-lang.org/feed.xml", category: "programming" },
+  { url: "https://stackoverflow.blog/feed/", category: "programming" },
+  { url: "https://feed.infoq.com/", category: "programming" },
+
+  // ── Science (additional) ──
+  { url: "https://www.newscientist.com/feed/home/", category: "science" },
+
+  // ── Startups (additional) ──
+  { url: "https://www.ycombinator.com/blog/rss", category: "startups" },
+
+  // ── Security (additional) ──
+  { url: "https://www.securityweek.com/feed/", category: "security" },
+  { url: "https://isc.sans.edu/rssfeed_full.xml", category: "security" },
+
+  // ── DevOps (additional) ──
+  { url: "https://devops.com/feed/", category: "devops" },
+  { url: "https://www.reddit.com/r/kubernetes/top/.rss?t=day", category: "devops" },
+
+  // ── Data Science (additional) ──
+  { url: "https://towardsdatascience.com/feed", category: "data" },
+
+  // ── Design (additional) ──
+  { url: "https://alistapart.com/main/feed/", category: "design" },
+
   // ── Photography ──
   { url: "https://petapixel.com/feed/", category: "photography" },
   { url: "https://www.dpreview.com/feeds/news.xml", category: "photography" },
@@ -326,7 +371,14 @@ const SOURCE_QUALITY: Record<string, number> = {
   "theverge.com": 15,
   "wired.com": 15,
   "techcrunch.com": 15,
+  "zdnet.com": 10,
+  "404media.co": 15,
+  "github.blog": 15,
+  "stackoverflow.blog": 15,
+  "infoq.com": 12,
   // Science
+  "newscientist.com": 15,
+  "technologyreview.com": 18,
   "nature.com": 15,
   "sciencedaily.com": 12,
   "phys.org": 12,
@@ -401,6 +453,11 @@ const SOURCE_QUALITY: Record<string, number> = {
   "coindesk.com": 12,
   "decrypt.co": 10,
   "theblock.co": 12,
+  // AI (additional)
+  "venturebeat.com": 14,
+  "huggingface.co": 15,
+  "research.google": 18,
+  "openai.com": 18,
   // Open Source
   "opensource.com": 10,
   "itsfoss.com": 10,
