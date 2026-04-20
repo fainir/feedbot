@@ -2,8 +2,8 @@ name: Ingest cron
 
 on:
   schedule:
-    # Every hour at :05 — scans sources, classifies, inserts new articles
-    - cron: "5 * * * *"
+    # Every 25 minutes — scans sources, classifies, inserts new articles
+    - cron: "*/25 * * * *"
     # Daily digest email at 08:00 UTC
     - cron: "0 8 * * *"
   workflow_dispatch:
