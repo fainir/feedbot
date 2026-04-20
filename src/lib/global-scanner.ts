@@ -254,6 +254,7 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   // ── Data Science ──
   { url: "https://www.reddit.com/r/datascience/top/.rss?t=day", category: "data" },
   { url: "https://medium.com/feed/tag/data-science", category: "data" },
+  { url: "http://arxiv.org/rss/cs.LG", category: "data" },
 
   // ── Mobile ──
   { url: "https://www.reddit.com/r/iOSProgramming/top/.rss?t=day", category: "mobile" },
@@ -271,6 +272,21 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
 
   // ── Anime ──
   { url: "https://news.google.com/rss/search?q=anime+manga+release&hl=en-US&gl=US&ceid=US:en", category: "entertainment" },
+
+  // ── Additional communities ──
+  { url: "https://www.reddit.com/r/webdev/top/.rss?t=day", category: "programming" },
+  { url: "https://www.reddit.com/r/UXDesign/top/.rss?t=day", category: "design" },
+  { url: "https://www.reddit.com/r/Entrepreneur/top/.rss?t=day", category: "startups" },
+  { url: "https://www.reddit.com/r/singularity/top/.rss?t=day", category: "ai" },
+  { url: "https://www.reddit.com/r/ProductManagement/top/.rss?t=day", category: "startups" },
+
+  // ── Curated tech aggregators ──
+  { url: "https://lobste.rs/rss", category: "programming" },
+  { url: "https://dev.to/feed/tag/webdev", category: "programming" },
+  { url: "https://github.com/trending.atom", category: "programming" },
+  { url: "https://medium.com/feed/tag/startup", category: "startups" },
+  { url: "https://medium.com/feed/tag/technology", category: "technology" },
+  { url: "http://arxiv.org/rss/cs.AI", category: "ai" },
 
   // ── YouTube Channels (free RSS, no API budget) ──
   // Tech/AI
@@ -814,6 +830,61 @@ export async function scanBrave(queries?: string[]): Promise<{ scanned: number; 
   }
 
   return { scanned: totalScanned, added: totalAdded };
+}
+
+/**
+ * PHASE 1C: Google News RSS per active feed.
+ * Generates a targeted Google News RSS URL from each feed's query_text so
+ * niche/custom feeds get articles that the generic GLOBAL_SOURCES may miss.
+ * Processes up to `limit` feeds per run to avoid hammering Google.
+ */
+export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; added: number; feeds: number }> {
+  const supabase = getServiceClient();
+
+  const { data: feeds } = await supabase
+    .from("feeds")
+    .select("id, name, query_text, last_refreshed_at")
+    .eq("is_active", true);
+
+  if (!feeds || feeds.length === 0) return { scanned: 0, added: 0, feeds: 0 };
+
+  // Prioritise feeds that haven't been refreshed recently
+  const sorted = [...feeds].sort((a, b) => {
+    const at = (a as Record<string, unknown>).last_refreshed_at as string | null;
+    const bt = (b as Record<string, unknown>).last_refreshed_at as string | null;
+    if (!at && !bt) return 0;
+    if (!at) return -1;
+    if (!bt) return 1;
+    return at.localeCompare(bt);
+  });
+
+  const batch = sorted.slice(0, limit);
+
+  const fetchTasks = batch
+    .map((f) => {
+      const q = (f.query_text || f.name || "").trim();
+      if (!q) return null;
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=US&ceid=US:en`;
+      return fetchRss(url, "custom");
+    })
+    .filter(Boolean) as Promise<RawArticle[]>[];
+
+  const results = await Promise.allSettled(fetchTasks);
+
+  const articles: RawArticle[] = [];
+  const seenUrls = new Set<string>();
+
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    for (const article of result.value) {
+      if (seenUrls.has(article.url)) continue;
+      seenUrls.add(article.url);
+      articles.push(article);
+    }
+  }
+
+  const added = await insertToPool(articles);
+  return { scanned: articles.length, added, feeds: batch.length };
 }
 
 // Search Brave Videos API for YouTube content
