@@ -28,15 +28,19 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.target }}" ]; then
             echo "path=${{ github.event.inputs.target }}" >> "$GITHUB_OUTPUT"
+            echo "extra=" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.schedule }}" = "0 8 * * *" ]; then
             echo "path=digest" >> "$GITHUB_OUTPUT"
+            echo "extra=" >> "$GITHUB_OUTPUT"
           else
             echo "path=scan-and-match" >> "$GITHUB_OUTPUT"
+            echo "extra=refresh-feeds" >> "$GITHUB_OUTPUT"
           fi
       - name: Hit cron endpoint
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PATH_: ${{ steps.pick.outputs.path }}
+          EXTRA_: ${{ steps.pick.outputs.extra }}
         run: |
           if [ -z "$CRON_SECRET" ]; then
             echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
@@ -48,3 +52,11 @@ jobs:
             -H "Authorization: Bearer $CRON_SECRET" \
             "https://myfeed.space/api/cron/$PATH_"
           echo
+          if [ -n "$EXTRA_" ]; then
+            echo "GET https://myfeed.space/api/cron/$EXTRA_"
+            curl --fail --silent --show-error \
+              --max-time 540 \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "https://myfeed.space/api/cron/$EXTRA_"
+            echo
+          fi
