@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     .from("feed_items")
     .select("id, title, url, summary, source, image_url, published_at, relevance_score")
     .eq("feed_id", feedId)
+    .gte("relevance_score", 65)
     .order("published_at", { ascending: false })
     .limit(limit + 1);
 

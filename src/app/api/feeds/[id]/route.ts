@@ -34,6 +34,7 @@ export async function GET(
     .from("feed_items")
     .select("*")
     .eq("feed_id", id)
+    .gte("relevance_score", 65)
     .order("published_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

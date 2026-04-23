@@ -154,10 +154,19 @@ ${feedList}
 ARTICLES (index|title|summary|source):
 ${articleList}
 
-For each article, find 1-3 feeds it belongs in. Be generous — include if loosely relevant.
-Skip only: spam, ads, non-English.
+For each article, find 1-3 feeds it belongs in. Skip only: spam, ads, non-English.
 
-Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"one sentence summary"},...]}`;
+SCORING CALIBRATION — use the FULL 0-100 range:
+- 0-20: Completely unrelated (cooking recipe in a cybersecurity feed)
+- 20-40: Vaguely related topic area but wrong focus
+- 40-60: Tangentially related, mentions the topic but isn't really about it
+- 60-75: Related and somewhat useful, but not a core match
+- 75-90: Strong match, directly about the feed's topic
+- 90-100: Perfect match, exactly what this feed's subscribers want
+
+IMPORTANT: Most articles should score 20-60. Only truly excellent matches should score above 75. Do NOT inflate scores — a mediocre match is a 40, not a 65.
+
+Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"score":0to100,"s":"one sentence summary"},...]}`;
 
       const response = await client.chat.completions.create({
         model: AI_MODEL,
@@ -176,14 +185,14 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
         debugErrors.push(`batch${i}: no JSON found in: ${rawContent.slice(0, 100)}`);
         continue;
       }
-      const parsed = JSON.parse(jsonMatch[0]) as { m?: { a: number; f: number[]; q: number; s: string }[] };
+      const parsed = JSON.parse(jsonMatch[0]) as { m?: { a: number; f: number[]; score: number; s: string }[] };
       const matchList = parsed.m || [];
       console.log(`Classify batch ${i}: model returned ${matchList.length} matches`);
       for (const match of matchList) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
-        const quality = typeof match.q === "number" ? match.q : 5;
-        if (quality < 5) continue;
+        if (!match.score || match.score < 1) continue;
+        const quality = typeof match.score === "number" ? match.score : 0;
         const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
@@ -207,8 +216,29 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
   }
   const uniqueMatches = [...bestByKey.values()];
 
+  // Per-source cap: no source contributes more than 30% of a feed's matches
+  const feedTotals = new Map<string, number>();
+  for (const m of uniqueMatches) {
+    const fid = feeds[m.feedIdx].id;
+    feedTotals.set(fid, (feedTotals.get(fid) || 0) + 1);
+  }
+  const feedSourceCounts = new Map<string, Map<string, number>>();
+  const cappedMatches = [...uniqueMatches]
+    .sort((a, b) => b.quality - a.quality)
+    .filter(m => {
+      const fid = feeds[m.feedIdx].id;
+      const source = (newArticles[m.articleIdx].source || "unknown").toLowerCase();
+      const cap = Math.max(1, Math.ceil((feedTotals.get(fid) || 1) * 0.3));
+      if (!feedSourceCounts.has(fid)) feedSourceCounts.set(fid, new Map());
+      const sc = feedSourceCounts.get(fid)!;
+      const count = sc.get(source) || 0;
+      if (count >= cap) return false;
+      sc.set(source, count + 1);
+      return true;
+    });
+
   // Build insert rows — use LLM summary if available, fallback to RSS summary
-  const toInsert = uniqueMatches.map(m => {
+  const toInsert = cappedMatches.map(m => {
       const a = newArticles[m.articleIdx];
       return {
         feed_id: feeds[m.feedIdx].id,
@@ -218,30 +248,68 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
         summary: m.summary || a.summary,
         source: a.source,
         image_url: a.image_url,
-        relevance_score: m.quality * 10,
+        relevance_score: m.quality,
         published_at: a.published_at,
       };
     });
 
+  // Cross-feed dedup: skip if same URL already in feed_items with similar or better score
+  const checkUrls = [...new Set(toInsert.map(r => r.url))];
+  const existingByKey = new Map<string, number>();
+  for (let i = 0; i < checkUrls.length; i += 200) {
+    const { data: existing } = await supabase
+      .from("feed_items")
+      .select("feed_id, url, relevance_score")
+      .in("url", checkUrls.slice(i, i + 200));
+    for (const item of (existing || [])) {
+      const k = `${item.feed_id}::${item.url}`;
+      if ((item.relevance_score || 0) > (existingByKey.get(k) || 0)) existingByKey.set(k, item.relevance_score);
+    }
+  }
+  const dedupedInsert = toInsert.filter(r => {
+    const existing = existingByKey.get(`${r.feed_id}::${r.url}`);
+    return existing === undefined || r.relevance_score >= existing + 10;
+  });
+
   // Insert in batches
   let inserted = 0;
-  for (let i = 0; i < toInsert.length; i += 100) {
-    const chunk = toInsert.slice(i, i + 100);
+  for (let i = 0; i < dedupedInsert.length; i += 100) {
+    const chunk = dedupedInsert.slice(i, i + 100);
     const { error } = await supabase.from("feed_items").insert(chunk);
     if (!error) inserted += chunk.length;
     else console.error(`Insert batch ${i} failed:`, error);
   }
 
   // Update last_refreshed_at for feeds that got new items
-  const updatedFeeds = new Set(toInsert.map(r => r.feed_id));
+  const updatedFeeds = new Set(dedupedInsert.map(r => r.feed_id));
   const now = new Date().toISOString();
   for (const feedId of updatedFeeds) {
     await supabase.from("feeds").update({ last_refreshed_at: now }).eq("id", feedId);
   }
 
+  // Per-feed cap: prune feeds exceeding 2000 items
+  for (const feedId of updatedFeeds) {
+    const { count } = await supabase
+      .from("feed_items")
+      .select("id", { count: "exact", head: true })
+      .eq("feed_id", feedId);
+    if (count && count > 2000) {
+      const { data: oldest } = await supabase
+        .from("feed_items")
+        .select("id")
+        .eq("feed_id", feedId)
+        .order("relevance_score", { ascending: true })
+        .order("published_at", { ascending: true })
+        .limit(count - 2000);
+      if (oldest && oldest.length > 0) {
+        await supabase.from("feed_items").delete().in("id", oldest.map((r: { id: string }) => r.id));
+      }
+    }
+  }
+
   await setScanState(supabase, "last_classified_at", now);
 
-  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
+  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: cappedMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
 }
 
 // ════════════════════════════════════════════════════════════════

@@ -101,6 +101,7 @@ const GLOBAL_SOURCES: { url: string; category: string }[] = [
   { url: "https://www.creativebloq.com/feed", category: "design" },
   { url: "https://www.smashingmagazine.com/feed/", category: "design" },
   { url: "https://css-tricks.com/feed/", category: "design" },
+  { url: "https://www.typewolf.com/feed", category: "design" },
   { url: "https://dev.to/feed/tag/design", category: "design" },
   { url: "https://medium.com/feed/tag/animation", category: "design" },
 
@@ -650,11 +651,27 @@ function cleanSummary(summary: string, title: string): string {
   return summary;
 }
 
+function filterRedditNoise(articles: RawArticle[]): RawArticle[] {
+  return articles.filter(a => {
+    const src = (a.source || "").toLowerCase();
+    if (!src.startsWith("r/") && !src.includes("reddit")) return true;
+    const title = a.title || "";
+    if (title.length < 30) return false;
+    if (title.endsWith("?")) return false;
+    const emojiCount = (title.match(/[\u{1F600}-\u{1F9FF}]/gu) || []).length;
+    if (emojiCount >= 3) return false;
+    return true;
+  });
+}
+
 async function insertToPool(articles: RawArticle[]): Promise<number> {
   if (articles.length === 0) return 0;
 
   // Filter junk articles
   articles = articles.filter((a) => !isJunkArticle(a));
+
+  // Filter Reddit noise
+  articles = filterRedditNoise(articles);
 
   // Clean summaries
   for (const a of articles) {
@@ -884,6 +901,9 @@ export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; add
     for (const article of result.value) {
       if (seenUrls.has(article.url)) continue;
       seenUrls.add(article.url);
+      try {
+        article.source = new URL(article.url).hostname.replace("www.", "");
+      } catch {}
       articles.push(article);
     }
   }
