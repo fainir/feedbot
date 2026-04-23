@@ -46,17 +46,30 @@ jobs:
             echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
             exit 1
           fi
-          echo "GET https://myfeed.space/api/cron/$PATH_"
-          curl --fail --silent --show-error \
-            --max-time 540 \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            "https://myfeed.space/api/cron/$PATH_"
-          echo
-          if [ -n "$EXTRA_" ]; then
-            echo "GET https://myfeed.space/api/cron/$EXTRA_"
-            curl --fail --silent --show-error \
+          hit_endpoint() {
+            local path="$1"
+            local url="https://myfeed.space/api/cron/$path"
+            echo "GET $url"
+            local status
+            status=$(curl --silent --show-error --write-out "%{http_code}" -o /tmp/curl_out \
               --max-time 540 \
               -H "Authorization: Bearer $CRON_SECRET" \
-              "https://myfeed.space/api/cron/$EXTRA_"
-            echo
+              "$url")
+            cat /tmp/curl_out; echo
+            if [ "$status" -eq 502 ]; then
+              echo "Got 502 — waiting 30s and retrying..."
+              sleep 30
+              curl --fail --silent --show-error \
+                --max-time 540 \
+                -H "Authorization: Bearer $CRON_SECRET" \
+                "$url"
+              echo
+            elif [ "$status" -ge 400 ]; then
+              echo "Request failed with HTTP $status" >&2
+              exit 1
+            fi
+          }
+          hit_endpoint "$PATH_"
+          if [ -n "$EXTRA_" ]; then
+            hit_endpoint "$EXTRA_"
           fi

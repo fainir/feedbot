@@ -860,21 +860,26 @@ export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; add
 
   const batch = sorted.slice(0, limit);
 
-  const fetchTasks = batch
-    .map((f) => {
-      const q = (f.query_text || f.name || "").trim();
-      if (!q) return null;
-      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=US&ceid=US:en`;
-      return fetchRss(url, "custom");
-    })
-    .filter(Boolean) as Promise<RawArticle[]>[];
-
-  const results = await Promise.allSettled(fetchTasks);
+  const allResults: PromiseSettledResult<RawArticle[]>[] = [];
+  for (let i = 0; i < batch.length; i += 5) {
+    const chunk = batch.slice(i, i + 5);
+    const chunkResults = await Promise.allSettled(
+      chunk
+        .map((f) => {
+          const q = (f.query_text || f.name || "").trim();
+          if (!q) return null;
+          const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en&gl=US&ceid=US:en`;
+          return fetchRss(url, "custom");
+        })
+        .filter(Boolean) as Promise<RawArticle[]>[]
+    );
+    allResults.push(...chunkResults);
+  }
 
   const articles: RawArticle[] = [];
   const seenUrls = new Set<string>();
 
-  for (const result of results) {
+  for (const result of allResults) {
     if (result.status !== "fulfilled") continue;
     for (const article of result.value) {
       if (seenUrls.has(article.url)) continue;
