@@ -436,6 +436,19 @@ const SOURCE_QUALITY: Record<string, number> = {
   "news.google.com": 0,
 };
 
+export function filterRedditNoise(articles: Array<{title?: string; source?: string; url?: string}>) {
+  return articles.filter(a => {
+    const src = (a.source || a.url || '').toLowerCase();
+    if (!src.includes('reddit')) return true;
+    const title = a.title || '';
+    if (title.length < 30) return false;
+    if (title.endsWith('?')) return false;
+    const emojiCount = (title.match(/[\u{1F600}-\u{1F9FF}]/gu) || []).length;
+    if (emojiCount >= 3) return false;
+    return true;
+  });
+}
+
 export function getSourceBoost(source: string): number {
   const lower = source.toLowerCase();
   for (const [domain, boost] of Object.entries(SOURCE_QUALITY)) {

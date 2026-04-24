@@ -216,7 +216,7 @@ export async function GET(req: NextRequest) {
     });
   } else {
     if (feedIds.length === 0) return NextResponse.json({ items: [], hasMore: false });
-    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).order("published_at", { ascending: false }).limit(limit * 4);
+    let queryBuilder = supabase.from("feed_items").select("id, title, url, summary, source, image_url, published_at, relevance_score").in("feed_id", feedIds).gte("relevance_score", 65).order("published_at", { ascending: false }).limit(limit * 4);
     if (cursor) queryBuilder = queryBuilder.lt("published_at", cursor);
     const { data: items } = await queryBuilder;
     results = items || [];

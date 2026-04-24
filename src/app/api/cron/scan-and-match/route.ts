@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import OpenAI from "openai";
 import { getServiceClient } from "@/lib/supabase";
-import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews } from "@/lib/global-scanner";
+import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews, filterRedditNoise } from "@/lib/global-scanner";
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = request.headers.get("authorization");
@@ -124,6 +124,8 @@ async function classify(supabase: SupabaseClient) {
     return { articles: articles.length, skipped: articles.length, matches: 0, inserted: 0 };
   }
 
+  const filteredArticles = filterRedditNoise(newArticles) as typeof newArticles;
+
   // Build feed list with FULL user prompts — the LLM needs to understand
   // what each user WANTS, not just a category label
   const feedList = feeds.map((f, i) =>
@@ -137,8 +139,8 @@ async function classify(supabase: SupabaseClient) {
   const debugErrors: string[] = [];
   const debugResponses: string[] = [];
 
-  for (let i = 0; i < newArticles.length; i += BATCH) {
-    const batch = newArticles.slice(i, i + BATCH);
+  for (let i = 0; i < filteredArticles.length; i += BATCH) {
+    const batch = filteredArticles.slice(i, i + BATCH);
     const articleList = batch.map((a, j) => {
       const summary = (a.summary || "").slice(0, 80);
       return `${j}|${a.title}|${summary}|${a.source}`;
@@ -156,8 +158,9 @@ ${articleList}
 
 For each article, find 1-3 feeds it belongs in. Be generous — include if loosely relevant.
 Skip only: spam, ads, non-English.
+Return a score from 0 to 100 for each match (0=irrelevant, 100=perfect fit).
 
-Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"one sentence summary"},...]}`;
+Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"score":integer0to100,"s":"one sentence summary"},...]}`;
 
       const response = await client.chat.completions.create({
         model: AI_MODEL,
@@ -176,14 +179,14 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
         debugErrors.push(`batch${i}: no JSON found in: ${rawContent.slice(0, 100)}`);
         continue;
       }
-      const parsed = JSON.parse(jsonMatch[0]) as { m?: { a: number; f: number[]; q: number; s: string }[] };
+      const parsed = JSON.parse(jsonMatch[0]) as { m?: { a: number; f: number[]; score: number; s: string }[] };
       const matchList = parsed.m || [];
       console.log(`Classify batch ${i}: model returned ${matchList.length} matches`);
       for (const match of matchList) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
-        const quality = typeof match.q === "number" ? match.q : 5;
-        if (quality < 5) continue;
+        const quality = typeof match.score === "number" ? match.score : 50;
+        if (quality < 50) continue;
         const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
@@ -201,7 +204,7 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
   // Deduplicate matches — keep highest quality per article-feed pair
   const bestByKey = new Map<string, typeof allMatches[0]>();
   for (const m of allMatches) {
-    const key = `${newArticles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
+    const key = `${filteredArticles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
     const existing = bestByKey.get(key);
     if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
   }
@@ -209,7 +212,7 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
 
   // Build insert rows — use LLM summary if available, fallback to RSS summary
   const toInsert = uniqueMatches.map(m => {
-      const a = newArticles[m.articleIdx];
+      const a = filteredArticles[m.articleIdx];
       return {
         feed_id: feeds[m.feedIdx].id,
         article_pool_id: a.id,
@@ -218,7 +221,7 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
         summary: m.summary || a.summary,
         source: a.source,
         image_url: a.image_url,
-        relevance_score: m.quality * 10,
+        relevance_score: m.quality,
         published_at: a.published_at,
       };
     });
@@ -241,7 +244,7 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
 
   await setScanState(supabase, "last_classified_at", now);
 
-  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
+  return { articles: articles.length, newArticles: newArticles.length, filtered: newArticles.length - filteredArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
 }
 
 // ════════════════════════════════════════════════════════════════
