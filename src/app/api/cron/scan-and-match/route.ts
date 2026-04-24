@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import OpenAI from "openai";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews } from "@/lib/global-scanner";
+import { classifyAndInsert } from "@/lib/classify";
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = request.headers.get("authorization");
@@ -16,15 +16,6 @@ function isAuthorized(request: NextRequest): boolean {
     return false;
   }
 }
-
-let _client: OpenAI | null = null;
-function getClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
-  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return _client;
-}
-
-const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 type SupabaseClient = ReturnType<typeof getServiceClient>;
 
@@ -83,10 +74,6 @@ async function scan(supabase: SupabaseClient) {
 // ════════════════════════════════════════════════════════════════
 
 async function classify(supabase: SupabaseClient) {
-  const client = getClient();
-  if (!client) return { error: "No OPENAI_API_KEY" };
-
-  // Get all active feeds (id + name + prompt)
   const { data: feeds } = await supabase
     .from("feeds")
     .select("id, name, query_text")
@@ -94,7 +81,6 @@ async function classify(supabase: SupabaseClient) {
 
   if (!feeds || feeds.length === 0) return { error: "No active feeds" };
 
-  // Get new articles since last classification
   const lastClassified = await getScanState(supabase, "last_classified_at");
   const cutoff = lastClassified || new Date(Date.now() - 24 * 3600_000).toISOString();
 
@@ -110,7 +96,7 @@ async function classify(supabase: SupabaseClient) {
     return { articles: 0, matches: 0, inserted: 0 };
   }
 
-  // Skip articles already in any feed (don't re-classify)
+  // Skip articles already matched to any feed
   const articleIds = articles.map(a => a.id);
   const { data: alreadyMatched } = await supabase
     .from("feed_items")
@@ -124,135 +110,13 @@ async function classify(supabase: SupabaseClient) {
     return { articles: articles.length, skipped: articles.length, matches: 0, inserted: 0 };
   }
 
-  // Build feed list with FULL user prompts — the LLM needs to understand
-  // what each user WANTS, not just a category label
-  const feedList = feeds.map((f, i) =>
-    `${i}: "${f.query_text || f.name}"`
-  ).join("\n");
+  const result = await classifyAndInsert(newArticles, feeds, supabase);
 
-  // Process in batches of 50 (shorter = more reliable, less context to overwhelm model)
-  const BATCH = 50;
-  const allMatches: { articleIdx: number; feedIdx: number; quality: number; summary: string }[] = [];
-  let apiCalls = 0;
-  const debugErrors: string[] = [];
-  const debugResponses: string[] = [];
-
-  for (let i = 0; i < newArticles.length; i += BATCH) {
-    const batch = newArticles.slice(i, i + BATCH);
-    const articleList = batch.map((a, j) => {
-      const summary = (a.summary || "").slice(0, 80);
-      return `${j}|${a.title}|${summary}|${a.source}`;
-    }).join("\n");
-
-    try {
-      apiCalls++;
-      const prompt = `You are matching news articles to reader feeds. Return JSON only.
-
-FEEDS (index: description):
-${feedList}
-
-ARTICLES (index|title|summary|source):
-${articleList}
-
-For each article, find the 1-2 feeds it best fits. Be STRICT — only include if clearly relevant.
-
-SCORING:
-- 85-100: Article's PRIMARY topic matches the feed. It IS about this topic, not just mentions it.
-- 65-84: Clearly relevant, a follower of this topic would genuinely want this.
-- Below 65: SKIP — tangential mention, off-topic, or background context only.
-
-RULES:
-- Assign to at most 1 feed unless the article is genuinely cross-topic (e.g. AI + security).
-- Reddit posts (reddit.com/r/*/comments/): cap score at 55 — discussions are not primary sources.
-- Listicles ("Top 10…", "Best X for…"), agency promotions, tutorials with no news value: cap at 50.
-- "Company uses AI for X" → that's an X article, not an AI article. Score 0 for AI feeds.
-- Skip: spam, ads, non-English content, generic opinion pieces with no new information.
-
-Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
-
-      const response = await client.chat.completions.create({
-        model: AI_MODEL,
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-      });
-
-      const rawContent = response.choices[0]?.message?.content;
-      debugResponses.push(`batch${i}: ${(rawContent || "null").slice(0, 200)}`);
-      if (!rawContent) {
-        debugErrors.push(`batch${i}: no content in response`);
-        continue;
-      }
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        debugErrors.push(`batch${i}: no JSON found in: ${rawContent.slice(0, 100)}`);
-        continue;
-      }
-      const parsed = JSON.parse(jsonMatch[0]) as { m?: { a: number; f: number[]; q: number; s: string }[] };
-      const matchList = parsed.m || [];
-      console.log(`Classify batch ${i}: model returned ${matchList.length} matches`);
-      for (const match of matchList) {
-        if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
-        if (match.a < 0 || match.a >= batch.length) continue;
-        const quality = typeof match.q === "number" ? match.q : 0;
-        if (quality < 65) continue;
-        const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
-        for (const fi of match.f) {
-          if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
-            allMatches.push({ articleIdx: i + match.a, feedIdx: fi, quality, summary });
-          }
-        }
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      debugErrors.push(`batch${i}: ${msg}`);
-      console.error(`Classify batch ${i} failed: ${msg}`, e);
-    }
-  }
-
-  // Deduplicate matches — keep highest quality per article-feed pair
-  const bestByKey = new Map<string, typeof allMatches[0]>();
-  for (const m of allMatches) {
-    const key = `${newArticles[m.articleIdx].id}::${feeds[m.feedIdx].id}`;
-    const existing = bestByKey.get(key);
-    if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
-  }
-  const uniqueMatches = [...bestByKey.values()];
-
-  // Build insert rows — use LLM summary if available, fallback to RSS summary
-  const toInsert = uniqueMatches.map(m => {
-      const a = newArticles[m.articleIdx];
-      return {
-        feed_id: feeds[m.feedIdx].id,
-        article_pool_id: a.id,
-        title: a.title,
-        url: a.url,
-        summary: m.summary || a.summary,
-        source: a.source,
-        image_url: a.image_url,
-        relevance_score: m.quality,
-        published_at: a.published_at,
-      };
-    });
-
-  // Insert in batches
-  let inserted = 0;
-  for (let i = 0; i < toInsert.length; i += 100) {
-    const chunk = toInsert.slice(i, i + 100);
-    const { error } = await supabase.from("feed_items").insert(chunk);
-    if (!error) inserted += chunk.length;
-    else console.error(`Insert batch ${i} failed:`, error);
-  }
-
-  // Update last_refreshed_at for feeds that got new items
-  const updatedFeeds = new Set(toInsert.map(r => r.feed_id));
+  // Update last_refreshed_at for feeds that got new items — best effort
   const now = new Date().toISOString();
-  for (const feedId of updatedFeeds) {
-    await supabase.from("feeds").update({ last_refreshed_at: now }).eq("id", feedId);
-  }
-
   await setScanState(supabase, "last_classified_at", now);
 
-  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, apiCalls, matches: uniqueMatches.length, inserted, feedsUpdated: updatedFeeds.size, debugErrors, debugResponses };
+  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, ...result };
 }
 
 // ════════════════════════════════════════════════════════════════

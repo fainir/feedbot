@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
-import { instantClassify } from "@/lib/instant-classify";
+import { classifyAndInsert } from "@/lib/classify";
 import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
 import { generateSearchPlan } from "@/lib/prompt-intelligence";
 
@@ -138,19 +138,15 @@ export async function POST(request: NextRequest) {
   // Fire-and-forget: populate feed in background so the response returns instantly
   const svc = getServiceClient();
   const feedId = feed.id;
+  const newFeed = { id: feedId, name: feed.name as string, query_text: query_text };
   Promise.resolve().then(async () => {
     try {
-      const count = await instantClassify(svc, feedId, query_text);
-      if (count > 0) await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
-    } catch {}
-    try {
-      const braveItems = await discoverFeeds(query_text);
-      if (braveItems.length > 0) {
-        await svc.from("feed_items").insert(braveItems.map(item => ({
-          feed_id: feedId, title: item.title, url: item.url, summary: item.summary,
-          source: item.source, image_url: item.image_url, published_at: item.published_at,
-        })));
-        await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
+      const discovered = await discoverFeeds(query_text);
+      if (discovered.length > 0) {
+        const { inserted } = await classifyAndInsert(discovered, [newFeed], svc);
+        if (inserted > 0) {
+          await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
+        }
       }
     } catch {}
   });

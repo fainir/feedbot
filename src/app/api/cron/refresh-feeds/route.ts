@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import { refreshFeed } from "@/lib/feed-engine";
-import { insertToPool } from "@/lib/global-scanner";
+import { classifyAndInsert } from "@/lib/classify";
 import type { Feed } from "@/types/database";
 
 function isAuthorized(request: NextRequest): boolean {
@@ -97,21 +97,19 @@ export async function GET(request: NextRequest) {
     const batchResults = await Promise.allSettled(
       batch.map(async (feed) => {
         const discoveredItems = await refreshFeed(feed);
+        if (discoveredItems.length === 0) return { feed, newItems: 0 };
 
-        // Route through article_pool so classify() scores them before display.
-        // Direct feed_items inserts bypassed AI scoring, producing null-score junk.
-        const poolItems = discoveredItems.map((item) => ({
-          ...item,
-          category: "custom",
-        }));
-        const added = await insertToPool(poolItems);
+        // Classify and insert immediately — same AI pipeline as scan-and-match
+        const { inserted } = await classifyAndInsert(discoveredItems, [feed], supabase);
 
-        await supabase
-          .from("feeds")
-          .update({ last_refreshed_at: new Date().toISOString() })
-          .eq("id", feed.id);
+        if (inserted > 0) {
+          await supabase
+            .from("feeds")
+            .update({ last_refreshed_at: new Date().toISOString() })
+            .eq("id", feed.id);
+        }
 
-        return { feed, newItems: added };
+        return { feed, newItems: inserted };
       })
     );
 
