@@ -157,7 +157,7 @@ ${articleList}
 For each article, find 1-3 feeds it belongs in. Be generous — include if loosely relevant.
 Skip only: spam, ads, non-English.
 
-Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"one sentence summary"},...]}`;
+Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
 
       const response = await client.chat.completions.create({
         model: AI_MODEL,
@@ -182,8 +182,8 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
       for (const match of matchList) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
-        const quality = typeof match.q === "number" ? match.q : 5;
-        if (quality < 5) continue;
+        const quality = typeof match.q === "number" ? match.q : 50;
+        if (quality < 50) continue;
         const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
@@ -218,7 +218,7 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore1to10,"s":"
         summary: m.summary || a.summary,
         source: a.source,
         image_url: a.image_url,
-        relevance_score: m.quality * 10,
+        relevance_score: m.quality,
         published_at: a.published_at,
       };
     });
