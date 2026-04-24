@@ -598,6 +598,10 @@ function isJunkArticle(a: RawArticle): boolean {
     const u = new URL(a.url);
     const path = u.pathname.replace(/\/+$/, "");
     if (!path || path === "" || path === "/index" || path === "/index.html") return true;
+
+    // Reddit discussion threads surfaced via Google News search — not primary sources.
+    // Curated subreddit RSS feeds (from GLOBAL_SOURCES) are still allowed through classify().
+    if (u.hostname === "www.reddit.com" && /search results/i.test(a.source)) return true;
   } catch { return true; }
 
   // Template/broken content in title or summary

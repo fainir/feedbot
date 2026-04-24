@@ -154,8 +154,19 @@ ${feedList}
 ARTICLES (index|title|summary|source):
 ${articleList}
 
-For each article, find 1-3 feeds it belongs in. Be generous — include if loosely relevant.
-Skip only: spam, ads, non-English.
+For each article, find the 1-2 feeds it best fits. Be STRICT — only include if clearly relevant.
+
+SCORING:
+- 85-100: Article's PRIMARY topic matches the feed. It IS about this topic, not just mentions it.
+- 65-84: Clearly relevant, a follower of this topic would genuinely want this.
+- Below 65: SKIP — tangential mention, off-topic, or background context only.
+
+RULES:
+- Assign to at most 1 feed unless the article is genuinely cross-topic (e.g. AI + security).
+- Reddit posts (reddit.com/r/*/comments/): cap score at 55 — discussions are not primary sources.
+- Listicles ("Top 10…", "Best X for…"), agency promotions, tutorials with no news value: cap at 50.
+- "Company uses AI for X" → that's an X article, not an AI article. Score 0 for AI feeds.
+- Skip: spam, ads, non-English content, generic opinion pieces with no new information.
 
 Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
 
@@ -182,8 +193,8 @@ Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":
       for (const match of matchList) {
         if (typeof match.a !== "number" || !Array.isArray(match.f)) continue;
         if (match.a < 0 || match.a >= batch.length) continue;
-        const quality = typeof match.q === "number" ? match.q : 50;
-        if (quality < 50) continue;
+        const quality = typeof match.q === "number" ? match.q : 0;
+        if (quality < 65) continue;
         const summary = (typeof match.s === "string" && match.s.length > 10) ? match.s.slice(0, 200) : "";
         for (const fi of match.f) {
           if (typeof fi === "number" && fi >= 0 && fi < feeds.length) {
