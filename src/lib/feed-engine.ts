@@ -48,10 +48,8 @@ function buildGoogleNewsUrl(query: string): string {
 
 function buildCommonRssUrls(terms: string[]): string[] {
   const topic = terms.slice(0, 3).join("-");
-  const query = terms.slice(0, 3).join("+");
 
   return [
-    `https://www.reddit.com/search.rss?q=${query}&sort=new`,
     `https://hnrss.org/newest?q=${terms.join("+")}`,
     `https://medium.com/feed/tag/${topic}`,
     `https://dev.to/feed/tag/${topic}`,

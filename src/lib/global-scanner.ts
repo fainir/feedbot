@@ -654,7 +654,7 @@ function cleanSummary(summary: string, title: string): string {
   return summary;
 }
 
-async function insertToPool(articles: RawArticle[]): Promise<number> {
+export async function insertToPool(articles: RawArticle[]): Promise<number> {
   if (articles.length === 0) return 0;
 
   // Filter junk articles
