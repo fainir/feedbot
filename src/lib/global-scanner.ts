@@ -704,19 +704,28 @@ export async function insertToPool(articles: RawArticle[]): Promise<number> {
  * Cost: $0 (all RSS).
  */
 export async function scanGlobal(): Promise<{ scanned: number; added: number }> {
-  const results = await Promise.allSettled(
-    GLOBAL_SOURCES.map(({ url, category }) => fetchRss(url, category))
-  );
-
   const articles: RawArticle[] = [];
   const seenUrls = new Set<string>();
 
-  for (const result of results) {
-    if (result.status !== "fulfilled") continue;
-    for (const article of result.value) {
-      if (seenUrls.has(article.url)) continue;
-      seenUrls.add(article.url);
-      articles.push(article);
+  // Chunk to 5 concurrent fetches — fetching all ~140 feeds in parallel
+  // spikes memory above Railway's 512MB limit (each parsed RSS holds raw XML
+  // + items in memory until GC). Process in waves and drop intermediates.
+  const CHUNK = 5;
+  for (let i = 0; i < GLOBAL_SOURCES.length; i += CHUNK) {
+    const chunk = GLOBAL_SOURCES.slice(i, i + CHUNK);
+    const results = await Promise.allSettled(
+      chunk.map(({ url, category }) => fetchRss(url, category))
+    );
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+      for (const article of result.value) {
+        if (seenUrls.has(article.url)) continue;
+        seenUrls.add(article.url);
+        articles.push(article);
+      }
+    }
+    if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
+      (global as { gc: () => void }).gc();
     }
   }
 
@@ -864,9 +873,14 @@ export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; add
 
   const batch = sorted.slice(0, limit);
 
-  const allResults: PromiseSettledResult<RawArticle[]>[] = [];
-  for (let i = 0; i < batch.length; i += 5) {
-    const chunk = batch.slice(i, i + 5);
+  const articles: RawArticle[] = [];
+  const seenUrls = new Set<string>();
+
+  // 3 concurrent (down from 5) — Google News RSS responses are large and
+  // can OOM Railway's 512MB limit when parsed in parallel. Drain results
+  // each chunk so parsed RSS objects can be GC'd before next batch.
+  for (let i = 0; i < batch.length; i += 3) {
+    const chunk = batch.slice(i, i + 3);
     const chunkResults = await Promise.allSettled(
       chunk
         .map((f) => {
@@ -877,18 +891,16 @@ export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; add
         })
         .filter(Boolean) as Promise<RawArticle[]>[]
     );
-    allResults.push(...chunkResults);
-  }
-
-  const articles: RawArticle[] = [];
-  const seenUrls = new Set<string>();
-
-  for (const result of allResults) {
-    if (result.status !== "fulfilled") continue;
-    for (const article of result.value) {
-      if (seenUrls.has(article.url)) continue;
-      seenUrls.add(article.url);
-      articles.push(article);
+    for (const result of chunkResults) {
+      if (result.status !== "fulfilled") continue;
+      for (const article of result.value) {
+        if (seenUrls.has(article.url)) continue;
+        seenUrls.add(article.url);
+        articles.push(article);
+      }
+    }
+    if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
+      (global as { gc: () => void }).gc();
     }
   }
 

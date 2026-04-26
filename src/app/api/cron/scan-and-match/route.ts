@@ -89,7 +89,7 @@ async function classify(supabase: SupabaseClient) {
     .select("id, title, summary, source, url, image_url, published_at")
     .gte("created_at", cutoff)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(200);
 
   if (!articles || articles.length === 0) {
     await setScanState(supabase, "last_classified_at", new Date().toISOString());
@@ -101,7 +101,7 @@ async function classify(supabase: SupabaseClient) {
   const { data: alreadyMatched } = await supabase
     .from("feed_items")
     .select("article_pool_id")
-    .in("article_pool_id", articleIds.slice(0, 500));
+    .in("article_pool_id", articleIds.slice(0, 200));
   const matchedSet = new Set((alreadyMatched || []).map((r: { article_pool_id: string }) => r.article_pool_id));
   const newArticles = articles.filter(a => !matchedSet.has(a.id));
 
@@ -143,6 +143,9 @@ export async function GET(request: NextRequest) {
 
   // phase=all: scan then classify
   const scanResult = await scan(supabase);
+  if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
+    (global as { gc: () => void }).gc();
+  }
   const classifyResult = await classify(supabase);
   return NextResponse.json({ scan: scanResult, classify: classifyResult });
 }

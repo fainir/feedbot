@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --no-lint",
-    "start": "next start",
+    "start": "NODE_OPTIONS='--max-old-space-size=450 --expose-gc' next start",
     "lint": "next lint",
     "test": "vitest run --dir src",
     "test:watch": "vitest --dir src",
