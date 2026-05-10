@@ -34,7 +34,7 @@ export async function GET(
     .from("feed_items")
     .select("*")
     .eq("feed_id", id)
-    .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (itemsError) {
