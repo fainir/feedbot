@@ -8,4 +8,4 @@ cmds = ["npm ci"]
 cmds = ["NODE_OPTIONS='--max-old-space-size=3072' npm run build"]
 
 [start]
-cmd = "node --max-old-space-size=450 --expose-gc .next/standalone/server.js"
+cmd = "node --max-old-space-size=400 --expose-gc .next/standalone/server.js"

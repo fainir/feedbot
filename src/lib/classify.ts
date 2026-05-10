@@ -72,9 +72,9 @@ export async function classifyAndInsert(
 
   const feedList = feeds.map((f, i) => `${i}: "${f.query_text || f.name}"`).join("\n");
 
-  // 25 articles/batch — keeps the prompt + response well under the
+  // 15 articles/batch — keeps the prompt + response well under the
   // memory ceiling on Railway. Larger batches were OOMing during classify.
-  const BATCH = 25;
+  const BATCH = 15;
   const allMatches: { articleIdx: number; feedIdx: number; quality: number; summary: string }[] = [];
 
   for (let i = 0; i < articles.length; i += BATCH) {

@@ -710,7 +710,7 @@ export async function scanGlobal(): Promise<{ scanned: number; added: number }> 
   // Chunk to 5 concurrent fetches — fetching all ~140 feeds in parallel
   // spikes memory above Railway's 512MB limit (each parsed RSS holds raw XML
   // + items in memory until GC). Process in waves and drop intermediates.
-  const CHUNK = 5;
+  const CHUNK = 3;
   for (let i = 0; i < GLOBAL_SOURCES.length; i += CHUNK) {
     const chunk = GLOBAL_SOURCES.slice(i, i + CHUNK);
     const results = await Promise.allSettled(
@@ -851,7 +851,7 @@ export async function scanBrave(queries?: string[]): Promise<{ scanned: number; 
  * niche/custom feeds get articles that the generic GLOBAL_SOURCES may miss.
  * Processes up to `limit` feeds per run to avoid hammering Google.
  */
-export async function scanGoogleNews(limit = 25): Promise<{ scanned: number; added: number; feeds: number }> {
+export async function scanGoogleNews(limit = 10): Promise<{ scanned: number; added: number; feeds: number }> {
   const supabase = getServiceClient();
 
   const { data: feeds } = await supabase
