@@ -140,7 +140,7 @@ export default function MyFeedPage() {
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                   {item.image_url && (
                     <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden">
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                      <img src={item.image_url} alt="" className="w-full h-full object-cover will-change-transform transform-gpu group-hover:scale-[1.04] transition-transform duration-500 ease-out" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
                     </div>
                   )}
                   <div className="p-3 sm:p-4">

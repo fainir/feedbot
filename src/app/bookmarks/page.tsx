@@ -144,7 +144,7 @@ export default function BookmarksPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
                     {hasImage && (
                       <div className={`w-full aspect-[2.5/1] bg-gradient-to-br ${getGradient(title)} overflow-hidden relative`}>
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700 ease-out" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover will-change-transform transform-gpu group-hover:scale-[1.04] transition-transform duration-500 ease-out" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-3 sm:p-4">
