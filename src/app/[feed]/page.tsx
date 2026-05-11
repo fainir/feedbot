@@ -819,7 +819,7 @@ export default function FeedPage() {
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
               return (
-                <article key={item.id || i} className="group rounded-3xl border border-border overflow-hidden bg-bg-card shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <article key={item.id || i} className="group rounded-3xl border border-border overflow-hidden bg-bg-card shadow-sm hover:shadow-md transition-[box-shadow,border-color] duration-300">
                   {ytId ? (
                     <div className="w-full aspect-video">
                       <iframe src={`https://www.youtube.com/embed/${ytId}`} title={title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" />
@@ -828,7 +828,7 @@ export default function FeedPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: feedSlug })}>
                     {!ytId && hasImage && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover will-change-transform transform-gpu group-hover:scale-[1.04] transition-transform duration-500 ease-out" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover will-change-transform transform-gpu group-hover:scale-[1.05] transition-transform duration-1000 ease-in-out" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-4 sm:p-6">
