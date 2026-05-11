@@ -49,25 +49,32 @@ jobs:
           hit_endpoint() {
             local path="$1"
             local url="https://myfeed.space/api/cron/$path"
-            echo "GET $url"
-            local status
-            status=$(curl --silent --show-error --write-out "%{http_code}" -o /tmp/curl_out \
-              --max-time 540 \
-              -H "Authorization: Bearer $CRON_SECRET" \
-              "$url")
-            cat /tmp/curl_out; echo
-            if [ "$status" -eq 502 ]; then
-              echo "Got 502 — waiting 30s and retrying..."
-              sleep 30
-              curl --fail --silent --show-error \
+            local attempt status rc
+            for attempt in 1 2 3; do
+              echo "GET $url (attempt $attempt)"
+              set +e
+              status=$(curl --silent --show-error --write-out "%{http_code}" -o /tmp/curl_out \
                 --max-time 540 \
                 -H "Authorization: Bearer $CRON_SECRET" \
-                "$url"
-              echo
-            elif [ "$status" -ge 400 ]; then
-              echo "Request failed with HTTP $status" >&2
-              exit 1
-            fi
+                "$url")
+              rc=$?
+              set -e
+              cat /tmp/curl_out; echo
+              if [ "$rc" -eq 0 ] && [ "$status" -lt 400 ]; then
+                return 0
+              fi
+              if [ "$rc" -ne 0 ]; then
+                echo "curl failed with exit code $rc"
+              else
+                echo "Request failed with HTTP $status"
+              fi
+              if [ "$attempt" -lt 3 ]; then
+                echo "Waiting 30s before retry..."
+                sleep 30
+              fi
+            done
+            echo "Giving up after 3 attempts." >&2
+            exit 1
           }
           hit_endpoint "$PATH_"
           if [ -n "$EXTRA_" ]; then
