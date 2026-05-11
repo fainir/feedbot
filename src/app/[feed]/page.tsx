@@ -828,7 +828,7 @@ export default function FeedPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: feedSlug })}>
                     {!ytId && hasImage && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover will-change-transform transform-gpu group-hover:scale-[1.05] transition-transform duration-1000 ease-in-out" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
+                        <img src={item.image_url} alt={title} className="w-full h-full object-cover will-change-transform transform-gpu scale-100 group-hover:scale-[1.05] transition-transform duration-1000 ease-in-out" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
                       </div>
                     )}
                     <div className="p-4 sm:p-6">
