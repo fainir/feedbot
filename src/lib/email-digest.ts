@@ -34,11 +34,29 @@ export async function sendDigests(): Promise<{ sent: number; skipped: number }> 
   let sent = 0;
   let skipped = 0;
 
-  // Get all users with digest enabled
-  const { data: prefs } = await supabase
+  // Get all users with digest enabled. Try the new schema (migration 013);
+  // fall back to the legacy column set if feed_frequencies isn't there yet.
+  type PrefRow = {
+    user_id: string;
+    digest_frequency: string;
+    feed_ids: string[] | null;
+    feed_frequencies?: FeedFrequencies | null;
+    last_digest_at: string | null;
+  };
+  let prefs: PrefRow[] | null = null;
+  const tryFull = await supabase
     .from("email_preferences")
     .select("user_id, digest_frequency, feed_ids, feed_frequencies, last_digest_at")
     .eq("digest_enabled", true);
+  if (tryFull.error && tryFull.error.code === "42703") {
+    const tryLegacy = await supabase
+      .from("email_preferences")
+      .select("user_id, digest_frequency, feed_ids, last_digest_at")
+      .eq("digest_enabled", true);
+    prefs = tryLegacy.data as PrefRow[] | null;
+  } else {
+    prefs = tryFull.data as PrefRow[] | null;
+  }
 
   if (!prefs || prefs.length === 0) return { sent: 0, skipped: 0 };
 
@@ -126,10 +144,17 @@ export async function sendDigests(): Promise<{ sent: number; skipped: number }> 
         for (const fid of dueFeedIds) {
           if (updated[fid]) updated[fid] = { ...updated[fid], last_sent_at: nowIso };
         }
-        await supabase
+        const upd = await supabase
           .from("email_preferences")
           .update({ feed_frequencies: updated, last_digest_at: nowIso })
           .eq("user_id", pref.user_id);
+        if (upd.error && upd.error.code === "42703") {
+          // Column not migrated yet — stamp only the global timestamp.
+          await supabase
+            .from("email_preferences")
+            .update({ last_digest_at: nowIso })
+            .eq("user_id", pref.user_id);
+        }
       } else {
         await supabase
           .from("email_preferences")

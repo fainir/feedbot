@@ -16,11 +16,29 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const svc = getServiceClient();
-  const { data } = await svc
+  // Try selecting the new column. If migration 013 hasn't been applied to
+  // this Supabase yet, the schema cache complains — retry without it.
+  let data: {
+    digest_enabled?: boolean;
+    digest_frequency?: string;
+    feed_ids?: string[] | null;
+    feed_frequencies?: FeedFrequencies | null;
+  } | null = null;
+  const tryFull = await svc
     .from("email_preferences")
     .select("digest_enabled, digest_frequency, feed_ids, feed_frequencies")
     .eq("user_id", user.id)
     .single();
+  if (tryFull.error && tryFull.error.code === "42703") {
+    const tryLegacy = await svc
+      .from("email_preferences")
+      .select("digest_enabled, digest_frequency, feed_ids")
+      .eq("user_id", user.id)
+      .single();
+    data = tryLegacy.data;
+  } else {
+    data = tryFull.data;
+  }
 
   // Build legacy `feeds` list for callers that still expect it.
   const ff = (data?.feed_frequencies as FeedFrequencies | null) || {};
@@ -100,16 +118,33 @@ export async function POST(req: NextRequest) {
     ? Object.entries(feedFrequencies).filter(([, c]) => c.frequency !== "never").map(([id]) => id)
     : null;
 
-  const { error } = await svc
+  // Try the new schema first (feed_frequencies column from migration 013).
+  // If the column doesn't exist yet (migration not run in this environment),
+  // fall back to the legacy shape so saving still works for users.
+  const fullRow = {
+    user_id: user.id,
+    digest_enabled: enabled,
+    digest_frequency: frequency,
+    feed_ids: feedIds && feedIds.length > 0 ? feedIds : null,
+    feed_frequencies: feedFrequencies ?? {},
+  };
+  const { error: errFull } = await svc
     .from("email_preferences")
-    .upsert({
-      user_id: user.id,
-      digest_enabled: enabled,
-      digest_frequency: frequency,
-      feed_ids: feedIds && feedIds.length > 0 ? feedIds : null,
-      feed_frequencies: feedFrequencies ?? {},
-    }, { onConflict: "user_id" });
+    .upsert(fullRow, { onConflict: "user_id" });
 
-  if (error) return NextResponse.json({ error: "Failed to save", detail: error.message, code: error.code }, { status: 500 });
+  if (errFull && errFull.code === "PGRST204") {
+    // Schema cache says the column isn't there — retry without it.
+    const { feed_frequencies: _drop, ...legacyRow } = fullRow;
+    const { error: errLegacy } = await svc
+      .from("email_preferences")
+      .upsert(legacyRow, { onConflict: "user_id" });
+    if (errLegacy) {
+      return NextResponse.json({ error: "Failed to save", detail: errLegacy.message, code: errLegacy.code }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, schema: "legacy" });
+  }
+  if (errFull) {
+    return NextResponse.json({ error: "Failed to save", detail: errFull.message, code: errFull.code }, { status: 500 });
+  }
   return NextResponse.json({ success: true });
 }
