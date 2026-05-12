@@ -94,7 +94,13 @@ export default function ForYouPage() {
   const [showEmailPrefs, setShowEmailPrefs] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ enabled: true, frequency: "daily", time: "08:00", feeds: ["for-you"] as string[] });
   const [heroDismissed, setHeroDismissed] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("myfeed-hero-dismissed") === "1";
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("myfeed-hero-dismissed") === "1") return true;
+      // Auto-collapse for returning users (3rd+ visit): show CTA once or twice,
+      // then assume they get the product and reclaim the screen for content.
+      const visits = parseInt(localStorage.getItem("myfeed-visit-count") || "0", 10);
+      if (visits >= 2) return true;
+    }
     return false;
   });
   const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(() => {
@@ -109,6 +115,11 @@ export default function ForYouPage() {
     setMounted(true);
     window.scrollTo(0, 0);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // Increment visit counter so the hero CTA auto-collapses on the 3rd visit.
+    try {
+      const n = parseInt(localStorage.getItem("myfeed-visit-count") || "0", 10) + 1;
+      localStorage.setItem("myfeed-visit-count", String(Math.min(n, 99)));
+    } catch {}
   }, []);
 
   // Collapse top bar on scroll down (mobile only; CSS gates the transform on sm: breakpoint)
@@ -354,12 +365,20 @@ export default function ForYouPage() {
             <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">
               <Sparkles className="h-3.5 w-3.5" />Create feed
             </button>
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
+              </button>
+            )}
             <div className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="p-1 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
+              <button onClick={() => setShowMenu(!showMenu)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
               {showMenu && (
                 <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
                   {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
-                  {mounted && <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{theme === "dark" ? "Light mode" : "Dark mode"}</button>}
                   {!user && <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign up / Sign in</Link>}
                   {user && <Link href="/bookmarks" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><Bookmark className="h-4 w-4" />Bookmarks</Link>}
                   {user && <button onClick={() => { setShowEmailPrefs(true); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors"><Mail className="h-4 w-4" />Email digest</button>}
@@ -401,11 +420,11 @@ export default function ForYouPage() {
               <Rss className="h-4 w-4" /> My Feed
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
+              <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               {user ? (
-                <button onClick={() => setShowEmailPrefs(true)} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
+                <button onClick={() => setShowEmailPrefs(true)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
                   <Mail className="h-3.5 w-3.5" />
                 </button>
               ) : (
@@ -474,7 +493,7 @@ export default function ForYouPage() {
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
           <div className="relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:bg-none dark:bg-bg-hover">
-            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-5 right-5 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
+            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 sm:top-5 sm:right-5 inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
               <div>
@@ -486,6 +505,9 @@ export default function ForYouPage() {
               <input
                 type="text"
                 placeholder="e.g. React tutorials, SpaceX launches, startup funding..."
+                inputMode="text"
+                autoCapitalize="sentences"
+                enterKeyHint="go"
                 className="min-w-0 w-full bg-bg-card border border-border rounded-full px-5 py-2.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-text/20 focus:border-text/40 placeholder:text-text-muted/70 sm:flex-1 transition-colors"
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
@@ -540,7 +562,14 @@ export default function ForYouPage() {
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: "for-you" })}>
                     {!ytId && hasImage && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
-                        <img src={item.image_url} alt={title} className="w-full h-full object-cover" loading="lazy" onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }} />
+                        <img
+                          src={item.image_url}
+                          alt={title}
+                          className="w-full h-full object-cover"
+                          loading={i === 0 ? "eager" : "lazy"}
+                          fetchPriority={i === 0 ? "high" : "auto"}
+                          onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }}
+                        />
                       </div>
                     )}
                     <div className="p-4 sm:p-6">
