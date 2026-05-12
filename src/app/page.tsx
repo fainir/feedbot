@@ -435,14 +435,14 @@ export default function ForYouPage() {
             {mounted && (
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors"
+                className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors"
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
               </button>
             )}
             <div className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
+              <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
               {showMenu && (
                 <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
                   {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
@@ -487,11 +487,11 @@ export default function ForYouPage() {
               <Rss className="h-4 w-4" /> My Feed
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
+              <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="relative inline-flex items-center justify-center p-2 rounded-full before:absolute before:content-[''] before:-inset-2 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               {user ? (
-                <button onClick={() => setShowEmailPrefs(true)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
+                <button onClick={() => setShowEmailPrefs(true)} className="relative inline-flex items-center justify-center p-2 rounded-full before:absolute before:content-[''] before:-inset-2 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Email updates">
                   <Mail className="h-3.5 w-3.5" />
                 </button>
               ) : (
@@ -560,7 +560,7 @@ export default function ForYouPage() {
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
           <div className="relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:bg-none dark:bg-bg-hover">
-            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 sm:top-5 sm:right-5 inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
+            <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 sm:top-5 sm:right-5 inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
               <div>

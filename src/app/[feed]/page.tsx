@@ -718,14 +718,14 @@ export default function FeedPage() {
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors"
+              className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors"
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
             </button>
           )}
           <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
+            <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options">
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
             {showMenu && (
@@ -786,10 +786,10 @@ export default function FeedPage() {
               <span className="text-lg flex-shrink-0">{activeTab?.icon || "📡"}</span> <span className="truncate">{displayName}</span>
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={handleRefresh} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
+              <button onClick={handleRefresh} className="relative inline-flex items-center justify-center p-2 rounded-full before:absolute before:content-[''] before:-inset-2 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
-              <button onClick={handleShareFeed} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
+              <button onClick={handleShareFeed} className="relative inline-flex items-center justify-center p-2 rounded-full before:absolute before:content-[''] before:-inset-2 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
                 <Share2 className="h-3.5 w-3.5" />
               </button>
               {!user && (

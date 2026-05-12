@@ -163,7 +163,7 @@ export default function MyFeedPage() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowShare(true)}
-            className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 hover:bg-bg-hover rounded-lg transition-colors"
+            className="relative inline-flex items-center justify-center p-2 hover:bg-bg-hover rounded-lg before:absolute before:content-[''] before:-inset-2 sm:before:hidden transition-colors"
             aria-label="Share feed"
           >
             <Share2 className="h-4 w-4" />
@@ -171,7 +171,7 @@ export default function MyFeedPage() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 hover:bg-bg-hover rounded-lg transition-colors"
+            className="relative inline-flex items-center justify-center p-2 hover:bg-bg-hover rounded-lg before:absolute before:content-[''] before:-inset-2 sm:before:hidden transition-colors"
             aria-label="Refresh feed"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
@@ -185,7 +185,7 @@ export default function MyFeedPage() {
           <div className="w-full max-w-md bg-bg-card border border-border rounded-2xl p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold">Share &quot;{feed.name}&quot;</h2>
-              <button onClick={() => setShowShare(false)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Close">
+              <button onClick={() => setShowShare(false)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Close">
                 <span className="text-lg leading-none">×</span>
               </button>
             </div>
