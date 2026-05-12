@@ -226,8 +226,13 @@ async function sendEmail(apiKey: string, to: string, subject: string, html: stri
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "MyFeed <onboarding@resend.dev>",
+      // gethandyai.app is the only verified domain on the Resend account
+      // right now. Using `onboarding@resend.dev` would limit deliveries to
+      // the API account owner (Resend test-mode policy). Once the user
+      // verifies myfeed.space on Resend, swap this to `digest@myfeed.space`.
+      from: "MyFeed <digest@gethandyai.app>",
       to,
+      reply_to: "noreply@myfeed.space",
       subject,
       html,
     }),
