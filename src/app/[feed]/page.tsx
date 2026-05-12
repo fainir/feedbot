@@ -715,19 +715,22 @@ export default function FeedPage() {
             <Sparkles className="h-3.5 w-3.5" />
             Create feed
           </button>
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
+            </button>
+          )}
           <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)} className="p-1 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
+            <button onClick={() => setShowMenu(!showMenu)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full hover:bg-bg-hover transition-colors" aria-label="More options">
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
                 {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
-                {mounted && (
-                  <button onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors">
-                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    {theme === "dark" ? "Light mode" : "Dark mode"}
-                  </button>
-                )}
                 {!user && (
                   <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
                     <LogIn className="h-4 w-4" />
@@ -783,10 +786,10 @@ export default function FeedPage() {
               <span className="text-lg flex-shrink-0">{activeTab?.icon || "📡"}</span> <span className="truncate">{displayName}</span>
             </h2>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <button onClick={handleRefresh} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
+              <button onClick={handleRefresh} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh feed" disabled={refreshing}>
                 <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
               </button>
-              <button onClick={handleShareFeed} className="p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
+              <button onClick={handleShareFeed} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Share feed">
                 <Share2 className="h-3.5 w-3.5" />
               </button>
               {!user && (
