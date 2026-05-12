@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Sparkles, Loader2, ArrowLeft, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Bookmark, Share2 } from "lucide-react";
+import { Sparkles, Loader2, ArrowLeft, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Bookmark, Share2, Check, Copy, Globe, Lock } from "lucide-react";
 import Link from "next/link";
 
 interface Feed {
@@ -10,6 +10,8 @@ interface Feed {
   name: string;
   query_text: string;
   is_active: boolean;
+  is_public: boolean;
+  slug: string | null;
   last_refreshed_at: string | null;
   created_at: string;
 }
@@ -32,6 +34,10 @@ export default function MyFeedPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showShare, setShowShare] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const loadFeed = useCallback(async () => {
     try {
@@ -62,6 +68,64 @@ export default function MyFeedPage() {
       await loadFeed();
     } catch { /* ignore */ }
     setRefreshing(false);
+  };
+
+  const shareUrl = feed?.slug ? `${typeof window !== "undefined" ? window.location.origin : ""}/${feed.slug}` : "";
+
+  const handleMakePublic = async () => {
+    if (!feed || publishing) return;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/feeds/${feedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_public: true }),
+      });
+      if (res.ok) {
+        const { feed: updated } = await res.json();
+        setFeed((f) => (f ? { ...f, ...updated } : f));
+      }
+    } catch { /* ignore */ }
+    setPublishing(false);
+  };
+
+  const handleMakePrivate = async () => {
+    if (!feed || publishing) return;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/feeds/${feedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_public: false }),
+      });
+      if (res.ok) {
+        const { feed: updated } = await res.json();
+        setFeed((f) => (f ? { ...f, ...updated } : f));
+      }
+    } catch { /* ignore */ }
+    setPublishing(false);
+  };
+
+  const handleCopyLink = async () => {
+    if (!shareUrl) return;
+    setCopying(true);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 2000);
+    } catch { /* ignore */ }
+    setCopying(false);
+  };
+
+  const handleNativeShare = async () => {
+    if (!feed || !shareUrl) return;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ title: `${feed.name} - MyFeed`, url: shareUrl });
+      } catch { /* user cancelled */ }
+    } else {
+      handleCopyLink();
+    }
   };
 
   if (loading) {
@@ -96,15 +160,93 @@ export default function MyFeedPage() {
             <p className="text-[11px] text-text-muted line-clamp-1">{feed.query_text}</p>
           </div>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="p-2 hover:bg-bg-hover rounded-lg transition-colors"
-          aria-label="Refresh feed"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowShare(true)}
+            className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 hover:bg-bg-hover rounded-lg transition-colors"
+            aria-label="Share feed"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-2 hover:bg-bg-hover rounded-lg transition-colors"
+            aria-label="Refresh feed"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </header>
+
+      {/* Share dialog */}
+      {showShare && feed && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => setShowShare(false)}>
+          <div className="w-full max-w-md bg-bg-card border border-border rounded-2xl p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold">Share &quot;{feed.name}&quot;</h2>
+              <button onClick={() => setShowShare(false)} className="inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-full text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Close">
+                <span className="text-lg leading-none">×</span>
+              </button>
+            </div>
+
+            {!feed.is_public ? (
+              <>
+                <div className="flex items-start gap-3 mb-5">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-hover flex-shrink-0"><Lock className="h-4 w-4 text-text-muted" /></div>
+                  <div>
+                    <p className="text-sm font-medium text-text">This feed is private</p>
+                    <p className="text-xs text-text-muted mt-0.5">Make it public to share the link with anyone. Title and prompt will be visible; nobody can edit it but you.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleMakePublic}
+                  disabled={publishing}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-text text-bg py-3 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                  Make public &amp; get shareable link
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-bg-hover flex-shrink-0"><Globe className="h-4 w-4 text-text" /></div>
+                  <div>
+                    <p className="text-sm font-medium text-text">This feed is public</p>
+                    <p className="text-xs text-text-muted mt-0.5">Anyone with the link can view this feed. They can&apos;t edit it.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mb-3 rounded-xl border border-border bg-bg px-3 py-2.5">
+                  <span className="text-xs text-text-muted flex-1 truncate font-mono">{shareUrl}</span>
+                  <button
+                    onClick={handleCopyLink}
+                    disabled={copying}
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md hover:bg-bg-hover transition-colors flex-shrink-0"
+                  >
+                    {justCopied ? <><Check className="h-3.5 w-3.5 text-green-500" />Copied</> : <><Copy className="h-3.5 w-3.5" />Copy</>}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleNativeShare}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-text text-bg py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+                  >
+                    <Share2 className="h-4 w-4" />Share
+                  </button>
+                  <button
+                    onClick={handleMakePrivate}
+                    disabled={publishing}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-border text-text-muted py-2.5 text-sm font-medium transition-colors hover:text-text hover:bg-bg-hover disabled:opacity-50"
+                  >
+                    {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}Make private
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="max-w-2xl mx-auto px-3 sm:px-4 py-4">
         {items.length === 0 ? (

@@ -73,6 +73,7 @@ export async function PATCH(
     "notify_push",
     "notify_whatsapp",
     "is_active",
+    "is_public",
   ];
 
   const updates: Record<string, unknown> = {};
