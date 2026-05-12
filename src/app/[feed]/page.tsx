@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss } from "lucide-react";
+import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pull-to-refresh";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -356,6 +357,20 @@ export default function FeedPage() {
       .finally(() => { setLoading(false); setRefreshing(false); });
   }, [activeTab, feedSlug, fetchFeed, fetchBySlug]);
 
+  // Pull-to-refresh — silent variant: don't clear list or flash skeletons,
+  // just swap items in once the new fetch lands. Keeps the gesture smooth.
+  const pullRefresh = useCallback(async () => {
+    setNewArticlesAvailable(0);
+    try {
+      const fetcher = activeTab ? fetchFeed(activeTab.query) : fetchBySlug(feedSlug);
+      const d = await fetcher;
+      setItems(d.items || []);
+      setHasMore(d.hasMore || false);
+      setNextCursor(d.nextCursor || null);
+    } catch { /* keep current items if fetch fails */ }
+  }, [activeTab, feedSlug, fetchFeed, fetchBySlug]);
+  const { pullPx, refreshing: pulling } = usePullToRefresh(pullRefresh);
+
   useEffect(() => {
     setCommunityFeed(null);
     setNotFound(false);
@@ -614,6 +629,7 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
+      <PullToRefreshIndicator pullPx={pullPx} refreshing={pulling} />
       {/* Top bar -fixed. On mobile, slides up to hide row 1 on scroll down. */}
       <header className={`fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border transition-transform duration-200 will-change-transform ${hideTopRow ? "-translate-y-12" : "translate-y-0"} sm:!translate-y-0`}>
         <div className="flex items-center h-12">

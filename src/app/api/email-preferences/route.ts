@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type Frequency = "daily" | "weekly" | "never";
+type FeedFrequencies = Record<string, { frequency: Frequency; last_sent_at?: string | null }>;
+
+function isFrequency(s: unknown): s is Frequency {
+  return s === "daily" || s === "weekly" || s === "never";
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -10,14 +18,22 @@ export async function GET() {
   const svc = getServiceClient();
   const { data } = await svc
     .from("email_preferences")
-    .select("digest_enabled, digest_frequency, feed_ids")
+    .select("digest_enabled, digest_frequency, feed_ids, feed_frequencies")
     .eq("user_id", user.id)
     .single();
+
+  // Build legacy `feeds` list for callers that still expect it.
+  const ff = (data?.feed_frequencies as FeedFrequencies | null) || {};
+  const feedsFromMap = Object.entries(ff)
+    .filter(([, cfg]) => cfg && cfg.frequency !== "never")
+    .map(([id]) => id);
+  const feeds = feedsFromMap.length > 0 ? feedsFromMap : (data?.feed_ids ?? ["for-you"]);
 
   return NextResponse.json({
     enabled: data?.digest_enabled ?? false,
     frequency: data?.digest_frequency ?? "daily",
-    feeds: data?.feed_ids ?? ["for-you"],
+    feeds,
+    feedFrequencies: ff,
   });
 }
 
@@ -27,24 +43,71 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  // Accept both frontend format (enabled/frequency/feeds) and raw DB format
   const enabled = body.enabled ?? body.digest_enabled ?? true;
   const frequency = body.frequency || body.digest_frequency || "daily";
-  const rawFeeds = body.feeds || body.feed_ids || null;
-  // feed_ids column is UUID[] — filter out non-UUID strings like "for-you"
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const feedIds = Array.isArray(rawFeeds)
-    ? rawFeeds.filter((f: string) => uuidRegex.test(f))
+
+  // New shape: feedFrequencies as { uuid: "daily"|"weekly"|"never" }. Filter out
+  // non-UUID keys (the legacy "for-you" slug that doesn't map to a feed row).
+  const rawFreqs = (body.feedFrequencies || body.feed_frequencies || null) as
+    | Record<string, Frequency>
+    | null;
+  let feedFrequencies: FeedFrequencies | null = null;
+  if (rawFreqs && typeof rawFreqs === "object") {
+    const out: FeedFrequencies = {};
+    for (const [id, f] of Object.entries(rawFreqs)) {
+      if (!UUID_RE.test(id)) continue;
+      if (!isFrequency(f)) continue;
+      out[id] = { frequency: f, last_sent_at: null };
+    }
+    feedFrequencies = out;
+  }
+
+  // Backward-compat: caller still using `feeds: string[]`. Convert into a
+  // feed_frequencies map at the global `frequency`.
+  if (!feedFrequencies) {
+    const rawFeeds = body.feeds || body.feed_ids || null;
+    if (Array.isArray(rawFeeds)) {
+      const out: FeedFrequencies = {};
+      for (const id of rawFeeds) {
+        if (typeof id === "string" && UUID_RE.test(id)) {
+          out[id] = { frequency: isFrequency(frequency) ? frequency : "daily", last_sent_at: null };
+        }
+      }
+      feedFrequencies = out;
+    }
+  }
+
+  // Preserve last_sent_at on existing feeds so updating prefs doesn't reset
+  // the cron's per-feed schedule.
+  const svc = getServiceClient();
+  if (feedFrequencies && Object.keys(feedFrequencies).length > 0) {
+    const { data: existing } = await svc
+      .from("email_preferences")
+      .select("feed_frequencies")
+      .eq("user_id", user.id)
+      .single();
+    const prev = (existing?.feed_frequencies as FeedFrequencies | null) || {};
+    for (const id of Object.keys(feedFrequencies)) {
+      if (prev[id]?.last_sent_at) {
+        feedFrequencies[id].last_sent_at = prev[id].last_sent_at;
+      }
+    }
+  }
+
+  // Derive the legacy `feed_ids` from the new map so old code paths keep
+  // working until we drop them.
+  const feedIds = feedFrequencies
+    ? Object.entries(feedFrequencies).filter(([, c]) => c.frequency !== "never").map(([id]) => id)
     : null;
 
-  const svc = getServiceClient();
   const { error } = await svc
     .from("email_preferences")
     .upsert({
       user_id: user.id,
       digest_enabled: enabled,
       digest_frequency: frequency,
-      feed_ids: feedIds && feedIds.length > 0 ? feedIds : null, // null = all feeds
+      feed_ids: feedIds && feedIds.length > 0 ? feedIds : null,
+      feed_frequencies: feedFrequencies ?? {},
     }, { onConflict: "user_id" });
 
   if (error) return NextResponse.json({ error: "Failed to save", detail: error.message, code: error.code }, { status: 500 });

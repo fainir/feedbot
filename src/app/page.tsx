@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss } from "lucide-react";
+import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pull-to-refresh";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
@@ -93,6 +94,11 @@ export default function ForYouPage() {
   });
   const [showEmailPrefs, setShowEmailPrefs] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ enabled: true, frequency: "daily", time: "08:00", feeds: ["for-you"] as string[] });
+  // Per-feed digest cadence — keyed by slug (FEEDS[i].id) for client convenience;
+  // we resolve slugs to feed UUIDs on save via the system-feeds endpoint.
+  type FeedFreq = "daily" | "weekly" | "never";
+  const [feedFreqs, setFeedFreqs] = useState<Record<string, FeedFreq>>({});
+  const [systemFeedMap, setSystemFeedMap] = useState<Record<string, string>>({}); // slug -> uuid
   const [heroDismissed, setHeroDismissed] = useState(() => {
     if (typeof window !== "undefined") {
       if (localStorage.getItem("myfeed-hero-dismissed") === "1") return true;
@@ -141,6 +147,54 @@ export default function ForYouPage() {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
 
+  // Hydrate the email-prefs dialog whenever it opens. We do this lazily so a
+  // logged-out viewer (or one who never opens the dialog) doesn't pay for it.
+  useEffect(() => {
+    if (!showEmailPrefs || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // Fetch in parallel: existing prefs + the slug→UUID map.
+        const [pRes, sRes] = await Promise.all([
+          fetch("/api/email-preferences").then((r) => r.ok ? r.json() : null),
+          fetch("/api/public/system-feeds").then((r) => r.ok ? r.json() : null),
+        ]);
+        if (cancelled) return;
+        // Build the slug→uuid map.
+        const slugToUuid: Record<string, string> = {};
+        if (sRes?.feeds) {
+          // Match on a normalised name: lowercased letters, e.g. "AI & ML" → "aiml".
+          const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const bySlug = new Map<string, string>();
+          for (const sf of sRes.feeds as Array<{ id: string; name: string; slug: string | null }>) {
+            if (sf.slug) bySlug.set(sf.slug, sf.id);
+            bySlug.set(norm(sf.name), sf.id);
+          }
+          for (const f of FEEDS) {
+            const uuid = bySlug.get(f.id) || bySlug.get(f.id.replace(/-/g, "")) || bySlug.get(f.name.toLowerCase().replace(/[^a-z0-9]/g, ""));
+            if (uuid) slugToUuid[f.id] = uuid;
+          }
+        }
+        setSystemFeedMap(slugToUuid);
+        // Project the server's feed_frequencies (UUID keys) back onto slugs for the UI.
+        if (pRes?.feedFrequencies) {
+          const uuidToSlug: Record<string, string> = {};
+          for (const [slug, uuid] of Object.entries(slugToUuid)) uuidToSlug[uuid] = slug;
+          const ff: Record<string, FeedFreq> = {};
+          for (const [uuid, cfg] of Object.entries(pRes.feedFrequencies as Record<string, { frequency: FeedFreq }>)) {
+            const slug = uuidToSlug[uuid];
+            if (slug && cfg?.frequency) ff[slug] = cfg.frequency;
+          }
+          setFeedFreqs(ff);
+        }
+        if (typeof pRes?.enabled === "boolean") {
+          setEmailPrefs((p) => ({ ...p, enabled: pRes.enabled, frequency: pRes.frequency || p.frequency }));
+        }
+      } catch { /* dialog still works with defaults */ }
+    })();
+    return () => { cancelled = true; };
+  }, [showEmailPrefs, user]);
+
   // Load feed preferences from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("myfeed-for-you-feeds");
@@ -178,6 +232,18 @@ export default function ForYouPage() {
     const url = `/api/public/feeds?q=all&feeds=${encodeURIComponent(feedsParam)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
     return fetch(url).then((r) => r.json());
   }, [feedNames]);
+
+  // Pull-to-refresh — silent fetch, swap items in when it lands.
+  const pullRefresh = useCallback(async () => {
+    try {
+      const d = await fetchFeed();
+      setItems(d.items || []);
+      setHasMore(d.hasMore || false);
+      setNextCursor(d.nextCursor || null);
+      trackEvent("feed_refresh", { feed: "for-you", source: "pull" });
+    } catch { /* keep current items on failure */ }
+  }, [fetchFeed]);
+  const { pullPx, refreshing: pulling } = usePullToRefresh(pullRefresh);
 
   useEffect(() => {
     // Stale-while-revalidate: render the last cached response immediately
@@ -334,6 +400,7 @@ export default function ForYouPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text">
+      <PullToRefreshIndicator pullPx={pullPx} refreshing={pulling} />
       {/* Top bar -fixed so it never scrolls away. On mobile, slides up to hide row 1 on scroll down. */}
       <header className={`fixed top-0 left-0 right-0 z-50 bg-bg-card border-b border-border transition-transform duration-200 will-change-transform ${hideTopRow ? "-translate-y-12" : "translate-y-0"} sm:!translate-y-0`}>
         <div className="flex items-center h-12">
@@ -641,17 +708,7 @@ export default function ForYouPage() {
 
                 {emailPrefs.enabled && (
                   <>
-                    {/* Frequency */}
-                    <div>
-                      <label className="text-xs text-text-muted font-medium uppercase tracking-wider block mb-1.5">Frequency</label>
-                      <div className="flex gap-2">
-                        {[{ v: "daily", l: "Daily" }, { v: "weekly", l: "Weekly" }, { v: "realtime", l: "Every 6h" }].map((o) => (
-                          <button key={o.v} onClick={() => setEmailPrefs({ ...emailPrefs, frequency: o.v })} className={`flex-1 py-2 text-xs rounded-lg border transition-colors ${emailPrefs.frequency === o.v ? "border-text bg-text/10 text-text font-semibold" : "border-border text-text-muted hover:border-text/30"}`}>{o.l}</button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Time */}
+                    {/* Delivery time */}
                     <div>
                       <label className="text-xs text-text-muted font-medium uppercase tracking-wider block mb-1.5">Delivery time</label>
                       <select value={emailPrefs.time} onChange={(e) => setEmailPrefs({ ...emailPrefs, time: e.target.value })} className="w-full bg-bg-hover border border-border rounded-lg px-3 py-2 text-sm">
@@ -664,21 +721,44 @@ export default function ForYouPage() {
                       </select>
                     </div>
 
-                    {/* Feed selection */}
+                    {/* Per-feed frequency */}
                     <div>
-                      <label className="text-xs text-text-muted font-medium uppercase tracking-wider block mb-1.5">Include feeds</label>
-                      <div className="space-y-1 max-h-40 overflow-y-auto">
-                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-hover cursor-pointer">
-                          <input type="checkbox" checked={emailPrefs.feeds.includes("for-you")} onChange={(e) => { const f = e.target.checked ? [...emailPrefs.feeds, "for-you"] : emailPrefs.feeds.filter((x) => x !== "for-you"); setEmailPrefs({ ...emailPrefs, feeds: f }); }} className="rounded" />
-                          <span className="text-sm">✨ For You (all feeds mixed)</span>
-                        </label>
-                        {FEEDS.map((feed) => (
-                          <label key={feed.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-hover cursor-pointer">
-                            <input type="checkbox" checked={emailPrefs.feeds.includes(feed.id)} onChange={(e) => { const f = e.target.checked ? [...emailPrefs.feeds, feed.id] : emailPrefs.feeds.filter((x) => x !== feed.id); setEmailPrefs({ ...emailPrefs, feeds: f }); }} className="rounded" />
-                            <span className="text-sm">{feed.icon} {feed.name}</span>
-                          </label>
-                        ))}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-text-muted font-medium uppercase tracking-wider">Each feed&apos;s cadence</label>
+                        <div className="flex gap-1 text-[10px]">
+                          <button
+                            type="button"
+                            onClick={() => { const all: Record<string, FeedFreq> = {}; for (const f of FEEDS) all[f.id] = "daily"; setFeedFreqs(all); }}
+                            className="px-1.5 py-0.5 rounded text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
+                          >All daily</button>
+                          <button
+                            type="button"
+                            onClick={() => setFeedFreqs({})}
+                            className="px-1.5 py-0.5 rounded text-text-muted hover:text-text hover:bg-bg-hover transition-colors"
+                          >Clear</button>
+                        </div>
                       </div>
+                      <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                        {FEEDS.map((feed) => {
+                          const current = feedFreqs[feed.id] || "never";
+                          return (
+                            <div key={feed.id} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-hover">
+                              <span className="text-sm truncate flex-1">{feed.icon} {feed.name}</span>
+                              <select
+                                value={current}
+                                onChange={(e) => setFeedFreqs((s) => ({ ...s, [feed.id]: e.target.value as FeedFreq }))}
+                                className="bg-bg border border-border rounded-md px-2 py-1 text-xs"
+                                aria-label={`${feed.name} email frequency`}
+                              >
+                                <option value="never">Off</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                              </select>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-text-muted mt-2">Daily feeds arrive at your delivery time. Weekly feeds arrive once every 7 days at the same time.</p>
                     </div>
                   </>
                 )}
@@ -687,11 +767,24 @@ export default function ForYouPage() {
               <div className="flex gap-2 mt-5">
                 <button onClick={() => setShowEmailPrefs(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
                 <button onClick={async () => {
+                  // Resolve slugs to UUIDs and ship the per-feed map. Slugs without
+                  // a UUID mapping are dropped (server would strip them anyway).
+                  const feedFrequencies: Record<string, FeedFreq> = {};
+                  for (const slug of Object.keys(feedFreqs)) {
+                    const uuid = systemFeedMap[slug];
+                    const freq = feedFreqs[slug];
+                    if (uuid && freq) feedFrequencies[uuid] = freq;
+                  }
                   try {
                     await fetch("/api/email-preferences", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(emailPrefs),
+                      body: JSON.stringify({
+                        enabled: emailPrefs.enabled,
+                        frequency: emailPrefs.frequency,
+                        time: emailPrefs.time,
+                        feedFrequencies,
+                      }),
                     });
                     toast("Email preferences saved", "success");
                   } catch { toast("Failed to save", "error"); }

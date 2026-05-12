@@ -1,12 +1,7 @@
 import { getServiceClient } from "@/lib/supabase";
 
-interface DigestUser {
-  user_id: string;
-  email: string;
-  digest_frequency: string;
-  feed_ids: string[] | null;
-  last_digest_at: string | null;
-}
+type Frequency = "daily" | "weekly" | "never" | "hourly";
+type FeedFrequencies = Record<string, { frequency: Frequency; last_sent_at?: string | null }>;
 
 interface DigestArticle {
   title: string;
@@ -17,6 +12,12 @@ interface DigestArticle {
   published_at: string;
   feed_name: string;
 }
+
+const FREQ_MS: Record<string, number> = {
+  hourly: 60 * 60 * 1000,
+  daily: 24 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+};
 
 /**
  * Send email digests to users who have them enabled.
@@ -36,48 +37,69 @@ export async function sendDigests(): Promise<{ sent: number; skipped: number }> 
   // Get all users with digest enabled
   const { data: prefs } = await supabase
     .from("email_preferences")
-    .select("user_id, digest_frequency, feed_ids, last_digest_at")
+    .select("user_id, digest_frequency, feed_ids, feed_frequencies, last_digest_at")
     .eq("digest_enabled", true);
 
   if (!prefs || prefs.length === 0) return { sent: 0, skipped: 0 };
 
-  // Get user emails
   for (const pref of prefs) {
     try {
-      // Check if it's time for this user's digest
-      if (!isDueForDigest(pref.digest_frequency, pref.last_digest_at)) {
-        skipped++;
-        continue;
+      // Resolve which feeds are DUE for this user using per-feed frequencies
+      // when present; fall back to the legacy global digest_frequency model.
+      const ff = (pref.feed_frequencies as FeedFrequencies | null) || {};
+      const hasPerFeed = Object.keys(ff).length > 0;
+      const now = Date.now();
+
+      let dueFeedIds: string[] = [];
+      if (hasPerFeed) {
+        for (const [feedId, cfg] of Object.entries(ff)) {
+          if (!cfg || cfg.frequency === "never") continue;
+          const interval = FREQ_MS[cfg.frequency] ?? FREQ_MS.daily;
+          const lastSent = cfg.last_sent_at ? new Date(cfg.last_sent_at).getTime() : 0;
+          if (now - lastSent >= interval) dueFeedIds.push(feedId);
+        }
+        if (dueFeedIds.length === 0) { skipped++; continue; }
+      } else {
+        // Legacy path: check the single global frequency.
+        if (!isDueForDigest(pref.digest_frequency, pref.last_digest_at)) {
+          skipped++;
+          continue;
+        }
+        dueFeedIds = (pref.feed_ids as string[] | null) ?? [];
       }
 
-      // Get user email
       const { data: profile } = await supabase
         .from("profiles")
         .select("email")
         .eq("id", pref.user_id)
         .single();
-
       if (!profile?.email) { skipped++; continue; }
 
-      // Digest = For You: pulls from system feeds only, user can select which ones
       const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
-      let feedQuery = supabase.from("feeds").select("id, name").eq("user_id", SYSTEM_USER).eq("is_active", true);
-      if (pref.feed_ids && pref.feed_ids.length > 0) {
-        feedQuery = feedQuery.in("id", pref.feed_ids);
+      let feedQuery = supabase
+        .from("feeds")
+        .select("id, name")
+        .eq("user_id", SYSTEM_USER)
+        .eq("is_active", true);
+      if (dueFeedIds.length > 0) {
+        feedQuery = feedQuery.in("id", dueFeedIds);
       }
       const { data: feeds } = await feedQuery;
       if (!feeds || feeds.length === 0) { skipped++; continue; }
 
-      // Get recent articles since last digest
-      const since = pref.last_digest_at || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // For per-feed mode, use each feed's own last_sent_at as its `since`.
+      // For legacy mode, use the global last_digest_at.
       const articles: DigestArticle[] = [];
-
       for (const feed of feeds) {
+        const perFeedSince = hasPerFeed
+          ? (ff[feed.id]?.last_sent_at ?? new Date(now - 24 * 60 * 60 * 1000).toISOString())
+          : (pref.last_digest_at || new Date(now - 24 * 60 * 60 * 1000).toISOString());
+
         const { data: items } = await supabase
           .from("feed_items")
           .select("title, url, summary, source, image_url, published_at")
           .eq("feed_id", feed.id)
-          .gte("published_at", since)
+          .gte("published_at", perFeedSince)
           .order("relevance_score", { ascending: false })
           .limit(5);
 
@@ -88,15 +110,32 @@ export async function sendDigests(): Promise<{ sent: number; skipped: number }> 
 
       if (articles.length === 0) { skipped++; continue; }
 
-      // Send email via Resend
       const html = buildDigestHtml(articles, profile.email);
-      await sendEmail(resendKey, profile.email, `Your MyFeed Digest — ${articles.length} new articles`, html);
+      await sendEmail(
+        resendKey,
+        profile.email,
+        `Your MyFeed Digest — ${articles.length} new ${articles.length === 1 ? "article" : "articles"}`,
+        html,
+      );
 
-      // Update last_digest_at
-      await supabase
-        .from("email_preferences")
-        .update({ last_digest_at: new Date().toISOString() })
-        .eq("user_id", pref.user_id);
+      // Stamp last_sent_at per feed we just sent (per-feed mode), and the global
+      // last_digest_at (legacy column, still used by older clients).
+      if (hasPerFeed) {
+        const nowIso = new Date(now).toISOString();
+        const updated: FeedFrequencies = { ...ff };
+        for (const fid of dueFeedIds) {
+          if (updated[fid]) updated[fid] = { ...updated[fid], last_sent_at: nowIso };
+        }
+        await supabase
+          .from("email_preferences")
+          .update({ feed_frequencies: updated, last_digest_at: nowIso })
+          .eq("user_id", pref.user_id);
+      } else {
+        await supabase
+          .from("email_preferences")
+          .update({ last_digest_at: new Date(now).toISOString() })
+          .eq("user_id", pref.user_id);
+      }
 
       sent++;
     } catch (err) {
