@@ -3,6 +3,39 @@ import { createClient } from "@supabase/supabase-js";
 
 const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
+// ── In-memory response cache ──
+// First visitor in a 60s window pays the Supabase cost; every other
+// visitor for the same (q, cursor, limit, feeds) tuple gets the cached
+// JSON in <5ms. Capped to keep memory predictable on Railway.
+const _responseCache = new Map<string, { body: string; expiresAt: number }>();
+const RESPONSE_TTL_MS = 60_000;
+const RESPONSE_CACHE_MAX = 32;
+const CACHE_HEADERS = {
+  "Content-Type": "application/json",
+  // Browser + any upstream CDN: cache 60s, serve stale up to 5min while
+  // a fresh fetch happens in the background.
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
+function responseCacheKey(req: NextRequest): string {
+  const p = req.nextUrl.searchParams;
+  return [
+    p.get("q") ?? "",
+    p.get("cursor") ?? "",
+    p.get("limit") ?? "",
+    p.get("feeds") ?? "",
+  ].join("|");
+}
+
+function cachePut(key: string, body: string) {
+  // Simple FIFO eviction — Map preserves insertion order.
+  if (_responseCache.size >= RESPONSE_CACHE_MAX) {
+    const oldest = _responseCache.keys().next().value;
+    if (oldest !== undefined) _responseCache.delete(oldest);
+  }
+  _responseCache.set(key, { body, expiresAt: Date.now() + RESPONSE_TTL_MS });
+}
+
 // ── TF-IDF Feed Matcher ──
 // Builds a weighted keyword→feed index from all system feed query_texts.
 // Keywords rare across feeds score higher (IDF), so "django" → Dev is strong
@@ -135,6 +168,16 @@ function getSupabase() {
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get("q");
   if (!query) return NextResponse.json({ error: "q required" }, { status: 400 });
+
+  // Serve cached response if fresh.
+  const cacheKey = responseCacheKey(req);
+  const cached = _responseCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return new NextResponse(cached.body, {
+      status: 200,
+      headers: { ...CACHE_HEADERS, "X-Cache": "HIT" },
+    });
+  }
 
   const cursor = req.nextUrl.searchParams.get("cursor"); // ISO date for pagination
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 50, 100);
@@ -398,7 +441,7 @@ export async function GET(req: NextRequest) {
   const hasMore = diverse.length > limit;
   const page = hasMore ? diverse.slice(0, limit) : diverse;
 
-  return NextResponse.json({
+  const body = JSON.stringify({
     items: page.map((item) => ({
       id: item.id,
       title: item.title,
@@ -410,5 +453,10 @@ export async function GET(req: NextRequest) {
     })),
     hasMore,
     nextCursor: hasMore ? page[page.length - 1].published_at : null,
+  });
+  cachePut(cacheKey, body);
+  return new NextResponse(body, {
+    status: 200,
+    headers: { ...CACHE_HEADERS, "X-Cache": "MISS" },
   });
 }

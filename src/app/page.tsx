@@ -169,14 +169,49 @@ export default function ForYouPage() {
   }, [feedNames]);
 
   useEffect(() => {
-    setLoading(true);
-    setItems([]);
-    setNextCursor(null);
+    // Stale-while-revalidate: render the last cached response immediately
+    // (no spinner flash on repeat visits), then refresh from the network.
+    let cancelled = false;
+    const cacheKey = `myfeed:for-you:v1:${feedNames.join(",")}`;
+    const CACHE_MAX_AGE_MS = 30 * 60_000; // 30 min — bounded staleness
+    let hadCache = false;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const c = JSON.parse(raw) as { items?: FeedItem[]; hasMore?: boolean; nextCursor?: string | null; ts?: number };
+        if (c?.items?.length && Date.now() - (c.ts || 0) < CACHE_MAX_AGE_MS) {
+          setItems(c.items);
+          setHasMore(!!c.hasMore);
+          setNextCursor(c.nextCursor || null);
+          setLoading(false);
+          hadCache = true;
+        }
+      }
+    } catch {}
+    if (!hadCache) {
+      setLoading(true);
+      setItems([]);
+      setNextCursor(null);
+    }
     fetchFeed()
-      .then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); })
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, [fetchFeed]);
+      .then((d) => {
+        if (cancelled) return;
+        setItems(d.items || []);
+        setHasMore(d.hasMore || false);
+        setNextCursor(d.nextCursor || null);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            items: (d.items || []).slice(0, 50),
+            hasMore: !!d.hasMore,
+            nextCursor: d.nextCursor || null,
+            ts: Date.now(),
+          }));
+        } catch {}
+      })
+      .catch(() => { if (!hadCache && !cancelled) setItems([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fetchFeed, feedNames]);
 
   const { dedupedItems, trendingTopics } = useMemo(() => {
     // Load source preferences for personalization
