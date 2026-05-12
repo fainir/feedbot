@@ -892,7 +892,7 @@ export default function FeedPage() {
                     </div>
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: feedSlug })}>
-                    {!ytId && hasImage && (
+                    {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img
                           src={item.image_url}
@@ -1044,8 +1044,8 @@ export default function FeedPage() {
                         const data = await res.json();
                         const id = data.feed?.id;
                         if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; }
-                        window.location.href = "/dashboard";
-                      } catch { window.location.href = "/dashboard"; }
+                        window.location.href = "/";
+                      } catch { window.location.href = "/"; }
                     }}
                     className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
                   >

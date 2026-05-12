@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Sparkles, Loader2, ArrowLeft, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Bookmark, Share2, Check, Copy, Globe, Lock } from "lucide-react";
 import Link from "next/link";
+import { timeAgo } from "@/lib/source-info";
 
 interface Feed {
   id: string;
@@ -277,18 +278,23 @@ export default function MyFeedPage() {
               <span className="text-xs text-text-muted">{items.length} finds</span>
               <span className="text-xs text-text-muted">{feed.last_refreshed_at ? `Updated ${new Date(feed.last_refreshed_at).toLocaleTimeString()}` : ""}</span>
             </div>
-            {items.map((item) => (
+            {items.map((item) => {
+              // Skip favicon-sized URLs (Brave's image CDN + common favicon paths)
+              // as card heroes — they upscale to blurry blobs.
+              const isFaviconish = !!item.image_url && /imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url);
+              const heroImage = !isFaviconish ? item.image_url : null;
+              return (
               <article key={item.id} className="group rounded-2xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-all duration-200">
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-                  {item.image_url && (
+                  {heroImage && (
                     <div className="w-full aspect-[2.5/1] bg-bg-hover overflow-hidden">
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                      <img src={heroImage} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
                     </div>
                   )}
                   <div className="p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-text/5 text-text-muted">{item.source}</span>
-                      <span className="text-[11px] text-text-muted">{new Date(item.published_at).toLocaleDateString()}</span>
+                      <span className="text-[11px] text-text-muted">{timeAgo(item.published_at)}</span>
                     </div>
                     <h2 className="font-semibold text-text leading-snug text-[15px] group-hover:text-text/80 transition-colors">{item.title}</h2>
                     {item.summary && (
@@ -307,7 +313,8 @@ export default function MyFeedPage() {
                   </div>
                 </a>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

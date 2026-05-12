@@ -132,12 +132,16 @@ async function fetchBraveResults(query: string): Promise<DiscoveredItem[]> {
     return (data.web?.results || []).map(
       (r: { title: string; description: string; url: string; age?: string; profile?: { img?: string } }, i: number) => {
         const hostname = new URL(r.url).hostname.replace("www.", "");
+        // Brave's `profile.img` is a 32x32 favicon, NOT a hero image. Using
+        // it as a card hero image upscales it to a blurry blob. Leave it
+        // null so the card renders without a hero — the source pill chip
+        // still shows the favicon at its native size.
         return {
           title: r.title,
           url: r.url,
           summary: r.description,
           source: hostname,
-          image_url: r.profile?.img || null,
+          image_url: null,
           published_at: new Date(now - i * 3600000).toISOString(),
         };
       }

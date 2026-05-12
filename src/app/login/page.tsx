@@ -88,7 +88,7 @@ function LoginContent() {
           });
         } catch {}
       }
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } else {
       trackEvent("login", { method: "email" });
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -98,7 +98,7 @@ function LoginContent() {
         return;
       }
       if (data.user) identifyUser(data.user.id, { $email: data.user.email });
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     }
   }
 

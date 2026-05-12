@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { getServiceClient } from "@/lib/supabase";
 
 // Public endpoint — returns trending items (title + source only, no user-specific data)
-// Used for the landing page social proof and discover features
+// Used for the landing page social proof and discover features.
+// Uses the service client so the response doesn't get filtered to nothing by
+// RLS for anonymous callers (the previous cookie-scoped client returned []).
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = getServiceClient();
 
     // Get recent items from feeds (last 24 hours) — only public metadata
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

@@ -8,7 +8,7 @@ import { rateLimit, getClientKey } from "@/lib/rate-limit";
 export async function POST(req: Request) {
   try {
     const rl = rateLimit(`generate:${getClientKey(req)}`, { limit: 20, windowSeconds: 60 });
-    if (!rl.ok) {
+    if (!rl.success) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 

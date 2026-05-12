@@ -26,15 +26,17 @@ export default function GlobalError({
         </div>
       </header>
       <div className="flex items-center justify-center px-4" style={{ minHeight: "calc(100vh - 2.75rem)" }}>
-        <div className="text-center">
-          <h1 className="text-6xl font-bold mb-2">404</h1>
-          <p className="text-text-muted mb-6">Something went wrong</p>
+        <div className="max-w-sm text-center">
+          <h1 className="text-3xl font-bold mb-2">Something broke</h1>
+          <p className="text-text-muted mb-6">
+            We hit an unexpected error loading this page. It&apos;s not you — try reloading, or head back to your feeds.
+          </p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={reset}
               className="border border-text/30 text-text px-6 py-2.5 rounded-full font-semibold hover:bg-text hover:text-bg transition-all"
             >
-              Try again
+              Reload
             </button>
             <Link href="/explore" className="bg-text text-bg px-6 py-2.5 rounded-full font-semibold hover:opacity-90 transition-opacity">
               Explore feeds

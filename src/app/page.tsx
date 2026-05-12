@@ -160,18 +160,51 @@ export default function ForYouPage() {
           fetch("/api/public/system-feeds").then((r) => r.ok ? r.json() : null),
         ]);
         if (cancelled) return;
-        // Build the slug→uuid map.
+        // Build the slug→uuid map. The FEEDS constant uses short ids like
+        // "ai", "tech"; DB system feeds carry slugs like "ai-ml" and names
+        // like "AI & ML". Try several normalisation strategies + a manual
+        // synonym list so the lookup is resilient.
         const slugToUuid: Record<string, string> = {};
         if (sRes?.feeds) {
-          // Match on a normalised name: lowercased letters, e.g. "AI & ML" → "aiml".
           const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-          const bySlug = new Map<string, string>();
+          // Manual synonyms for slugs that don't match by normalisation alone.
+          const SYNONYMS: Record<string, string[]> = {
+            ai: ["aiml", "ai-ml", "ai-and-ml", "artificialintelligence", "machinelearning"],
+            tech: ["technology", "techindustry"],
+            dev: ["development", "developer", "developers", "programming", "softwaredevelopment"],
+            "open-source": ["opensource"],
+            energy: ["renewableenergy", "cleanenergy", "climate"],
+          };
+          const byKey = new Map<string, string>();
           for (const sf of sRes.feeds as Array<{ id: string; name: string; slug: string | null }>) {
-            if (sf.slug) bySlug.set(sf.slug, sf.id);
-            bySlug.set(norm(sf.name), sf.id);
+            if (sf.slug) byKey.set(sf.slug, sf.id);
+            byKey.set(norm(sf.name), sf.id);
+            byKey.set(norm(sf.slug || ""), sf.id);
           }
           for (const f of FEEDS) {
-            const uuid = bySlug.get(f.id) || bySlug.get(f.id.replace(/-/g, "")) || bySlug.get(f.name.toLowerCase().replace(/[^a-z0-9]/g, ""));
+            const candidates = [
+              f.id,
+              norm(f.id),
+              norm(f.name),
+              ...(SYNONYMS[f.id] || []),
+            ];
+            let uuid: string | undefined;
+            for (const c of candidates) {
+              if (!c) continue;
+              uuid = byKey.get(c);
+              if (uuid) break;
+            }
+            // Last-ditch fuzzy: name contains feed id or vice versa.
+            if (!uuid) {
+              const target = norm(f.name);
+              for (const sf of sRes.feeds as Array<{ id: string; name: string; slug: string | null }>) {
+                const sName = norm(sf.name);
+                if (sName === target || sName.includes(target) || target.includes(sName)) {
+                  uuid = sf.id;
+                  break;
+                }
+              }
+            }
             if (uuid) slugToUuid[f.id] = uuid;
           }
         }
@@ -483,9 +516,9 @@ export default function ForYouPage() {
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 pb-2">
           {/* Row 1: title left, action buttons right */}
           <div className="flex items-center justify-between gap-3 mb-2">
-            <h2 className="text-base font-bold text-text flex items-center gap-2">
+            <h1 className="text-base font-bold text-text flex items-center gap-2">
               <Rss className="h-4 w-4" /> My Feed
-            </h2>
+            </h1>
             <div className="flex items-center gap-1 flex-shrink-0">
               <button onClick={() => { trackEvent("feed_refresh", { feed: "for-you" }); setLoading(true); setItems([]); setNextCursor(null); fetchFeed().then((d) => { setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null); }).catch(() => setItems([])).finally(() => setLoading(false)); }} className="relative inline-flex items-center justify-center p-2 rounded-full before:absolute before:content-[''] before:-inset-2 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-all" aria-label="Refresh">
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -627,7 +660,7 @@ export default function ForYouPage() {
                     </div>
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: "for-you" })}>
-                    {!ytId && hasImage && (
+                    {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img
                           src={item.image_url}
@@ -809,7 +842,7 @@ export default function ForYouPage() {
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowNewFeed(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
                 {user ? (
-                  <button onClick={async () => { if (!newPrompt.trim()) return; trackEvent("create_feed", { prompt: newPrompt.slice(0, 100), logged_in: true }); try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } window.location.href = "/dashboard"; } catch { window.location.href = "/dashboard"; } }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
+                  <button onClick={async () => { if (!newPrompt.trim()) return; trackEvent("create_feed", { prompt: newPrompt.slice(0, 100), logged_in: true }); try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } window.location.href = "/"; } catch { window.location.href = "/"; } }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Create feed</button>
                 ) : (
                   <Link href={`/login?signup=true${newPrompt ? `&prompt=${encodeURIComponent(newPrompt)}` : ""}`} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />Sign up to create</Link>
                 )}
