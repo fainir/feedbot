@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, User, Mail, Calendar, Crown, Shield, Trash2, Key, ExternalLink, BarChart3 } from "lucide-react";
+import { ArrowLeft, User, Mail, Calendar, Crown, Shield, Trash2, Key, ExternalLink, BarChart3, Bell } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -142,10 +142,10 @@ export default function AccountPage() {
         <div className="space-y-2">
           {[
             { label: "Dashboard Settings", href: "/dashboard/settings", icon: Shield },
-            { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-            { label: "API Documentation", href: "/dashboard/api-docs", icon: Key },
-            { label: "Feed Templates", href: "/dashboard/templates", icon: Crown },
-            { label: "Keyboard Shortcuts", href: "/dashboard/shortcuts", icon: ExternalLink },
+            { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+            { label: "Email Digest", href: "/dashboard/digest", icon: Mail },
+            { label: "Discover Feeds", href: "/dashboard/discover", icon: BarChart3 },
+            { label: "Import / Export", href: "/dashboard/import-export", icon: Key },
             { label: "Getting Started Guide", href: "/dashboard/getting-started", icon: ExternalLink },
           ].map((link) => (
             <Link
