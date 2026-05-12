@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { getServiceClient } from "@/lib/supabase";
 
 export async function GET() {
   const supabase = await createClient();
@@ -8,15 +9,39 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { data: bookmarks, error } = await supabase
+  // Step 1: fetch the user's bookmark rows (RLS scoped to user_id).
+  const { data: rows, error } = await supabase
     .from("bookmarks")
-    .select("id, feed_item_id, created_at, feed_items(*)")
+    .select("id, feed_item_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: "Failed to load bookmarks" }, { status: 500 });
   }
+  if (!rows || rows.length === 0) {
+    return NextResponse.json({ bookmarks: [] });
+  }
+
+  // Step 2: resolve feed_items via service role. The previous PostgREST join
+  // `feed_items(*)` was returning null on every row because the user-scoped
+  // RLS read on feed_items wasn't propagating through the relationship. Doing
+  // it as a second query bypasses that and is still safe — we only return
+  // items the user has bookmarked themselves.
+  const svc = getServiceClient();
+  const ids = rows.map((r) => r.feed_item_id);
+  const { data: items } = await svc
+    .from("feed_items")
+    .select("id, title, url, summary, source, image_url, published_at, feed_id")
+    .in("id", ids);
+
+  const itemMap = new Map((items || []).map((i) => [i.id, i]));
+  const bookmarks = rows.map((r) => ({
+    id: r.id,
+    feed_item_id: r.feed_item_id,
+    created_at: r.created_at,
+    feed_items: itemMap.get(r.feed_item_id) || null,
+  }));
 
   return NextResponse.json({ bookmarks });
 }
