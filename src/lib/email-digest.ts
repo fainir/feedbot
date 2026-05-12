@@ -226,11 +226,10 @@ async function sendEmail(apiKey: string, to: string, subject: string, html: stri
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // gethandyai.app is the only verified domain on the Resend account
-      // right now. Using `onboarding@resend.dev` would limit deliveries to
-      // the API account owner (Resend test-mode policy). Once the user
-      // verifies myfeed.space on Resend, swap this to `digest@myfeed.space`.
-      from: "MyFeed <digest@gethandyai.app>",
+      // Sends from the verified myfeed.space domain. Sends 403 until the
+      // DNS records (DKIM + SPF MX/TXT) propagate; the auto-flip watcher
+      // confirms verify and digests start delivering automatically.
+      from: "MyFeed <digest@myfeed.space>",
       to,
       reply_to: "noreply@myfeed.space",
       subject,
