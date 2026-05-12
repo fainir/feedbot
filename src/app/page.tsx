@@ -407,7 +407,12 @@ export default function ForYouPage() {
     if (!user) { toast("Sign up to save your finds", "info"); return; }
     const was = userBookmarks.has(feedItemId);
     setUserBookmarks((s) => { const next = new Set(s); if (next.has(feedItemId)) next.delete(feedItemId); else next.add(feedItemId); return next; });
-    try { const res = await fetch("/api/bookmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId }) }); if (!res.ok) throw new Error(); } catch { setUserBookmarks((s) => { const next = new Set(s); if (was) next.add(feedItemId); else next.delete(feedItemId); return next; }); }
+    try {
+      const res = await fetch("/api/bookmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feed_item_id: feedItemId }) });
+      if (!res.ok) throw new Error();
+      // Tell /bookmarks (open in another tab or about to be opened) to refetch.
+      window.dispatchEvent(new CustomEvent("myfeed:bookmark-changed"));
+    } catch { setUserBookmarks((s) => { const next = new Set(s); if (was) next.add(feedItemId); else next.delete(feedItemId); return next; }); }
   }, [user, userBookmarks]);
 
   const handleShare = useCallback(async (item: FeedItem) => {

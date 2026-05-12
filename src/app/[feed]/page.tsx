@@ -313,6 +313,8 @@ export default function FeedPage() {
         body: JSON.stringify({ feed_item_id: feedItemId }),
       });
       if (!res.ok) throw new Error();
+      // Tell /bookmarks (open in another tab or about to be opened) to refetch.
+      window.dispatchEvent(new CustomEvent("myfeed:bookmark-changed"));
     } catch {
       // Revert on failure
       setUserBookmarks((s) => {

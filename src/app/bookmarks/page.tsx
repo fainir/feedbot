@@ -50,20 +50,45 @@ export default function BookmarksPage() {
 
   useEffect(() => setMounted(true), []);
 
+  // Pull bookmarks on mount and whenever the tab/window regains focus.
+  // Fixes the cross-page staleness: a user bookmarks an article on /ai, then
+  // navigates to /bookmarks → the new entry now appears without a manual
+  // reload (the visibility/focus listener refetches before the user sees
+  // the page) and without page reload (history navigation triggers it).
   useEffect(() => {
     const supabase = createClient();
+    let mounted = true;
+    let userId: string | null = null;
+
+    const fetchBookmarks = () => {
+      if (!userId) return;
+      fetch("/api/bookmarks")
+        .then((r) => r.json())
+        .then((d) => { if (mounted) setBookmarks(d.bookmarks || []); })
+        .catch(() => {});
+    };
+
     supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!mounted) return;
       setUser(user);
-      if (user) {
-        fetch("/api/bookmarks")
-          .then((r) => r.json())
-          .then((d) => setBookmarks(d.bookmarks || []))
-          .catch(() => {})
-          .finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      userId = user?.id || null;
+      if (user) fetchBookmarks();
+      setLoading(false);
     });
+
+    const onVisible = () => { if (document.visibilityState === "visible") fetchBookmarks(); };
+    const onFocus = () => fetchBookmarks();
+    // Cross-tab: any page can dispatch this event after bookmarking.
+    const onBookmarkChange = () => fetchBookmarks();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("myfeed:bookmark-changed", onBookmarkChange);
+    return () => {
+      mounted = false;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("myfeed:bookmark-changed", onBookmarkChange);
+    };
   }, []);
 
   const removeBookmark = async (feedItemId: string) => {
