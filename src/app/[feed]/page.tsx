@@ -192,6 +192,7 @@ export default function FeedPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [filter, setFilter] = useState<"all" | "today" | "week">("all");
   const [showMenu, setShowMenu] = useState(false);
   const desktopTabs = useScrollFade();
   const mobileTabs = useScrollFade();
@@ -443,6 +444,20 @@ export default function FeedPage() {
       return true;
     });
   }, [items]);
+
+  // Filter chips: All / Today / This week
+  // Counts are computed once so the chip labels can show "Today (12)" style hints.
+  const { filteredItems, filterCounts } = useMemo(() => {
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const week = dedupedItems.filter((i) => now - new Date(i.publishedAt).getTime() < 7 * DAY);
+    const today = dedupedItems.filter((i) => now - new Date(i.publishedAt).getTime() < DAY);
+    const out = filter === "today" ? today : filter === "week" ? week : dedupedItems;
+    return {
+      filteredItems: out,
+      filterCounts: { all: dedupedItems.length, today: today.length, week: week.length },
+    };
+  }, [dedupedItems, filter]);
 
   const loadMore = () => {
     if (loadingMore || !hasMore || !nextCursor) return;
@@ -789,6 +804,32 @@ export default function FeedPage() {
         </div>
       )}
 
+      {/* Filter chips */}
+      {!loading && dedupedItems.length > 0 && (
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+            {([
+              { id: "all" as const, label: "All", n: filterCounts.all },
+              { id: "today" as const, label: "Today", n: filterCounts.today },
+              { id: "week" as const, label: "This week", n: filterCounts.week },
+            ]).map((chip) => {
+              const active = filter === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setFilter(chip.id)}
+                  aria-pressed={active}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active ? "border-text bg-text text-bg" : "border-border text-text-muted hover:text-text hover:border-text/30"}`}
+                >
+                  <span>{chip.label}</span>
+                  <span className={`text-[10px] ${active ? "opacity-70" : "opacity-60"}`}>{chip.n}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Feed */}
       <main id="main-content" className="max-w-2xl mx-auto px-3 sm:px-4 pb-4 sm:pb-6">
         {loading ? (
@@ -802,15 +843,21 @@ export default function FeedPage() {
               </div>
             </div>
           ))}</div>
-        ) : dedupedItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="text-center py-16">
             <Globe className="h-10 w-10 text-text-muted mx-auto mb-3 opacity-50" />
-            <p className="text-text-muted font-medium">Scanning the internet...</p>
-            <p className="text-xs text-text-muted mt-1">Content updates continuously</p>
+            <p className="text-text-muted font-medium">
+              {dedupedItems.length === 0 ? "Scanning the internet..." : "No posts in this window"}
+            </p>
+            <p className="text-xs text-text-muted mt-1">
+              {dedupedItems.length === 0 ? "Content updates continuously" : (
+                <button onClick={() => setFilter("all")} className="underline hover:text-text">Show all posts</button>
+              )}
+            </p>
           </div>
         ) : (
           <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">
-            {dedupedItems.map((item, i) => {
+            {filteredItems.map((item, i) => {
               const src = getSourceInfo(item.source);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);
               const title = cleanTitle(item.title);
