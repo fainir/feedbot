@@ -8,8 +8,11 @@
 
 @theme {
   /* Dark mode (default) — X.com style */
-  --color-primary: #ffffff;
-  --color-primary-dark: #e5e5e5;
+  /* Primary is the brand accent used for "filled" buttons and active states
+     across the dashboard. It MUST contrast with white text — keep it a real
+     hue, not white, otherwise `bg-primary text-white` renders invisible. */
+  --color-primary: #1d9bf0;
+  --color-primary-dark: #1a8cd8;
   --color-secondary: #71767b;
   --color-bg: #000000;
   --color-bg-card: #16181c;
