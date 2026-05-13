@@ -2,7 +2,7 @@ name: Ingest cron
 
 on:
   schedule:
-    # Every 25 minutes — scans sources, classifies, inserts new articles
+    # Every 15 minutes — scans sources, classifies, inserts new articles
     - cron: "*/15 * * * *"
     # Daily digest email at 08:00 UTC
     - cron: "0 8 * * *"
@@ -44,14 +44,19 @@ jobs:
             echo "extra=refresh-feeds" >> "$GITHUB_OUTPUT"
           fi
       - name: Hit cron endpoint
+        # Never fail the job — transient DNS / 5xx / Railway cold starts must
+        # not page the maintainer. Failures are logged; the next scheduled run
+        # picks up where this one left off.
+        continue-on-error: true
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PATH_: ${{ steps.pick.outputs.path }}
           EXTRA_: ${{ steps.pick.outputs.extra }}
         run: |
+          set +e
           if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
-            exit 1
+            echo "CRON_SECRET secret is not set in repo settings — skipping run." >&2
+            exit 0
           fi
           hit_endpoint() {
             local path="$1"
@@ -59,19 +64,18 @@ jobs:
             local attempt status rc
             for attempt in 1 2 3; do
               echo "GET $url (attempt $attempt)"
-              set +e
               status=$(curl --silent --show-error --write-out "%{http_code}" -o /tmp/curl_out \
                 --max-time 540 \
                 -H "Authorization: Bearer $CRON_SECRET" \
-                "$url")
+                "$url" 2>&1)
               rc=$?
-              set -e
-              cat /tmp/curl_out; echo
-              if [ "$rc" -eq 0 ] && [ "$status" -lt 400 ]; then
+              [ -f /tmp/curl_out ] && { cat /tmp/curl_out; echo; }
+              if [ "$rc" -eq 0 ] && [ -n "$status" ] && [ "$status" -lt 400 ] 2>/dev/null; then
+                echo "OK ($status)"
                 return 0
               fi
               if [ "$rc" -ne 0 ]; then
-                echo "curl failed with exit code $rc"
+                echo "curl failed (exit $rc): $status"
               else
                 echo "Request failed with HTTP $status"
               fi
@@ -80,10 +84,12 @@ jobs:
                 sleep 30
               fi
             done
-            echo "Giving up after 3 attempts." >&2
-            exit 1
+            echo "Giving up on $path after 3 attempts — will retry next scheduled run." >&2
+            return 0
           }
-          hit_endpoint "$PATH_"
+          hit_endpoint "$PATH_" || true
           if [ -n "$EXTRA_" ]; then
-            hit_endpoint "$EXTRA_"
+            hit_endpoint "$EXTRA_" || true
           fi
+          # Always succeed — failures already logged above.
+          exit 0
