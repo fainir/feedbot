@@ -132,7 +132,7 @@ function LoginContent() {
       {/* Left side — branding (desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-bg-card border-r border-border p-12">
         <div className="max-w-md">
-          <Link href="/ai" className="flex items-center gap-2 mb-8">
+          <Link href="/" className="flex items-center gap-2 mb-8">
             <span className="flex items-center justify-center w-10 h-10 bg-text text-bg rounded-xl text-sm font-extrabold tracking-tighter">MF</span>
             <span className="text-2xl font-bold">MyFeed</span>
           </Link>
@@ -164,7 +164,7 @@ function LoginContent() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
-          <Link href="/ai" className="mb-8 flex items-center justify-center gap-2 lg:hidden">
+          <Link href="/" className="mb-8 flex items-center justify-center gap-2 lg:hidden">
             <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-extrabold tracking-tighter">MF</span>
             <span className="text-xl font-bold">MyFeed</span>
           </Link>
@@ -209,31 +209,35 @@ function LoginContent() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              aria-label="Email"
-              className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
-            />
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-              aria-label="Password"
-              className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
-            />
+            <div>
+              <label htmlFor="email" className="mb-1 block text-xs font-medium text-text-muted">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="mb-1 block text-xs font-medium text-text-muted">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder={isSignUp ? "At least 6 characters" : "Your password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
+                className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
+              />
+            </div>
 
             {!isSignUp && (
               <div className="flex justify-end">
@@ -279,7 +283,7 @@ function LoginContent() {
             </button>
           </p>
 
-          <Link href="/ai" className="block mt-4 text-center text-xs text-text-muted hover:text-text transition-colors">
+          <Link href="/" className="block mt-4 text-center text-xs text-text-muted hover:text-text transition-colors">
             ← Back to feeds
           </Link>
         </div>

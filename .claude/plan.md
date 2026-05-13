@@ -92,7 +92,8 @@
 - [x] Mobile: dropdown feed selector instead of scrolling tabs (M)
 - [x] Style mobile dropdown as custom selector (S)
 - [x] Fix pipeline zero matches — switch classify to chat.completions API, lower threshold to 5 (S)
-- [ ] Fix banner white bg in dark mode — use theme state (S)
+- [x] Fix banner white bg in dark mode — use resolvedTheme + neutral pre-mount surface (S)
+- [x] Mobile QA fixes: hydration #418, custom-feed metadata, guest toast CTA, share fallback, "Make my version" copy, auth labels, logo links, byline fade, aria-labels, theme-safe source tag, Medium image 301 bypass, favicon referrerPolicy (L)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

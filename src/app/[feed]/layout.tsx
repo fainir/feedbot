@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase-server";
 
 const TABS: Record<string, { name: string; icon: string; description: string }> = {
   ai: { name: "AI & ML", icon: "🤖", description: "Latest AI breakthroughs, LLM models, AI startups, machine learning research, and AI tools" },
@@ -41,12 +42,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { feed } = await params;
   const tab = TABS[feed];
 
-  if (!tab) {
-    return { title: "Feed Not Found - MyFeed" };
+  // System feed (curated tab): use the static TABS table.
+  // Public custom feed (user-created slug): look up by slug in DB so the page
+  // title, OG, and Twitter cards reflect the real feed name — not "Feed Not Found".
+  let title: string;
+  let description: string;
+  if (tab) {
+    title = `${tab.name} News Feed - MyFeed`;
+    description = tab.description;
+  } else {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("feeds")
+        .select("name, query_text")
+        .eq("slug", feed)
+        .eq("is_public", true)
+        .maybeSingle();
+      if (data?.name) {
+        title = `${data.name} - MyFeed`;
+        description = (data.query_text || `${data.name} — a personalized feed on MyFeed.`).slice(0, 160);
+      } else {
+        return { title: "Feed Not Found - MyFeed", robots: { index: false, follow: false } };
+      }
+    } catch {
+      return { title: "Feed Not Found - MyFeed", robots: { index: false, follow: false } };
+    }
   }
 
-  const title = `${tab.name} News Feed - MyFeed`;
-  const description = tab.description;
   const url = `https://myfeed.space/${feed}`;
 
   return {

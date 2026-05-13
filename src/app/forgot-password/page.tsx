@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen bg-bg text-text">
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <Link href="/ai" className="mb-8 flex items-center justify-center gap-2">
+          <Link href="/" className="mb-8 flex items-center justify-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 bg-text text-bg rounded-lg text-xs font-extrabold tracking-tighter">MF</span>
             <span className="text-xl font-bold">MyFeed</span>
           </Link>
@@ -58,25 +58,28 @@ export default function ForgotPasswordPage() {
 
           {!sent && (
             <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                aria-label="Email"
-                className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
-              />
+              <div>
+                <label htmlFor="email" className="mb-1 block text-xs font-medium text-text-muted">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
+                />
+              </div>
               {error && (
                 <p role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-400">{error}</p>
               )}
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-text text-bg py-2.5 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                aria-disabled={loading || !email}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-text text-bg py-2.5 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                   <>

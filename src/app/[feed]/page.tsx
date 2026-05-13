@@ -9,7 +9,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
-import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, getSourceFavicon, timeAgo } from "@/lib/source-info";
+import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, getSourceFavicon, timeAgo, normalizeImageUrl } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -292,7 +292,7 @@ export default function FeedPage() {
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
     trackEvent("article_reaction", { reaction, feed: feedSlug });
-    if (!user) { toast("Sign up to save your preferences", "info"); return; }
+    if (!user) { toast("Sign up to save your preferences", "info", { label: "Sign up", href: "/login?signup=true" }); return; }
     const prev = userReactions[feedItemId];
     // Optimistic update
     setUserReactions((r) => {
@@ -320,7 +320,7 @@ export default function FeedPage() {
   }, [user, userReactions]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) { toast("Sign up to save your finds", "info"); return; }
+    if (!user) { toast("Sign up to save your finds", "info", { label: "Sign up", href: "/login?signup=true" }); return; }
     const wasBookmarked = userBookmarks.has(feedItemId);
     // Optimistic update
     setUserBookmarks((s) => {
@@ -353,11 +353,22 @@ export default function FeedPage() {
     trackEvent("share_article", { source: item.source, feed: feedSlug });
     const shareData = { title: item.title, url: item.url };
     if (navigator.share) {
-      try { await navigator.share(shareData); } catch { /* user cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(item.url);
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        // AbortError = user explicitly dismissed the share sheet. Stay silent.
+        if ((err as DOMException)?.name === "AbortError") return;
+        // Anything else (NotAllowedError, etc.) — fall through to clipboard.
+      }
     }
-  }, [feedSlug]);
+    try {
+      await navigator.clipboard.writeText(item.url);
+      toast("Link copied!", "success");
+    } catch {
+      toast("Couldn't copy link", "error");
+    }
+  }, [feedSlug, toast]);
 
   const fetchFeed = useCallback((query: string, cursor?: string) => {
     const url = `/api/public/feeds?q=${encodeURIComponent(query)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
@@ -537,10 +548,19 @@ export default function FeedPage() {
   const handleShareFeed = useCallback(async () => {
     const url = `https://myfeed.space/${feedSlug}`;
     if (navigator.share) {
-      try { await navigator.share({ title: `${displayName} - MyFeed`, url }); } catch {}
-    } else {
+      try {
+        await navigator.share({ title: `${displayName} - MyFeed`, url });
+        return;
+      } catch (err) {
+        if ((err as DOMException)?.name === "AbortError") return;
+        // fall through to clipboard fallback
+      }
+    }
+    try {
       await navigator.clipboard.writeText(url);
       toast("Link copied!", "success");
+    } catch {
+      toast("Couldn't copy link", "error");
     }
   }, [feedSlug, displayName, toast]);
 
@@ -824,16 +844,24 @@ export default function FeedPage() {
               )}
             </div>
           </div>
-          {/* Row 2: prompt text (scrollable) + Customize pinned right */}
+          {/* Row 2: prompt text (scrollable) + Customize pinned right.
+              Right-edge fade hints that the text is scrollable when truncated. */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 overflow-x-auto scrollbar-hide min-w-0">
-              <p className="text-xs text-text-muted whitespace-nowrap">
-                {activeTab?.query || communityFeed?.description || ""}
-                {communityFeed ? ` · by ${communityFeed.creator}` : ""}
-              </p>
+            <div className="relative flex-1 min-w-0">
+              <div className="overflow-x-auto scrollbar-hide">
+                <p className="text-xs text-text-muted whitespace-nowrap pr-4">
+                  {activeTab?.query || communityFeed?.description || ""}
+                  {communityFeed ? ` · by ${communityFeed.creator}` : ""}
+                </p>
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-bg to-transparent" />
             </div>
-            <button onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0">
-              <Sparkles className="h-3 w-3" />Customize
+            <button
+              onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0"
+              aria-label={communityFeed ? "Make your own version of this feed" : "Customize this feed"}
+            >
+              <Sparkles className="h-3 w-3" />{communityFeed ? "Make my version" : "Customize"}
             </button>
           </div>
         </div>
@@ -920,7 +948,7 @@ export default function FeedPage() {
                     {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img
-                          src={item.image_url}
+                          src={normalizeImageUrl(item.image_url)}
                           alt={title}
                           className="w-full h-full object-cover"
                           loading={i === 0 ? "eager" : "lazy"}
@@ -932,7 +960,7 @@ export default function FeedPage() {
                     <div className="p-4 sm:p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
-                          {favicon ? <img src={favicon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                          {favicon ? <img src={favicon} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>
@@ -1099,23 +1127,27 @@ export default function FeedPage() {
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-text/5 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-text" /></div>
-                  <h2 className="font-bold text-lg">Customize Feed</h2>
+                  <h2 className="font-bold text-lg">{communityFeed ? "Make your own version" : "Customize Feed"}</h2>
                 </div>
-                <button onClick={() => setShowCustomize(false)} className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors"><X className="h-5 w-5 text-text-muted" /></button>
+                <button onClick={() => setShowCustomize(false)} className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors" aria-label="Close customize dialog"><X className="h-5 w-5 text-text-muted" /></button>
               </div>
-              <p className="text-sm text-text-muted mb-4 ml-10">Change the prompt to adjust what content appears.</p>
-              <textarea autoFocus className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} />
+              <p className="text-sm text-text-muted mb-4 ml-10">
+                {communityFeed
+                  ? "Tweak the prompt — we'll create a new feed in your account so you can edit it freely."
+                  : "Change the prompt to adjust what content appears."}
+              </p>
+              <textarea autoFocus className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} aria-label="Feed prompt" />
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowCustomize(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
                 {user ? (
                   <button onClick={async () => { if (!newPrompt.trim()) return; try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } } catch {} setShowCustomize(false); }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Save as custom feed
+                    {communityFeed ? "Create my version" : "Save as custom feed"}
                   </button>
                 ) : (
                 <Link href={`/login?signup=true${newPrompt ? `&prompt=${encodeURIComponent(newPrompt)}` : ""}`} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Sign up to customize
+                  {communityFeed ? "Sign up to create" : "Sign up to customize"}
                 </Link>
                 )}
               </div>

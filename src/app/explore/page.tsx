@@ -172,12 +172,18 @@ export default function ExplorePage() {
           <span className="flex items-center justify-center w-7 h-7 bg-text text-bg rounded-md text-[12px] font-black leading-none" style={{ letterSpacing: "-0.02em" }}>MF</span>
         </Link>
         <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-0 min-w-0">
-          <Link href="/" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-            <Rss className="h-3 w-3" /><span className="hidden sm:inline">My Feed</span>
+          <Link href="/" aria-label="My Feed" title="My Feed" className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
+            <Rss className="h-3 w-3" aria-hidden="true" /><span className="hidden sm:inline">My Feed</span>
           </Link>
           {TABS.map((tab) => (
-            <Link key={tab.id} href={`/${tab.id}`} className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1">
-              <span className="text-sm">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
+            <Link
+              key={tab.id}
+              href={`/${tab.id}`}
+              aria-label={tab.name}
+              title={tab.name}
+              className="px-2.5 py-3 text-xs font-medium whitespace-nowrap border-b-2 border-transparent text-text-muted hover:text-text hover:bg-bg-hover transition-colors flex items-center gap-1"
+            >
+              <span className="text-sm" aria-hidden="true">{tab.icon}</span><span className="hidden sm:inline">{tab.name}</span>
             </Link>
           ))}
         </div>

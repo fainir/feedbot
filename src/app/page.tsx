@@ -8,7 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
-import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo } from "@/lib/source-info";
+import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo, normalizeImageUrl } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -82,16 +82,15 @@ export default function ForYouPage() {
   const [hideTopRow, setHideTopRow] = useState(false);
   const lastScrollY = useRef(0);
   const [newPrompt, setNewPrompt] = useState("");
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [enabledFeeds, setEnabledFeeds] = useState<Set<string>>(DEFAULT_ENABLED);
-  const [showAllFeeds, setShowAllFeeds] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("myfeed-show-all") !== "0";
-    return true;
-  });
+  // Hydration-safe defaults: server and first client render must match.
+  // Hydrate from localStorage in an effect after mount (see below).
+  const [showAllFeeds, setShowAllFeeds] = useState(true);
   const [showEmailPrefs, setShowEmailPrefs] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ enabled: true, frequency: "daily", time: "08:00", feeds: ["for-you"] as string[] });
   // Per-feed digest cadence — keyed by slug (FEEDS[i].id) for client convenience;
@@ -99,28 +98,24 @@ export default function ForYouPage() {
   type FeedFreq = "daily" | "weekly" | "never";
   const [feedFreqs, setFeedFreqs] = useState<Record<string, FeedFreq>>({});
   const [systemFeedMap, setSystemFeedMap] = useState<Record<string, string>>({}); // slug -> uuid
-  const [heroDismissed, setHeroDismissed] = useState(() => {
-    if (typeof window !== "undefined") {
-      if (localStorage.getItem("myfeed-hero-dismissed") === "1") return true;
-      // Auto-collapse for returning users (3rd+ visit): show CTA once or twice,
-      // then assume they get the product and reclaim the screen for content.
-      const visits = parseInt(localStorage.getItem("myfeed-visit-count") || "0", 10);
-      if (visits >= 2) return true;
-    }
-    return false;
-  });
-  const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(() => {
-    if (typeof window !== "undefined") {
-      try { const saved = localStorage.getItem("myfeed-hidden-feeds"); if (saved) return new Set(JSON.parse(saved)); } catch {}
-    }
-    return new Set();
-  });
+  const [heroDismissed, setHeroDismissed] = useState(false);
+  const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
     window.scrollTo(0, 0);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // Hydrate UI prefs from localStorage AFTER mount so SSR HTML matches the
+    // first client render (prevents React #418 hydration mismatch).
+    try {
+      setShowAllFeeds(localStorage.getItem("myfeed-show-all") !== "0");
+      const dismissed = localStorage.getItem("myfeed-hero-dismissed") === "1";
+      const visits = parseInt(localStorage.getItem("myfeed-visit-count") || "0", 10);
+      if (dismissed || visits >= 2) setHeroDismissed(true);
+      const savedHidden = localStorage.getItem("myfeed-hidden-feeds");
+      if (savedHidden) setHiddenFeeds(new Set(JSON.parse(savedHidden)));
+    } catch {}
     // Increment visit counter so the hero CTA auto-collapses on the 3rd visit.
     try {
       const n = parseInt(localStorage.getItem("myfeed-visit-count") || "0", 10) + 1;
@@ -413,7 +408,7 @@ export default function ForYouPage() {
 
   const handleReaction = useCallback(async (feedItemId: string, reaction: "like" | "dislike") => {
     trackEvent("article_reaction", { reaction, feed: "for-you" });
-    if (!user) { toast("Sign up to save your preferences", "info"); return; }
+    if (!user) { toast("Sign up to save your preferences", "info", { label: "Sign up", href: "/login?signup=true" }); return; }
     const prev = userReactions[feedItemId];
     setUserReactions((r) => { const next = { ...r }; if (next[feedItemId] === reaction) delete next[feedItemId]; else next[feedItemId] = reaction; return next; });
     // Track source preferences for personalization
@@ -432,7 +427,7 @@ export default function ForYouPage() {
   }, [user, userReactions, items]);
 
   const handleBookmark = useCallback(async (feedItemId: string) => {
-    if (!user) { toast("Sign up to save your finds", "info"); return; }
+    if (!user) { toast("Sign up to save your finds", "info", { label: "Sign up", href: "/login?signup=true" }); return; }
     const was = userBookmarks.has(feedItemId);
     setUserBookmarks((s) => { const next = new Set(s); if (next.has(feedItemId)) next.delete(feedItemId); else next.add(feedItemId); return next; });
     try {
@@ -445,8 +440,21 @@ export default function ForYouPage() {
 
   const handleShare = useCallback(async (item: FeedItem) => {
     trackEvent("share_article", { source: item.source, feed: "for-you" });
-    if (navigator.share) { try { await navigator.share({ title: item.title, url: item.url }); } catch {} } else { await navigator.clipboard.writeText(item.url); }
-  }, []);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: item.title, url: item.url });
+        return;
+      } catch (err) {
+        if ((err as DOMException)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(item.url);
+      toast("Link copied!", "success");
+    } catch {
+      toast("Couldn't copy link", "error");
+    }
+  }, [toast]);
 
   const handleHeroSubmit = useCallback(() => {
     const prompt = newPrompt.trim();
@@ -625,15 +633,16 @@ export default function ForYouPage() {
       </div>
 
       {/* Hero banner for guests -create feed.
-          Note: we drive the banner background from `theme` (next-themes) rather
-          than Tailwind's dark: variant because the gradient classes (from-X/via-X/
-          to-X) only set CSS vars — they don't reset background-image, so the
-          gradient bleeds through in dark mode. Reading theme directly is the
-          cheapest fix that always picks the right surface. SSR guard via
-          `mounted` to avoid hydration mismatch. */}
+          The gradient classes (from-X/via-X/to-X) only set CSS vars — they
+          don't reset background-image, so the gradient bleeds through in dark
+          mode. We resolve the effective theme (next-themes `resolvedTheme` —
+          unwraps "system") and pick the right surface. Until mounted we use
+          the neutral surface so server HTML and first client render match,
+          preventing both hydration error and the white-banner flash that
+          dark-mode users were reporting. */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
-          <div className={`relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 ${mounted && theme !== "light" ? "bg-bg-hover" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50"}`}>
+          <div className={`relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 ${!mounted || resolvedTheme === "dark" ? "bg-bg-hover" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50"}`}>
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 sm:top-5 sm:right-5 inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>
@@ -704,7 +713,7 @@ export default function ForYouPage() {
                     {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
                       <div className="w-full aspect-[2/1] overflow-hidden relative">
                         <img
-                          src={item.image_url}
+                          src={normalizeImageUrl(item.image_url)}
                           alt={title}
                           className="w-full h-full object-cover"
                           loading={i === 0 ? "eager" : "lazy"}
@@ -716,7 +725,7 @@ export default function ForYouPage() {
                     <div className="p-4 sm:p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${src.color}`}>
-                          {favicon ? <img src={favicon} alt="" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                          {favicon ? <img src={favicon} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
                           {src.name}
                         </span>
                         <span className="text-[11px] text-text-muted">{timeAgo(item.publishedAt)}</span>

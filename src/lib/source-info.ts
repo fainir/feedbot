@@ -110,7 +110,7 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (s.includes("reddit") || s.startsWith("r/") || s.includes("everything science") || s.includes("the community for") || s.includes("top scoring links"))
     return { name: cleaned, icon: "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png", color: "bg-orange-600/10 text-orange-300" };
   if (s.includes("medium"))
-    return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-white/10 text-white" };
+    return { name: "Medium", icon: "https://cdn-static-1.medium.com/_/fp/icons/Medium-Avatar-500x500.svg", color: "bg-text/10 text-text" };
   if (s.includes("dev community") || s.includes("dev.to"))
     return { name: "DEV", icon: "https://dev.to/favicon.ico", color: "bg-indigo-500/10 text-indigo-400" };
   if (s.includes("ars technica"))
@@ -140,7 +140,7 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (s.includes("ign"))
     return { name: "IGN", icon: "https://www.ign.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
   if (s.includes("wired"))
-    return { name: "Wired", icon: "https://www.wired.com/favicon.ico", color: "bg-white/10 text-white" };
+    return { name: "Wired", icon: "https://www.wired.com/favicon.ico", color: "bg-text/10 text-text" };
   if (s.includes("forbes"))
     return { name: "Forbes", icon: "https://www.forbes.com/favicon.ico", color: "bg-blue-800/10 text-blue-300" };
   if (s.includes("decrypt"))
@@ -158,7 +158,7 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (s.includes("gamespot"))
     return { name: "GameSpot", icon: "https://www.gamespot.com/favicon.ico", color: "bg-yellow-500/10 text-yellow-400" };
   if (s.includes("kotaku"))
-    return { name: "Kotaku", icon: "https://kotaku.com/favicon.ico", color: "bg-white/10 text-white" };
+    return { name: "Kotaku", icon: "https://kotaku.com/favicon.ico", color: "bg-text/10 text-text" };
   if (s.includes("theguardian") || s.includes("guardian"))
     return { name: "The Guardian", icon: "https://www.theguardian.com/favicon.ico", color: "bg-blue-600/10 text-blue-400" };
   if (s.includes("lifehacker"))
@@ -166,7 +166,7 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (s.includes("electrek"))
     return { name: "Electrek", icon: "https://electrek.co/favicon.ico", color: "bg-green-500/10 text-green-400" };
   if (s.includes("wikipedia"))
-    return { name: "Wikipedia", icon: "https://en.wikipedia.org/favicon.ico", color: "bg-white/10 text-white" };
+    return { name: "Wikipedia", icon: "https://en.wikipedia.org/favicon.ico", color: "bg-text/10 text-text" };
   if (s.includes("variety"))
     return { name: "Variety", icon: "https://variety.com/favicon.ico", color: "bg-red-500/10 text-red-400" };
   if (s.includes("krebsonsecurity"))
@@ -214,6 +214,24 @@ export function getSourceFavicon(source: string, articleUrl?: string): string {
     return `https://www.google.com/s2/favicons?domain=${s}&sz=32`;
   }
   return "";
+}
+
+/**
+ * Medium's `cdn-images-1.medium.com/max/<size>/<id>` URLs respond with a 301
+ * to `/v2/resize:fit:<size>/<id>`. Rewriting here saves a round-trip on every
+ * article-card image (visible in network panel as 301 followed by 200).
+ *
+ * Also strips a known-bad fallback: tiny favicon sources that arrive as
+ * article images turn into broken cover tiles.
+ */
+export function normalizeImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  let u = url;
+  u = u.replace(
+    /^https:\/\/cdn-images-1\.medium\.com\/max\/(\d+)\//,
+    "https://cdn-images-1.medium.com/v2/resize:fit:$1/",
+  );
+  return u;
 }
 
 export function timeAgo(dateStr: string): string {
