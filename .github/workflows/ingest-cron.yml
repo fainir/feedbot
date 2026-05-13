@@ -6,6 +6,9 @@ on:
     - cron: "*/15 * * * *"
     # Daily digest email at 08:00 UTC
     - cron: "0 8 * * *"
+    # Daily prune at 04:00 UTC — drops old article_pool + feed_items rows
+    # to keep the Supabase Disk I/O budget from drifting back into the red.
+    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       target:
@@ -17,6 +20,7 @@ on:
           - scan-and-match
           - refresh-feeds
           - digest
+          - prune
 
 jobs:
   run:
@@ -31,6 +35,9 @@ jobs:
             echo "extra=" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.schedule }}" = "0 8 * * *" ]; then
             echo "path=digest" >> "$GITHUB_OUTPUT"
+            echo "extra=" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 4 * * *" ]; then
+            echo "path=prune" >> "$GITHUB_OUTPUT"
             echo "extra=" >> "$GITHUB_OUTPUT"
           else
             echo "path=scan-and-match" >> "$GITHUB_OUTPUT"
