@@ -2,8 +2,9 @@ name: Ingest cron
 
 on:
   schedule:
-    # Every 15 minutes — scans sources, classifies, inserts new articles
-    - cron: "*/15 * * * *"
+    # Every 30 minutes — scans sources, classifies, inserts new articles.
+    # Reduced from 15min to ease load on Railway (OOM/SSL/DNS recurrence).
+    - cron: "*/30 * * * *"
     # Daily digest email at 08:00 UTC
     - cron: "0 8 * * *"
     # Daily prune at 04:00 UTC — drops old article_pool + feed_items rows
@@ -43,20 +44,46 @@ jobs:
             echo "path=scan-and-match" >> "$GITHUB_OUTPUT"
             echo "extra=refresh-feeds" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Pre-flight health check
+        id: health
+        # Cheap probe before the real cron call. If the app is unreachable
+        # (DNS SERVFAIL, 5xx, cold-start in progress), skip THIS run with a
+        # clean exit — we KNOW the app isn't ready, so this isn't a failure
+        # we should page on. The next scheduled run will pick it up.
+        # Real cron-endpoint failures (the app IS up but errored) still fail loudly.
+        run: |
+          set +e
+          for attempt in 1 2 3; do
+            echo "Health probe attempt $attempt..."
+            status=$(curl --silent --show-error --max-time 30 \
+              --write-out "%{http_code}" -o /tmp/health_out \
+              "https://myfeed.space/api/health")
+            rc=$?
+            [ -f /tmp/health_out ] && { cat /tmp/health_out; echo; }
+            if [ "$rc" -eq 0 ] && [ "$status" = "200" ]; then
+              echo "Health OK"
+              echo "healthy=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Health probe failed (rc=$rc, status=$status)"
+            if [ "$attempt" -lt 3 ]; then sleep 20; fi
+          done
+          echo "App is unreachable after 3 health probes — skipping this run."
+          echo "Will pick up on the next scheduled tick."
+          echo "healthy=false" >> "$GITHUB_OUTPUT"
+          exit 0
+
       - name: Hit cron endpoint
-        # Never fail the job — transient DNS / 5xx / Railway cold starts must
-        # not page the maintainer. Failures are logged; the next scheduled run
-        # picks up where this one left off.
-        continue-on-error: true
+        if: steps.health.outputs.healthy == 'true'
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PATH_: ${{ steps.pick.outputs.path }}
           EXTRA_: ${{ steps.pick.outputs.extra }}
         run: |
-          set +e
           if [ -z "$CRON_SECRET" ]; then
-            echo "CRON_SECRET secret is not set in repo settings — skipping run." >&2
-            exit 0
+            echo "CRON_SECRET secret is not set in repo settings — aborting." >&2
+            exit 1
           fi
           hit_endpoint() {
             local path="$1"
@@ -64,18 +91,19 @@ jobs:
             local attempt status rc
             for attempt in 1 2 3; do
               echo "GET $url (attempt $attempt)"
+              set +e
               status=$(curl --silent --show-error --write-out "%{http_code}" -o /tmp/curl_out \
                 --max-time 540 \
                 -H "Authorization: Bearer $CRON_SECRET" \
-                "$url" 2>&1)
+                "$url")
               rc=$?
+              set -e
               [ -f /tmp/curl_out ] && { cat /tmp/curl_out; echo; }
-              if [ "$rc" -eq 0 ] && [ -n "$status" ] && [ "$status" -lt 400 ] 2>/dev/null; then
-                echo "OK ($status)"
+              if [ "$rc" -eq 0 ] && [ "$status" -lt 400 ]; then
                 return 0
               fi
               if [ "$rc" -ne 0 ]; then
-                echo "curl failed (exit $rc): $status"
+                echo "curl failed with exit code $rc"
               else
                 echo "Request failed with HTTP $status"
               fi
@@ -84,12 +112,10 @@ jobs:
                 sleep 30
               fi
             done
-            echo "Giving up on $path after 3 attempts — will retry next scheduled run." >&2
-            return 0
+            echo "Giving up on $path after 3 attempts." >&2
+            return 1
           }
-          hit_endpoint "$PATH_" || true
+          hit_endpoint "$PATH_" || exit 1
           if [ -n "$EXTRA_" ]; then
-            hit_endpoint "$EXTRA_" || true
+            hit_endpoint "$EXTRA_" || exit 1
           fi
-          # Always succeed — failures already logged above.
-          exit 0

@@ -707,10 +707,10 @@ export async function scanGlobal(): Promise<{ scanned: number; added: number }> 
   const articles: RawArticle[] = [];
   const seenUrls = new Set<string>();
 
-  // Chunk to 5 concurrent fetches — fetching all ~140 feeds in parallel
-  // spikes memory above Railway's 512MB limit (each parsed RSS holds raw XML
-  // + items in memory until GC). Process in waves and drop intermediates.
-  const CHUNK = 3;
+  // 2 concurrent fetches — fetching all ~140 feeds in parallel spikes
+  // memory above Railway's 512MB limit (each parsed RSS holds raw XML +
+  // items in memory until GC). Reduced from 3 → 2 after OOM recurrences.
+  const CHUNK = 2;
   for (let i = 0; i < GLOBAL_SOURCES.length; i += CHUNK) {
     const chunk = GLOBAL_SOURCES.slice(i, i + CHUNK);
     const results = await Promise.allSettled(
@@ -876,11 +876,11 @@ export async function scanGoogleNews(limit = 10): Promise<{ scanned: number; add
   const articles: RawArticle[] = [];
   const seenUrls = new Set<string>();
 
-  // 3 concurrent (down from 5) — Google News RSS responses are large and
+  // 2 concurrent (down from 3) — Google News RSS responses are large and
   // can OOM Railway's 512MB limit when parsed in parallel. Drain results
   // each chunk so parsed RSS objects can be GC'd before next batch.
-  for (let i = 0; i < batch.length; i += 3) {
-    const chunk = batch.slice(i, i + 3);
+  for (let i = 0; i < batch.length; i += 2) {
+    const chunk = batch.slice(i, i + 2);
     const chunkResults = await Promise.allSettled(
       chunk
         .map((f) => {

@@ -36,7 +36,7 @@ async function scan(supabase: SupabaseClient) {
   const results = { global: { scanned: 0, added: 0 }, googleNews: { scanned: 0, added: 0, feeds: 0 }, brave: { scanned: 0, added: 0 }, videos: { scanned: 0, added: 0 } };
 
   try { results.global = await scanGlobal(); } catch (e) { console.error("Global scan failed:", e); }
-  try { results.googleNews = await scanGoogleNews(10); } catch (e) { console.error("Google News scan failed:", e); }
+  try { results.googleNews = await scanGoogleNews(5); } catch (e) { console.error("Google News scan failed:", e); }
 
   // Brave and video search: rate-limited to once per hour
   const lastBrave = await getScanState(supabase, "last_brave_scan_at");
