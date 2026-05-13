@@ -224,6 +224,27 @@ export default function ExplorePage() {
             </button>
           ))}
         </div>
+        {(() => {
+          const q = search.trim().toLowerCase();
+          const sysHits = q ? FEEDS.filter(f => f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q)).length : FEEDS.length;
+          const commHits = q ? communityFeeds.filter(f => f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q)).length : communityFeeds.length;
+          if (q && sysHits + commHits === 0) {
+            return (
+              <div className="rounded-2xl border border-dashed border-border bg-bg-card/50 p-8 text-center">
+                <p className="text-text font-semibold mb-1">No feeds match &ldquo;{search}&rdquo;</p>
+                <p className="text-sm text-text-muted mb-4">Try a different keyword, or create a custom feed for this topic.</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button onClick={() => setSearch("")} className="px-4 py-2 text-xs rounded-full border border-border text-text-muted hover:text-text transition-colors">Clear search</button>
+                  <button onClick={() => setShowNewFeed(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full bg-text text-bg hover:opacity-90 transition-opacity">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Create a feed for &ldquo;{search.slice(0, 30)}&rdquo;
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* System feeds */}
           {FEEDS.filter(f => !search || f.name.toLowerCase().includes(search.toLowerCase()) || f.description.toLowerCase().includes(search.toLowerCase())).map((feed) => (

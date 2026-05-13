@@ -211,6 +211,8 @@ function LoginContent() {
           <form onSubmit={handleSubmit} className="space-y-3">
             <input
               type="email"
+              id="email"
+              name="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -221,6 +223,8 @@ function LoginContent() {
             />
             <input
               type="password"
+              id="password"
+              name="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -230,6 +234,17 @@ function LoginContent() {
               aria-label="Password"
               className="w-full rounded-xl border border-border bg-bg-card px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-text/50 focus:outline-none focus:ring-1 focus:ring-text/20 transition-all"
             />
+
+            {!isSignUp && (
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-text-muted hover:text-text transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {error && (
               <p role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-400">{error}</p>

@@ -147,6 +147,34 @@ export default function ForYouPage() {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
 
+  // Close transient overlays (menu, modals) on outside click and Escape so the
+  // mobile experience matches user expectations. The legacy onMouseLeave-only
+  // close only works on desktop pointer devices — no touch user can dismiss it.
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!showMenu && !showNewFeed && !showEmailPrefs) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showNewFeed) setShowNewFeed(false);
+        else if (showEmailPrefs) setShowEmailPrefs(false);
+        else if (showMenu) setShowMenu(false);
+      }
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      // Only the floating dropdown closes on outside-tap; the modals already
+      // have a backdrop-click handler.
+      if (showMenu && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [showMenu, showNewFeed, showEmailPrefs]);
+
   // Hydrate the email-prefs dialog whenever it opens. We do this lazily so a
   // logged-out viewer (or one who never opens the dialog) doesn't pay for it.
   useEffect(() => {
@@ -466,8 +494,10 @@ export default function ForYouPage() {
           </div>
           {/* Actions: right-aligned on both viewports, tighter on mobile */}
           <div className="ml-auto sm:ml-0 flex-shrink-0 flex items-center gap-1 sm:gap-2 pr-2 sm:pr-4 pl-2 sm:pl-3 sm:border-l sm:border-border/50">
-            <Link href="/explore" className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" />Explore</Link>
-            <button onClick={() => setShowNewFeed(true)} className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap">
+            {/* relative + before:-inset-y-2.5 extends the touch target to ~44px
+                tall on mobile (WCAG 2.5.5) without inflating the visual chip. */}
+            <Link href="/explore" className="relative flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap before:absolute before:content-[''] before:-inset-y-2.5 before:inset-x-0 sm:before:hidden"><Search className="h-3.5 w-3.5" />Explore</Link>
+            <button onClick={() => setShowNewFeed(true)} className="relative flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap before:absolute before:content-[''] before:-inset-y-2.5 before:inset-x-0 sm:before:hidden">
               <Sparkles className="h-3.5 w-3.5" />Create feed
             </button>
             {mounted && (
@@ -479,10 +509,10 @@ export default function ForYouPage() {
                 {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
               </button>
             )}
-            <div className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
+            <div ref={menuRef} className="relative">
+              <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options" aria-haspopup="true" aria-expanded={showMenu}><MoreVertical className="h-4 w-4 text-text-muted" /></button>
               {showMenu && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+                <div role="menu" className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50">
                   {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
                   {!user && <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><LogIn className="h-4 w-4" />Sign up / Sign in</Link>}
                   {user && <Link href="/bookmarks" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-text hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}><Bookmark className="h-4 w-4" />Bookmarks</Link>}
@@ -594,10 +624,16 @@ export default function ForYouPage() {
         </div>
       </div>
 
-      {/* Hero banner for guests -create feed */}
+      {/* Hero banner for guests -create feed.
+          Note: we drive the banner background from `theme` (next-themes) rather
+          than Tailwind's dark: variant because the gradient classes (from-X/via-X/
+          to-X) only set CSS vars — they don't reset background-image, so the
+          gradient bleeds through in dark mode. Reading theme directly is the
+          cheapest fix that always picks the right surface. SSR guard via
+          `mounted` to avoid hydration mismatch. */}
       {!user && !heroDismissed && (
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
-          <div className="relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-orange-50 dark:bg-none dark:bg-bg-hover">
+          <div className={`relative rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-sm p-4 sm:p-8 ${mounted && theme !== "light" ? "bg-bg-hover" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50"}`}>
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 sm:top-5 sm:right-5 inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-5 w-5" /></button>
             <div className="flex items-start gap-4 mb-5">
               <div className="w-11 h-11 rounded-xl bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-5 w-5 text-text" /></div>

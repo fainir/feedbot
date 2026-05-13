@@ -215,6 +215,29 @@ export default function FeedPage() {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   }, []);
 
+  // Close transient overlays on outside-click / Escape — mobile users have no
+  // mouseleave event, so the legacy onMouseLeave-only close was broken on touch.
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!showMenu && !showNewFeed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (showNewFeed) setShowNewFeed(false);
+      else if (showMenu) setShowMenu(false);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (showMenu && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [showMenu, showNewFeed]);
+
   // Collapse top bar on scroll down (mobile only — CSS gates on sm:)
   useEffect(() => {
     const onScroll = () => {
@@ -709,10 +732,10 @@ export default function FeedPage() {
 
         {/* Right actions */}
         <div className="ml-auto sm:ml-0 flex-shrink-0 flex items-center gap-1 sm:gap-2 pr-2 sm:pr-4 pl-2 sm:pl-3 sm:border-l sm:border-border/50">
-          <Link href="/explore" className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap"><Search className="h-3.5 w-3.5" />Explore</Link>
+          <Link href="/explore" className="relative flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-medium border border-text/30 text-text rounded-full hover:bg-text hover:text-bg transition-all whitespace-nowrap before:absolute before:content-[''] before:-inset-y-2.5 before:inset-x-0 sm:before:hidden"><Search className="h-3.5 w-3.5" />Explore</Link>
           <button
             onClick={() => setShowNewFeed(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
+            className="relative flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold bg-text text-bg rounded-full hover:opacity-90 transition-opacity whitespace-nowrap before:absolute before:content-[''] before:-inset-y-2.5 before:inset-x-0 sm:before:hidden"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Create feed
@@ -726,12 +749,12 @@ export default function FeedPage() {
               {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
             </button>
           )}
-          <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options">
+          <div ref={menuRef} className="relative">
+            <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options" aria-haspopup="true" aria-expanded={showMenu}>
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>
+              <div role="menu" className="absolute right-0 top-full mt-1 w-52 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50">
                 {user && <div className="px-3 py-2 border-b border-border"><p className="text-xs font-medium text-text truncate">{user.email}</p></div>}
                 {!user && (
                   <Link href="/login?signup=true" className="flex items-center gap-2 px-3 py-2 text-sm text-text font-medium hover:bg-bg-hover transition-colors" onClick={() => setShowMenu(false)}>
