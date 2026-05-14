@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
+import { useThemeSync } from "@/components/layout/use-theme-sync";
 import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo, normalizeImageUrl } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
@@ -101,6 +102,7 @@ export default function ForYouPage() {
   const [heroDismissed, setHeroDismissed] = useState(false);
   const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  useThemeSync(user);
 
   useEffect(() => {
     setMounted(true);

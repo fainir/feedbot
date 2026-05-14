@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
+import { useThemeSync } from "@/components/layout/use-theme-sync";
 
 // All feeds shown on Explore — 100+ topics
 const FEEDS = [
@@ -156,6 +157,7 @@ export default function ExplorePage() {
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { createClient().auth.getUser().then(({ data: { user } }) => setUser(user)); }, []);
+  useThemeSync(user);
   useEffect(() => {
     fetch("/api/public/community?sort=followers")
       .then((r) => r.json())
