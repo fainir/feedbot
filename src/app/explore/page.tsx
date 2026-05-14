@@ -203,7 +203,7 @@ export default function ExplorePage() {
               {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
             </button>
           )}
-          <div className="relative">
+          <div className="relative -ml-1 sm:-ml-1.5">
             <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options"><MoreVertical className="h-4 w-4 text-text-muted" /></button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 w-44 bg-bg-card border border-border rounded-xl shadow-lg py-1 z-50" onMouseLeave={() => setShowMenu(false)}>

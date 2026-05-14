@@ -769,7 +769,7 @@ export default function FeedPage() {
               {theme === "dark" ? <Sun className="h-4 w-4 text-text-muted" /> : <Moon className="h-4 w-4 text-text-muted" />}
             </button>
           )}
-          <div ref={menuRef} className="relative">
+          <div ref={menuRef} className="relative -ml-1 sm:-ml-1.5">
             <button onClick={() => setShowMenu(!showMenu)} className="relative inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden hover:bg-bg-hover transition-colors" aria-label="More options" aria-haspopup="true" aria-expanded={showMenu}>
               <MoreVertical className="h-4 w-4 text-text-muted" />
             </button>
