@@ -194,7 +194,6 @@ export default function FeedPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [showNewFeed, setShowNewFeed] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
-  const [filter, setFilter] = useState<"all" | "today" | "week">("all");
   const [showMenu, setShowMenu] = useState(false);
   const desktopTabs = useScrollFade();
   const mobileTabs = useScrollFade();
@@ -353,24 +352,9 @@ export default function FeedPage() {
 
   const handleShare = useCallback(async (item: FeedItem) => {
     trackEvent("share_article", { source: item.source, feed: feedSlug });
-    const shareData = { title: item.title, url: item.url };
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        // AbortError = user explicitly dismissed the share sheet. Stay silent.
-        if ((err as DOMException)?.name === "AbortError") return;
-        // Anything else (NotAllowedError, etc.) — fall through to clipboard.
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(item.url);
-      toast("Link copied!", "success");
-    } catch {
-      toast("Couldn't copy link", "error");
-    }
-  }, [feedSlug, toast]);
+    if (!navigator.share) return;
+    try { await navigator.share({ title: item.title, url: item.url }); } catch { /* user cancelled or share unavailable */ }
+  }, [feedSlug]);
 
   const fetchFeed = useCallback((query: string, cursor?: string) => {
     const url = `/api/public/feeds?q=${encodeURIComponent(query)}&limit=50${cursor ? `&cursor=${cursor}` : ""}`;
@@ -498,19 +482,9 @@ export default function FeedPage() {
     });
   }, [items]);
 
-  // Filter chips: All / Today / This week
-  // Counts are computed once so the chip labels can show "Today (12)" style hints.
-  const { filteredItems, filterCounts } = useMemo(() => {
-    const now = Date.now();
-    const DAY = 24 * 60 * 60 * 1000;
-    const week = dedupedItems.filter((i) => now - new Date(i.publishedAt).getTime() < 7 * DAY);
-    const today = dedupedItems.filter((i) => now - new Date(i.publishedAt).getTime() < DAY);
-    const out = filter === "today" ? today : filter === "week" ? week : dedupedItems;
-    return {
-      filteredItems: out,
-      filterCounts: { all: dedupedItems.length, today: today.length, week: week.length },
-    };
-  }, [dedupedItems, filter]);
+  // No date-window filter — the feed is always shown in full. We keep a
+  // `filteredItems` alias so the existing render path doesn't change shape.
+  const filteredItems = dedupedItems;
 
   const loadMore = () => {
     if (loadingMore || !hasMore || !nextCursor) return;
@@ -548,23 +522,10 @@ export default function FeedPage() {
   const displayName = activeTab?.name || communityFeed?.name || feedSlug;
 
   const handleShareFeed = useCallback(async () => {
+    if (!navigator.share) return;
     const url = `https://myfeed.space/${feedSlug}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `${displayName} - MyFeed`, url });
-        return;
-      } catch (err) {
-        if ((err as DOMException)?.name === "AbortError") return;
-        // fall through to clipboard fallback
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast("Link copied!", "success");
-    } catch {
-      toast("Couldn't copy link", "error");
-    }
-  }, [feedSlug, displayName, toast]);
+    try { await navigator.share({ title: `${displayName} - MyFeed`, url }); } catch { /* user cancelled or share unavailable */ }
+  }, [feedSlug, displayName]);
 
   // Build combined tab list: system tabs + user feeds, respecting order and hidden
   const allTabs = useMemo(() => {
@@ -878,32 +839,6 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* Filter chips */}
-      {!loading && dedupedItems.length > 0 && (
-        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-            {([
-              { id: "all" as const, label: "All", n: filterCounts.all },
-              { id: "today" as const, label: "Today", n: filterCounts.today },
-              { id: "week" as const, label: "This week", n: filterCounts.week },
-            ]).map((chip) => {
-              const active = filter === chip.id;
-              return (
-                <button
-                  key={chip.id}
-                  onClick={() => setFilter(chip.id)}
-                  aria-pressed={active}
-                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active ? "border-text bg-text text-bg" : "border-border text-text-muted hover:text-text hover:border-text/30"}`}
-                >
-                  <span>{chip.label}</span>
-                  <span className={`text-[10px] ${active ? "opacity-70" : "opacity-60"}`}>{chip.n}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Feed */}
       <main id="main-content" className="max-w-2xl mx-auto px-3 sm:px-4 pb-4 sm:pb-6">
         {loading ? (
@@ -920,14 +855,8 @@ export default function FeedPage() {
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-16">
             <Globe className="h-10 w-10 text-text-muted mx-auto mb-3 opacity-50" />
-            <p className="text-text-muted font-medium">
-              {dedupedItems.length === 0 ? "Scanning the internet..." : "No posts in this window"}
-            </p>
-            <p className="text-xs text-text-muted mt-1">
-              {dedupedItems.length === 0 ? "Content updates continuously" : (
-                <button onClick={() => setFilter("all")} className="underline hover:text-text">Show all posts</button>
-              )}
-            </p>
+            <p className="text-text-muted font-medium">Scanning the internet...</p>
+            <p className="text-xs text-text-muted mt-1">Content updates continuously</p>
           </div>
         ) : (
           <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">

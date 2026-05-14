@@ -442,21 +442,9 @@ export default function ForYouPage() {
 
   const handleShare = useCallback(async (item: FeedItem) => {
     trackEvent("share_article", { source: item.source, feed: "for-you" });
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: item.title, url: item.url });
-        return;
-      } catch (err) {
-        if ((err as DOMException)?.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(item.url);
-      toast("Link copied!", "success");
-    } catch {
-      toast("Couldn't copy link", "error");
-    }
-  }, [toast]);
+    if (!navigator.share) return;
+    try { await navigator.share({ title: item.title, url: item.url }); } catch { /* user cancelled or share unavailable */ }
+  }, []);
 
   const handleHeroSubmit = useCallback(() => {
     const prompt = newPrompt.trim();
