@@ -814,7 +814,6 @@ export default function FeedPage() {
               <div className="overflow-x-auto scrollbar-hide">
                 <p className="text-xs text-text-muted whitespace-nowrap pr-4">
                   {activeTab?.query || communityFeed?.description || ""}
-                  {communityFeed ? ` · by ${communityFeed.creator}` : ""}
                 </p>
               </div>
               <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-bg to-transparent" />
@@ -822,9 +821,9 @@ export default function FeedPage() {
             <button
               onClick={() => { setShowCustomize(true); setNewPrompt(activeTab?.query || communityFeed?.description || ""); }}
               className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap text-text-muted hover:text-text hover:bg-bg-hover transition-all flex-shrink-0"
-              aria-label={communityFeed ? "Make your own version of this feed" : "Customize this feed"}
+              aria-label="Customize this feed"
             >
-              <Sparkles className="h-3 w-3" />{communityFeed ? "Make my version" : "Customize"}
+              <Sparkles className="h-3 w-3" />Customize
             </button>
           </div>
         </div>
@@ -1058,27 +1057,23 @@ export default function FeedPage() {
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-text/5 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-text" /></div>
-                  <h2 className="font-bold text-lg">{communityFeed ? "Make your own version" : "Customize Feed"}</h2>
+                  <h2 className="font-bold text-lg">Customize Feed</h2>
                 </div>
                 <button onClick={() => setShowCustomize(false)} className="p-1.5 hover:bg-bg-hover rounded-lg transition-colors" aria-label="Close customize dialog"><X className="h-5 w-5 text-text-muted" /></button>
               </div>
-              <p className="text-sm text-text-muted mb-4 ml-10">
-                {communityFeed
-                  ? "Tweak the prompt — we'll create a new feed in your account so you can edit it freely."
-                  : "Change the prompt to adjust what content appears."}
-              </p>
+              <p className="text-sm text-text-muted mb-4 ml-10">Change the prompt to adjust what content appears.</p>
               <textarea autoFocus className="w-full bg-bg-hover border border-border rounded-xl px-4 py-3 text-sm resize-none h-28 focus:outline-none focus:border-text/50 focus:ring-1 focus:ring-text/20 transition-all" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} aria-label="Feed prompt" />
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setShowCustomize(false)} className="flex-1 py-2.5 text-sm border border-border rounded-xl hover:bg-bg-hover transition-colors font-medium">Cancel</button>
                 {user ? (
                   <button onClick={async () => { if (!newPrompt.trim()) return; try { const res = await fetch("/api/feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newPrompt.slice(0, 40), query_text: newPrompt }) }); const data = await res.json(); const id = data.feed?.id; if (id) { fetch(`/api/feeds/${id}/refresh`, { method: "POST" }).catch(() => {}); window.location.href = `/my/${id}`; return; } } catch {} setShowCustomize(false); }} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" />
-                    {communityFeed ? "Create my version" : "Save as custom feed"}
+                    Save as custom feed
                   </button>
                 ) : (
                 <Link href={`/login?signup=true${newPrompt ? `&prompt=${encodeURIComponent(newPrompt)}` : ""}`} className="flex-1 py-2.5 text-sm text-center bg-text text-bg rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {communityFeed ? "Sign up to create" : "Sign up to customize"}
+                  Sign up to customize
                 </Link>
                 )}
               </div>
