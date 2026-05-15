@@ -527,7 +527,7 @@ export default function FeedPage() {
     try { await navigator.share({ title: `${displayName} - MyFeed`, url }); } catch { /* user cancelled or share unavailable */ }
   }, [feedSlug, displayName]);
 
-  // Build combined tab list: system tabs + user feeds, respecting order and hidden
+  // Build combined tab list: system tabs + user feeds, respecting order and hidden.
   const allTabs = useMemo(() => {
     const systemTabs = TABS.map((t) => ({ id: t.id, name: t.name, icon: t.icon, isSystem: true }));
     const custom = userFeeds.map((f) => ({ id: f.id, name: f.name, icon: f.icon, isSystem: false }));
