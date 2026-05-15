@@ -102,7 +102,26 @@ export function cleanSourceDisplay(raw: string): string {
   return name;
 }
 
-export function getSourceInfo(raw: string): { name: string; icon: string; color: string } {
+/**
+ * Google News RSS strips the real publisher and reports source as "Google
+ * News" / "news.google.com". The actual outlet usually sits at the end of
+ * the headline as " - Publisher". Pull it out so the chip says "CNBC"
+ * instead of a generic "News".
+ */
+export function extractTitleSource(title: string | undefined | null): string | null {
+  if (!title) return null;
+  // Match the trailing " - Publisher" (separators: hyphen, en-dash, em-dash, vertical bar).
+  // Publisher must be 2-40 chars, no trailing punctuation, no digits-only.
+  const m = title.match(/[-–—|]\s+([A-Za-z][A-Za-z0-9 .'&!]{1,40})\s*$/);
+  if (!m) return null;
+  const name = m[1].trim();
+  // Reject things that look like sentence endings rather than publishers.
+  if (/^(the|a|an|and|or|but|with|for|in|on|of|to)$/i.test(name)) return null;
+  if (name.split(/\s+/).length > 5) return null;
+  return name;
+}
+
+export function getSourceInfo(raw: string, title?: string): { name: string; icon: string; color: string } {
   const s = raw.toLowerCase();
   const cleaned = cleanSourceDisplay(raw);
   if (s.includes("hacker news") || s.includes("hnrss"))
@@ -182,14 +201,25 @@ export function getSourceInfo(raw: string): { name: string; icon: string; color:
   if (
     s.includes("google news") ||
     s.includes("- google") ||
+    s.includes("news.google") ||
     s.includes("artificial intelligence") ||
     s.includes("machine learning") ||
     s.includes("big tech") ||
     s.includes("startup funding") ||
     s.includes("software engineering") ||
     s.includes("scientific discoveries")
-  )
+  ) {
+    // Google News hides the real publisher — pull it from the headline if we can.
+    const fromTitle = extractTitleSource(title);
+    if (fromTitle) {
+      // Recurse into the known-publisher table using the extracted name so we
+      // pick up a branded color/icon if there's one for it.
+      const better = getSourceInfo(fromTitle);
+      if (better.icon || better.color !== "bg-text/5 text-text-muted") return better;
+      return { name: fromTitle, icon: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(fromTitle.toLowerCase().replace(/[^a-z0-9]/g,""))}.com&sz=32`, color: "bg-text/5 text-text" };
+    }
     return { name: "News", icon: "https://news.google.com/favicon.ico", color: "bg-blue-500/10 text-blue-400" };
+  }
   // Fallback: use Google Favicons API to get icon from source domain
   return { name: cleaned, icon: "", color: "bg-text/5 text-text-muted" };
 }

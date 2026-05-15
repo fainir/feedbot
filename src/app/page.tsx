@@ -685,9 +685,12 @@ export default function ForYouPage() {
         ) : (
           <div className="space-y-2 sm:space-y-4 pt-1 sm:pt-2">
             {dedupedItems.map((item, i) => {
-              const src = getSourceInfo(item.source);
+              const src = getSourceInfo(item.source, item.title);
               const favicon = src.icon || getSourceFavicon(item.source, item.url);
-              const title = cleanTitle(item.title);
+              const titleRaw = cleanTitle(item.title);
+              const title = src.name && titleRaw.endsWith(` - ${src.name}`)
+                ? titleRaw.slice(0, -3 - src.name.length).trim()
+                : titleRaw;
               const summary = cleanSummary(item.summary, title);
               const hasImage = !!item.image_url;
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
