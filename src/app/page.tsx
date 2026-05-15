@@ -10,6 +10,7 @@ import { trackEvent } from "@/components/analytics";
 import { useToast } from "@/components/ui/toast";
 import { useThemeSync } from "@/components/layout/use-theme-sync";
 import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo, normalizeImageUrl } from "@/lib/source-info";
+import { useFeedPrefetch } from "@/components/feed/use-feed-prefetch";
 import type { User } from "@supabase/supabase-js";
 
 interface FeedItem {
@@ -103,6 +104,7 @@ export default function ForYouPage() {
   const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   useThemeSync(user);
+  const prefetchFeed = useFeedPrefetch();
 
   useEffect(() => {
     setMounted(true);
@@ -480,7 +482,13 @@ export default function ForYouPage() {
               <div className="w-px h-5 bg-border/50 mx-1 flex-shrink-0" />
               {FEEDS.filter(f => showAllFeeds || !hiddenFeeds.has(f.id)).map((tab) => (
                 <div key={tab.id} className="group relative shrink-0 border-b-2 border-transparent text-text-muted hover:text-text transition-colors">
-                  <Link href={`/${tab.id}`} className="flex items-center gap-1.5 px-2.5 py-3.5 text-sm font-medium whitespace-nowrap">
+                  <Link
+                    href={`/${tab.id}`}
+                    onMouseEnter={() => prefetchFeed(tab.id)}
+                    onTouchStart={() => prefetchFeed(tab.id)}
+                    onFocus={() => prefetchFeed(tab.id)}
+                    className="flex items-center gap-1.5 px-2.5 py-3.5 text-sm font-medium whitespace-nowrap"
+                  >
                     <span>{tab.icon}</span>{tab.name}
                   </Link>
                   {!showAllFeeds && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setHiddenFeeds(prev => { const next = new Set(prev); next.add(tab.id); localStorage.setItem("myfeed-hidden-feeds", JSON.stringify([...next])); return next; }); }} className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-bg-card border border-border/50 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Hide ${tab.name}`}><X className="h-2.5 w-2.5 text-text-muted" /></button>}

@@ -1,40 +1,38 @@
 # Context Handoff
-*Auto-generated: 2026-05-12T10:23:54Z*
-*Session tool calls: ? | Branch: claude/trusting-cori-04b6b1*
+*Auto-generated: 2026-05-15T11:26:39Z*
+*Session tool calls: ? | Branch: claude/stoic-snyder-826dad*
 
 ## Plan Progress
-Done: 180 | In Progress: 0 | Todo: 3 | Total: 183
+Done: 182 | In Progress: 0 | Todo: 2 | Total: 184
 
 ## Active Tasks (RESUME THESE)
 No active tasks
 
 ## Next Pending Tasks
-95:- [ ] Fix banner white bg in dark mode — use theme state (S)
-152:- [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
-153:- [ ] Test end-to-end Stripe flow
+153:- [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
+154:- [ ] Test end-to-end Stripe flow
 
 ## Blocked Tasks
-157:- [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
-158:- [!] Brave Search API key for real content — BLOCKED: needs API key
-160:- [!] Custom domain (feedbot.app?) — BLOCKED: needs domain purchase
+158:- [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
+159:- [!] Brave Search API key for real content — BLOCKED: needs API key
+161:- [!] Custom domain (feedbot.app?) — BLOCKED: needs domain purchase
 
 ## Process State
 No process-maker.json found
 
 ## Recent Commits
-42eb37b style: revert card image hover zoom, restore card lift on hover
-dad2f1c fix: give card image an explicit scale-100 baseline so hover interpolates
-1740a36 style: remove competing card lift so image zoom can be smooth + slow
-69bfa06 style: make card image hover zoom smooth instead of subpixel-stuttery
-5914343 style: slow down card image hover zoom
+36a1466 perf(cache): add Redis L2 + persistent client SWR for instant feed loads
+77a981d chore: add SOURCE_INFO_BUILD marker to detect chunk freshness
+dc3ca48 chore: touch [feed]/page.tsx to force Railway chunk rebuild
+3b77e94 chore: force redeploy (real-publisher chip fix)
+cb2ee3d fix(source-chip): show real publisher, not generic "News"
 
 ## Uncommitted Changes
 ### Staged
 None
 
 ### Modified
-src/app/api/public/feeds/route.ts
-src/app/page.tsx
+.claude/handoff.md
 
 ## What the Next Session Should Do
 1. Read .claude/plan.md — find [~] tasks and continue them

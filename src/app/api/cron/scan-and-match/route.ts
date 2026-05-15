@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews } from "@/lib/global-scanner";
 import { classifyAndInsert } from "@/lib/classify";
+import { warmFeedCache } from "@/lib/cache-warmer";
 
 function isAuthorized(request: NextRequest): boolean {
   const secret = request.headers.get("authorization");
@@ -147,5 +148,23 @@ export async function GET(request: NextRequest) {
     (global as { gc: () => void }).gc();
   }
   const classifyResult = await classify(supabase);
-  return NextResponse.json({ scan: scanResult, classify: classifyResult });
+
+  // Pre-warm the public feed caches so the first real visitor in the next
+  // 60s window hits L1 / L2 instead of paying the Supabase round-trip.
+  // Only worth doing when new items actually landed — otherwise the cache
+  // is fine as-is.
+  let warmResult: { warmed: number; hits: number } | { skipped: true } | undefined;
+  if (classifyResult && (classifyResult.inserted ?? 0) > 0) {
+    try {
+      const w = await warmFeedCache();
+      warmResult = { warmed: w.warmed, hits: w.hits };
+    } catch (e) {
+      warmResult = { warmed: 0, hits: 0 };
+      console.warn("[cron] cache warm failed:", (e as Error).message);
+    }
+  } else {
+    warmResult = { skipped: true };
+  }
+
+  return NextResponse.json({ scan: scanResult, classify: classifyResult, warm: warmResult });
 }

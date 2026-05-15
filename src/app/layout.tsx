@@ -69,6 +69,19 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
+        {/* Start TLS handshakes to the cover-image CDNs in parallel with HTML
+            parsing. Saves ~100-200ms on first-image-visible. Only the hosts
+            that appear most often in feed cards need preconnect; dns-prefetch
+            is fire-and-forget for the long tail. */}
+        <link rel="preconnect" href="https://cdn-images-1.medium.com" crossOrigin="" />
+        <link rel="preconnect" href="https://cdn-static-1.medium.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://media2.dev.to" />
+        <link rel="dns-prefetch" href="https://dev.to" />
+        <link rel="dns-prefetch" href="https://news.ycombinator.com" />
+        <link rel="dns-prefetch" href="https://www.reuters.com" />
+        <link rel="dns-prefetch" href="https://www.forbes.com" />
+        <link rel="dns-prefetch" href="https://www.bloomberg.com" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
         <script dangerouslySetInnerHTML={{ __html: `if(history.scrollRestoration)history.scrollRestoration='manual';window.scrollTo(0,0);` }} />
         <script
           type="application/ld+json"
