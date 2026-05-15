@@ -736,7 +736,7 @@ export default function ForYouPage() {
                       {summary && summary !== title && summary.length > 10 && (
                         <p className="text-xs text-text-muted mt-1 line-clamp-2 leading-snug">{summary}</p>
                       )}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                      <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/50">
                         <div className="flex items-center gap-3">
                           <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "like"); }} className={`px-2 py-1 rounded-md text-[11px] font-medium flex items-center gap-1 transition-all ${userReactions[item.id] === "like" ? "text-green-400 bg-green-500/10" : "text-text-muted hover:text-green-400 hover:bg-green-500/10"}`} aria-label="More like this"><ThumbsUp className="h-3 w-3" />More</button>
                           <button onClick={(e) => { e.preventDefault(); handleReaction(item.id, "dislike"); }} className={`px-2 py-1 rounded-md text-[11px] font-medium flex items-center gap-1 transition-all ${userReactions[item.id] === "dislike" ? "text-red-400 bg-red-500/10" : "text-text-muted hover:text-red-400 hover:bg-red-500/10"}`} aria-label="Less like this"><ThumbsDown className="h-3 w-3" />Less</button>
