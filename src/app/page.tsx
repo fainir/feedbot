@@ -642,10 +642,10 @@ export default function ForYouPage() {
         <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
           <div className={`relative rounded-xl border border-border overflow-hidden p-4 ${!mounted || resolvedTheme === "dark" ? "bg-bg-hover" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50"}`}>
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-9 h-9 rounded-lg bg-bg-hover flex items-center justify-center flex-shrink-0"><Rss className="h-4 w-4 text-text" /></div>
-              <div className="pr-6">
-                <h2 className="text-lg font-semibold text-text leading-tight mb-1">Create a feed about anything</h2>
+            <div className="flex items-start gap-2.5 mb-3 pr-6">
+              <Rss className="h-5 w-5 text-text mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-semibold text-text leading-tight">Create a feed about anything</h2>
                 <p className="text-sm text-text-muted leading-snug">Describe a topic you care about. Our AI scans thousands of sources across the web and builds a custom feed just for you — always fresh, delivered to your inbox.</p>
               </div>
             </div>
