@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cacheGet, cachePut } from "@/lib/cache";
 
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+// Two-tier cache: L1 in-memory + L2 Redis. See src/lib/cache.ts.
+const TTL_MS = 60_000;
+const CACHE_HEADERS = {
+  "Content-Type": "application/json",
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
+function cacheKey(req: NextRequest): string {
+  const p = req.nextUrl.searchParams;
+  return "slug:" + [p.get("slug") ?? "", p.get("cursor") ?? "", p.get("limit") ?? ""].join("|");
 }
 
 /**
@@ -15,6 +28,15 @@ function getSupabase() {
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
   if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
+
+  const key = cacheKey(req);
+  const cached = await cacheGet(key);
+  if (cached) {
+    return new NextResponse(cached.body, {
+      status: 200,
+      headers: { ...CACHE_HEADERS, "X-Cache": `HIT-${cached.tier}` },
+    });
+  }
 
   const supabase = getSupabase();
 
@@ -66,7 +88,7 @@ export async function GET(req: NextRequest) {
 
   const profile = feed.profiles as unknown as { name: string | null; email: string } | null;
 
-  return NextResponse.json({
+  const body = JSON.stringify({
     feed: {
       id: feed.id,
       name: feed.name,
@@ -85,5 +107,11 @@ export async function GET(req: NextRequest) {
     })),
     hasMore,
     nextCursor: hasMore ? page[page.length - 1].published_at : null,
+  });
+
+  void cachePut(key, body, TTL_MS);
+  return new NextResponse(body, {
+    status: 200,
+    headers: { ...CACHE_HEADERS, "X-Cache": "MISS" },
   });
 }

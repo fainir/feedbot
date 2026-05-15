@@ -1,39 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cacheGet, cachePut } from "@/lib/cache";
 
 const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
-// ── In-memory response cache ──
-// First visitor in a 60s window pays the Supabase cost; every other
-// visitor for the same (q, cursor, limit, feeds) tuple gets the cached
-// JSON in <5ms. Capped to keep memory predictable on Railway.
-const _responseCache = new Map<string, { body: string; expiresAt: number }>();
+// Two-tier cache: L1 in-memory + L2 Redis (shared across instances, survives
+// deploys). Both routes share the same helper from @/lib/cache.
 const RESPONSE_TTL_MS = 60_000;
-const RESPONSE_CACHE_MAX = 32;
 const CACHE_HEADERS = {
   "Content-Type": "application/json",
-  // Browser + any upstream CDN: cache 60s, serve stale up to 5min while
-  // a fresh fetch happens in the background.
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
 };
 
 function responseCacheKey(req: NextRequest): string {
   const p = req.nextUrl.searchParams;
-  return [
+  return "feeds:" + [
     p.get("q") ?? "",
     p.get("cursor") ?? "",
     p.get("limit") ?? "",
     p.get("feeds") ?? "",
   ].join("|");
-}
-
-function cachePut(key: string, body: string) {
-  // Simple FIFO eviction — Map preserves insertion order.
-  if (_responseCache.size >= RESPONSE_CACHE_MAX) {
-    const oldest = _responseCache.keys().next().value;
-    if (oldest !== undefined) _responseCache.delete(oldest);
-  }
-  _responseCache.set(key, { body, expiresAt: Date.now() + RESPONSE_TTL_MS });
 }
 
 // ── TF-IDF Feed Matcher ──
@@ -169,13 +155,13 @@ export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get("q");
   if (!query) return NextResponse.json({ error: "q required" }, { status: 400 });
 
-  // Serve cached response if fresh.
+  // Serve cached response if fresh. L1 (in-process) first, then L2 (Redis).
   const cacheKey = responseCacheKey(req);
-  const cached = _responseCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
     return new NextResponse(cached.body, {
       status: 200,
-      headers: { ...CACHE_HEADERS, "X-Cache": "HIT" },
+      headers: { ...CACHE_HEADERS, "X-Cache": `HIT-${cached.tier}` },
     });
   }
 
@@ -454,7 +440,8 @@ export async function GET(req: NextRequest) {
     hasMore,
     nextCursor: hasMore ? page[page.length - 1].published_at : null,
   });
-  cachePut(cacheKey, body);
+  // Fire-and-forget cache write so we don't hold the response on Redis.
+  void cachePut(cacheKey, body, RESPONSE_TTL_MS);
   return new NextResponse(body, {
     status: 200,
     headers: { ...CACHE_HEADERS, "X-Cache": "MISS" },

@@ -397,43 +397,55 @@ export default function FeedPage() {
     setCommunityFeed(null);
     setNotFound(false);
 
-    // Check cache first — instant tab switching for visited feeds
+    // Stale-while-revalidate via localStorage:
+    //   1. If we have a cache entry, render it INSTANTLY (no skeleton).
+    //   2. Always kick off a background fetch so the page eventually shows
+    //      fresh content. Cache is replaced only after the new payload
+    //      lands so the user never sees a flash of empty state.
+    // localStorage (vs sessionStorage) means the cache survives tab close
+    // and back-button — the perceived "feels instant" win.
     const cacheKey = `mf_cache_${feedSlug}`;
+    let hadCache = false;
     try {
-      const cached = sessionStorage.getItem(cacheKey);
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { items: cachedItems, hasMore: cachedMore, cursor, ts } = JSON.parse(cached);
-        // Use cache if < 2 min old
-        if (Date.now() - ts < 120_000) {
-          setItems(cachedItems);
-          setHasMore(cachedMore);
-          setNextCursor(cursor);
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+          setItems(parsed.items);
+          setHasMore(!!parsed.hasMore);
+          setNextCursor(parsed.cursor ?? null);
+          if (parsed.feed) setCommunityFeed(parsed.feed);
           setLoading(false);
-          return;
+          hadCache = true;
         }
       }
     } catch {}
 
-    setLoading(true);
-    setItems([]);
-    setNextCursor(null);
+    if (!hadCache) {
+      setLoading(true);
+      setItems([]);
+      setNextCursor(null);
+    }
 
     if (activeTab) {
       fetchFeed(activeTab.query)
         .then((d) => {
-          setItems(d.items || []); setHasMore(d.hasMore || false); setNextCursor(d.nextCursor || null);
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ items: d.items || [], hasMore: d.hasMore || false, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
+          if (!d || !Array.isArray(d.items)) return;
+          setItems(d.items);
+          setHasMore(d.hasMore || false);
+          setNextCursor(d.nextCursor || null);
+          try { localStorage.setItem(cacheKey, JSON.stringify({ items: d.items, hasMore: !!d.hasMore, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
         })
-        .catch(() => setItems([]))
+        .catch(() => { if (!hadCache) setItems([]); })
         .finally(() => setLoading(false));
     } else {
       fetch(`/api/public/feed-by-slug?slug=${encodeURIComponent(feedSlug)}&limit=50`)
         .then((r) => {
-          if (!r.ok) { setNotFound(true); setLoading(false); return; }
+          if (!r.ok) { if (!hadCache) setNotFound(true); setLoading(false); return null; }
           return r.json();
         })
         .then((d) => {
-          if (!d || !d.items) { setNotFound(true); return; }
+          if (!d || !d.items) { if (!hadCache) setNotFound(true); return; }
           setItems(d.items);
           setHasMore(d.hasMore || false);
           setNextCursor(d.nextCursor || null);
@@ -441,9 +453,9 @@ export default function FeedPage() {
             setCommunityFeed(d.feed);
             fetch(`/api/feeds/${d.feed.id}/view`, { method: "POST" }).catch(() => {});
           }
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ items: d.items, hasMore: d.hasMore || false, cursor: d.nextCursor || null, ts: Date.now() })); } catch {}
+          try { localStorage.setItem(cacheKey, JSON.stringify({ items: d.items, hasMore: !!d.hasMore, cursor: d.nextCursor || null, feed: d.feed || null, ts: Date.now() })); } catch {}
         })
-        .catch(() => setNotFound(true))
+        .catch(() => { if (!hadCache) setNotFound(true); })
         .finally(() => setLoading(false));
     }
   }, [feedSlug, activeTab, fetchFeed, fetchBySlug]);
