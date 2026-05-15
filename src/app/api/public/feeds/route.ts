@@ -6,7 +6,10 @@ const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
 // Two-tier cache: L1 in-memory + L2 Redis (shared across instances, survives
 // deploys). Both routes share the same helper from @/lib/cache.
-const RESPONSE_TTL_MS = 60_000;
+// Server-side TTL is 5min so cache survives between the 15min cron ticks
+// (which unconditionally warm it). Browser/CDN TTL stays shorter via
+// Cache-Control so revisits revalidate frequently.
+const RESPONSE_TTL_MS = 300_000;
 const CACHE_HEADERS = {
   "Content-Type": "application/json",
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",

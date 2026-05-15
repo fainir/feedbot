@@ -16,7 +16,9 @@ type Entry = { body: string; expiresAt: number };
 
 const L1 = new Map<string, Entry>();
 const L1_MAX = 128;
-const DEFAULT_TTL_MS = 60_000;
+// Defaults to 5min so a value promoted from L2 → L1 has the same shelf life
+// as the L2 entry it came from. Per-call TTL still wins via `ttlMs` arg.
+const DEFAULT_TTL_MS = 300_000;
 
 let redis: Redis | null = null;
 

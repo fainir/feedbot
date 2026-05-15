@@ -149,21 +149,18 @@ export async function GET(request: NextRequest) {
   }
   const classifyResult = await classify(supabase);
 
-  // Pre-warm the public feed caches so the first real visitor in the next
-  // 60s window hits L1 / L2 instead of paying the Supabase round-trip.
-  // Only worth doing when new items actually landed — otherwise the cache
-  // is fine as-is.
-  let warmResult: { warmed: number; hits: number } | { skipped: true } | undefined;
-  if (classifyResult && (classifyResult.inserted ?? 0) > 0) {
-    try {
-      const w = await warmFeedCache();
-      warmResult = { warmed: w.warmed, hits: w.hits };
-    } catch (e) {
-      warmResult = { warmed: 0, hits: 0 };
-      console.warn("[cron] cache warm failed:", (e as Error).message);
-    }
-  } else {
-    warmResult = { skipped: true };
+  // Pre-warm the public feed caches on every cron tick — not just when new
+  // items landed. The L1/L2 TTL is shorter than the cron interval, so even
+  // when no fresh content arrives, the cached responses can expire between
+  // ticks. Warming unconditionally costs ~35 cheap localhost requests and
+  // gives a near-100% HIT rate for visitors.
+  let warmResult: { warmed: number; hits: number } | undefined;
+  try {
+    const w = await warmFeedCache();
+    warmResult = { warmed: w.warmed, hits: w.hits };
+  } catch (e) {
+    warmResult = { warmed: 0, hits: 0 };
+    console.warn("[cron] cache warm failed:", (e as Error).message);
   }
 
   return NextResponse.json({ scan: scanResult, classify: classifyResult, warm: warmResult });

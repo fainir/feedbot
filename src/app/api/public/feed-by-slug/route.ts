@@ -10,7 +10,10 @@ function getSupabase() {
 }
 
 // Two-tier cache: L1 in-memory + L2 Redis. See src/lib/cache.ts.
-const TTL_MS = 60_000;
+// Server-side TTL is 5min so cache survives between the 15min cron ticks
+// (which unconditionally warm it). Browser/CDN TTL stays shorter via
+// Cache-Control so revisits revalidate frequently.
+const TTL_MS = 300_000;
 const CACHE_HEADERS = {
   "Content-Type": "application/json",
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
