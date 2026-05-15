@@ -9,25 +9,11 @@
 // itself fast.
 
 import FeedClient from "./feed-client";
+import { ALL_SYSTEM_FEEDS } from "@/lib/system-feeds";
 
-// Same map as in layout.tsx — keep in sync if you add a feed.
-const SYSTEM_TAB_QUERIES: Record<string, string> = {
-  ai: "AI & ML",
-  tech: "Tech News",
-  startups: "Startups",
-  dev: "Dev",
-  science: "Science",
-  crypto: "Crypto",
-  design: "Design",
-  security: "Security",
-  gaming: "Gaming",
-  business: "Business",
-  space: "Space",
-  health: "Health",
-  "open-source": "Open Source",
-  robotics: "Robotics",
-  energy: "Energy",
-};
+const SLUG_TO_QUERY: Record<string, string> = Object.fromEntries(
+  ALL_SYSTEM_FEEDS.map((f) => [f.id, f.query]),
+);
 
 type FeedItem = {
   id: string;
@@ -63,7 +49,7 @@ function originUrl(): string {
 
 async function fetchInitial(slug: string): Promise<FetchResult> {
   const base = originUrl();
-  const tabQuery = SYSTEM_TAB_QUERIES[slug];
+  const tabQuery = SLUG_TO_QUERY[slug];
   try {
     if (tabQuery) {
       const url = `${base}/api/public/feeds?q=${encodeURIComponent(tabQuery)}&limit=50`;
