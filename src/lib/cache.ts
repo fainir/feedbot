@@ -27,11 +27,13 @@ function getRedis(): Redis | null {
   if (Date.now() < redisDisabledUntil) return null;
   try {
     redis = new Redis(process.env.REDIS_URL, {
+      // Railway's internal DNS resolves to IPv6 only.
+      family: 6,
       // Don't queue commands while disconnected — fail fast and let us fall
       // back to L1 instead of stacking commands that may never flush.
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
-      connectTimeout: 1500,
+      connectTimeout: 2000,
       commandTimeout: 800,
       lazyConnect: false,
       retryStrategy(times) {
