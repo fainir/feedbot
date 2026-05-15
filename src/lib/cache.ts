@@ -6,8 +6,8 @@
  * L2 — Redis (single-digit-ms, shared across instances, survives deploys).
  *
  * If REDIS_URL is unset we run L1-only — every call gracefully degrades to
- * the same behaviour as before. If Redis goes down at runtime we keep
- * serving from L1 and stop blocking on Redis until the next attempt.
+ * the same behaviour as before. If Redis goes down at runtime, individual
+ * calls just miss L2 and refetch from upstream; we never break the API.
  */
 
 import Redis from "ioredis";
@@ -19,37 +19,34 @@ const L1_MAX = 128;
 const DEFAULT_TTL_MS = 60_000;
 
 let redis: Redis | null = null;
-let redisDisabledUntil = 0;
 
 function getRedis(): Redis | null {
   if (!process.env.REDIS_URL) return null;
   if (redis) return redis;
-  if (Date.now() < redisDisabledUntil) return null;
   try {
     redis = new Redis(process.env.REDIS_URL, {
       // Railway's internal DNS resolves to IPv6 only.
       family: 6,
-      // Don't queue commands while disconnected — fail fast and let us fall
-      // back to L1 instead of stacking commands that may never flush.
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 1,
-      connectTimeout: 2000,
-      commandTimeout: 800,
+      // Queue commands issued before the connection opens — first request
+      // after cold start waits a few hundred ms instead of failing instantly.
+      // commandTimeout still bounds the wait so a stuck connection can't
+      // block API responses.
+      enableOfflineQueue: true,
+      maxRetriesPerRequest: 2,
+      connectTimeout: 3000,
+      commandTimeout: 1200,
       lazyConnect: false,
-      retryStrategy(times) {
-        // After two failed attempts in a row, back off for 30s. The cache
-        // helpers will switch to L1 during that window.
-        if (times > 2) return null;
-        return Math.min(times * 200, 1000);
-      },
+      // ioredis default reconnects forever — that's what we want so a brief
+      // Redis blip doesn't permanently disable L2 for this instance.
     });
     redis.on("error", () => {
-      // Suppress chatty connection logs — error path already returns null.
-      redisDisabledUntil = Date.now() + 30_000;
+      // Don't disable L2 here — ioredis will reconnect on its own. Each
+      // call just sees a "MaxRetriesPerRequestError" and falls through to
+      // L1 (read) or no-op (write). Avoiding global state means recovery
+      // is automatic without us tracking timers.
     });
     return redis;
   } catch {
-    redisDisabledUntil = Date.now() + 30_000;
     return null;
   }
 }
@@ -83,7 +80,7 @@ export async function cacheGet(key: string): Promise<{ body: string; tier: "L1" 
       return { body: v, tier: "L2" };
     }
   } catch {
-    redisDisabledUntil = Date.now() + 30_000;
+    // Single failure — log path? No, stay quiet. Reconnect handled by ioredis.
   }
   return null;
 }
@@ -93,14 +90,9 @@ export async function cachePut(key: string, body: string, ttlMs: number = DEFAUL
   const r = getRedis();
   if (!r) return;
   try {
-    // PX = expire in ms. We deliberately don't await with retries — caller
-    // shouldn't be blocked on cache writes.
+    // PX = expire in ms.
     await r.set(key, body, "PX", ttlMs);
   } catch {
-    redisDisabledUntil = Date.now() + 30_000;
+    // Ignore — next write will retry. L1 already has the value.
   }
-}
-
-export function cacheBackendName(): "redis" | "memory" {
-  return process.env.REDIS_URL && Date.now() >= redisDisabledUntil ? "redis" : "memory";
 }
