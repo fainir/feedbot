@@ -554,9 +554,9 @@ export default function ForYouPage() {
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
-        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 pb-2">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-1.5 pb-1.5">
           {/* Row 1: title left, action buttons right */}
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center justify-between gap-3 mb-1">
             <h1 className="text-base font-bold text-text flex items-center gap-2">
               <Rss className="h-4 w-4" /> My Feed
             </h1>
@@ -639,7 +639,7 @@ export default function ForYouPage() {
           preventing both hydration error and the white-banner flash that
           dark-mode users were reporting. */}
       {!user && !heroDismissed && (
-        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
           <div className={`relative rounded-xl border border-border overflow-hidden p-4 ${!mounted || resolvedTheme === "dark" ? "bg-bg-hover" : "bg-gradient-to-br from-indigo-50 via-white to-orange-50"}`}>
             <button onClick={() => { setHeroDismissed(true); localStorage.setItem("myfeed-hero-dismissed", "1"); }} className="absolute top-2 right-2 inline-flex items-center justify-center p-1.5 rounded-full before:absolute before:content-[''] before:-inset-2.5 sm:before:hidden text-text-muted hover:text-text hover:bg-bg-hover transition-colors" aria-label="Dismiss"><X className="h-4 w-4" /></button>
             <div className="flex items-start gap-3 mb-3">
@@ -673,7 +673,7 @@ export default function ForYouPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-1">
       </div>
 
       {/* Feed content */}
@@ -712,7 +712,7 @@ export default function ForYouPage() {
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: "for-you" })}>
                     {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
-                      <div className="w-full h-40 sm:h-44 overflow-hidden relative">
+                      <div className="w-full h-36 sm:h-40 overflow-hidden relative">
                         <img
                           src={normalizeImageUrl(item.image_url)}
                           alt={title}

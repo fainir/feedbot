@@ -845,9 +845,9 @@ export default function FeedPage({
 
       {/* Feed header -full width, 2 rows */}
       <div className="border-b border-border bg-bg">
-        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 pb-2">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-1.5 pb-1.5">
           {/* Row 1: icon + title left, action buttons right */}
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center justify-between gap-3 mb-1">
             <h2 className="text-base font-bold text-text flex items-center gap-2 min-w-0">
               <span className="text-lg flex-shrink-0">{activeTab?.icon || "📡"}</span> <span className="truncate">{displayName}</span>
             </h2>
@@ -938,7 +938,7 @@ export default function FeedPage({
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: feedSlug })}>
                     {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
-                      <div className="w-full h-40 sm:h-44 overflow-hidden relative">
+                      <div className="w-full h-36 sm:h-40 overflow-hidden relative">
                         <img
                           src={normalizeImageUrl(item.image_url)}
                           alt={title}
