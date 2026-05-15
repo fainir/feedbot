@@ -108,6 +108,7 @@ export function cleanSourceDisplay(raw: string): string {
  * the headline as " - Publisher". Pull it out so the chip says "CNBC"
  * instead of a generic "News".
  */
+export const SOURCE_INFO_BUILD = "publisher-extraction-v1";
 export function extractTitleSource(title: string | undefined | null): string | null {
   if (!title) return null;
   // Match the trailing " - Publisher" (separators: hyphen, en-dash, em-dash, vertical bar).
