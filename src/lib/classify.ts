@@ -57,6 +57,21 @@ RULES:
 Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
 
 /**
+ * Cap articles from any single domain to at most 20% of the batch.
+ * Prevents a noisy source from monopolizing the AI classification window.
+ */
+function capBySource(articles: ArticleInput[]): ArticleInput[] {
+  const counts: Record<string, number> = {};
+  const limit = Math.max(3, Math.ceil(articles.length * 0.2));
+  return articles.filter((a) => {
+    let domain = "unknown";
+    try { domain = new URL(a.url).hostname.replace("www.", ""); } catch {}
+    counts[domain] = (counts[domain] || 0) + 1;
+    return counts[domain] <= limit;
+  });
+}
+
+/**
  * Classify articles against feeds using AI, then insert matched items to feed_items.
  * Used by every ingestion path: cron scan, per-feed refresh, and new feed creation.
  */
@@ -70,6 +85,9 @@ export async function classifyAndInsert(
   const client = getClient();
   if (!client) return { matches: 0, inserted: 0 };
 
+  // Apply source diversity cap before sending to AI
+  const capped = capBySource(articles);
+
   const feedList = feeds.map((f, i) => `${i}: "${f.query_text || f.name}"`).join("\n");
 
   // 10 articles/batch — reduced from 15 after continued OOM under load.
@@ -77,8 +95,8 @@ export async function classifyAndInsert(
   const BATCH = 10;
   const allMatches: { articleIdx: number; feedIdx: number; quality: number; summary: string }[] = [];
 
-  for (let i = 0; i < articles.length; i += BATCH) {
-    const batch = articles.slice(i, i + BATCH);
+  for (let i = 0; i < capped.length; i += BATCH) {
+    const batch = capped.slice(i, i + BATCH);
     const articleList = batch
       .map((a, j) => `${j}|${a.title}|${(a.summary || "").slice(0, 80)}|${a.source || ""}`)
       .join("\n");
@@ -123,13 +141,13 @@ export async function classifyAndInsert(
   // Keep highest quality per article-feed pair
   const bestByKey = new Map<string, (typeof allMatches)[0]>();
   for (const m of allMatches) {
-    const key = `${articles[m.articleIdx].url}::${feeds[m.feedIdx].id}`;
+    const key = `${capped[m.articleIdx].url}::${feeds[m.feedIdx].id}`;
     const existing = bestByKey.get(key);
     if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
   }
 
   const toInsert = [...bestByKey.values()].map((m) => {
-    const a = articles[m.articleIdx];
+    const a = capped[m.articleIdx];
     return {
       feed_id: feeds[m.feedIdx].id,
       article_pool_id: a.id ?? null,
