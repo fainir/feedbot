@@ -12,28 +12,18 @@
  */
 
 import { getServiceClient } from "@/lib/supabase";
+import { ALL_SYSTEM_FEEDS, DEFAULT_TAB_IDS } from "@/lib/system-feeds";
 
-// Same list as src/app/[feed]/layout.tsx TABS keys. Keeping the data
-// source-of-truth out here would mean importing the layout module from
-// a worker context — not worth it. If you add a new system feed, add
-// it here too.
-const SYSTEM_FEED_QUERIES: Array<{ id: string; q: string }> = [
-  { id: "ai", q: "AI & ML" },
-  { id: "tech", q: "Tech News" },
-  { id: "startups", q: "Startups" },
-  { id: "dev", q: "Dev" },
-  { id: "science", q: "Science" },
-  { id: "crypto", q: "Crypto" },
-  { id: "design", q: "Design" },
-  { id: "security", q: "Security" },
-  { id: "gaming", q: "Gaming" },
-  { id: "business", q: "Business" },
-  { id: "space", q: "Space" },
-  { id: "health", q: "Health" },
-  { id: "open-source", q: "Open Source" },
-  { id: "robotics", q: "Robotics" },
-  { id: "energy", q: "Energy" },
-];
+// Pull the queries from the shared system-feeds module so cache keys match
+// what /[feed]/page.tsx and / actually request. Mismatched keys = guaranteed
+// cache MISS on SSR even though the warmer "succeeded".
+const SYSTEM_FEED_QUERIES = ALL_SYSTEM_FEEDS.filter((f) => DEFAULT_TAB_IDS.has(f.id))
+  .map((f) => ({ id: f.id, q: f.query }));
+
+// For You blends these 14 system-feed names via the "all" path.
+// Must stay in sync with DEFAULT_FOR_YOU_FEEDS in src/app/page.tsx.
+const FOR_YOU_FEED_NAMES = ALL_SYSTEM_FEEDS.filter((f) => DEFAULT_TAB_IDS.has(f.id))
+  .map((f) => f.name);
 
 const TOP_COMMUNITY_LIMIT = 20;
 
@@ -70,8 +60,10 @@ export async function warmFeedCache(): Promise<{
     (f) => `${base}/api/public/feeds?q=${encodeURIComponent(f.q)}&limit=50`,
   );
 
-  // "All" / For You blend
-  const allUrl = `${base}/api/public/feeds?q=all&limit=50`;
+  // "All" / For You blend. Match the exact query the homepage SSR fetches
+  // (q=all + feeds=<14 system-feed names>) so the cache key lines up.
+  const allFeedsParam = FOR_YOU_FEED_NAMES.join(",");
+  const allUrl = `${base}/api/public/feeds?q=all&feeds=${encodeURIComponent(allFeedsParam)}&limit=50`;
 
   // Top community feeds by view count
   const supabase = getServiceClient();

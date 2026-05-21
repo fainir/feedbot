@@ -95,6 +95,7 @@
 - [x] Fix banner white bg in dark mode — use resolvedTheme + neutral pre-mount surface (S)
 - [x] Mobile QA fixes: hydration #418, custom-feed metadata, guest toast CTA, share fallback, "Make my version" copy, auth labels, logo links, byline fade, aria-labels, theme-safe source tag, Medium image 301 bypass, favicon referrerPolicy (L)
 - [x] Speedup pass: SSR homepage, loopback SSR, SW SWR for API, first-image preload, dynamic / (L)
+- [x] Fix cache-warmer key mismatch — use long queries so SSR cache HITs (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
