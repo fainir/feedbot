@@ -248,20 +248,49 @@ export function getSourceFavicon(source: string, articleUrl?: string): string {
 }
 
 /**
- * Medium's `cdn-images-1.medium.com/max/<size>/<id>` URLs respond with a 301
- * to `/v2/resize:fit:<size>/<id>`. Rewriting here saves a round-trip on every
- * article-card image (visible in network panel as 301 followed by 200).
+ * Cap CDN image sizes to what we actually display, and skip known 301 hops.
  *
- * Also strips a known-bad fallback: tiny favicon sources that arrive as
- * article images turn into broken cover tiles.
+ * 1. Medium `/max/<N>/` redirects to `/v2/resize:fit:<N>/`. Rewrite up-front
+ *    to skip the 301.
+ * 2. Medium `/v2/resize:fit:<N>/` arrives at 1024-1536px even though the
+ *    card displays the image at ~360px (720px on 2x retina). Cap at 800.
+ *    On the LCP hero image this drops ~2.3 MB → ~250 KB.
+ * 3. dev.to's CDN accepts a `width=N` param. Cap at 800 for the same reason.
+ *
+ * 800px is the sweet spot: sharp on 2x retina mobiles (where the card sits
+ * at ~360px CSS), small enough that the LCP image lands in the same paint
+ * as the rest of the card. Anything larger is wasted bandwidth.
  */
+const IMAGE_TARGET_WIDTH = 800;
+
 export function normalizeImageUrl(url: string | null | undefined): string {
   if (!url) return "";
   let u = url;
+
+  // Medium legacy /max/<N>/ → /v2/resize:fit:<N>/
   u = u.replace(
     /^https:\/\/cdn-images-1\.medium\.com\/max\/(\d+)\//,
     "https://cdn-images-1.medium.com/v2/resize:fit:$1/",
   );
+
+  // Medium /v2/resize:fit:<N>/ → cap at IMAGE_TARGET_WIDTH
+  u = u.replace(
+    /(cdn-images-1\.medium\.com\/v2\/resize:fit:)(\d+)(\/)/,
+    (_m, prefix, size, suffix) => {
+      const n = Number(size);
+      return prefix + (n > IMAGE_TARGET_WIDTH ? IMAGE_TARGET_WIDTH : n) + suffix;
+    },
+  );
+
+  // dev.to dynamic resizer — replace width=<N> if it's bigger than target.
+  u = u.replace(
+    /(media\d?\.dev\.to\/dynamic\/image\/[^?\s]*width=)(\d+)/,
+    (_m, prefix, size) => {
+      const n = Number(size);
+      return prefix + (n > IMAGE_TARGET_WIDTH ? IMAGE_TARGET_WIDTH : n);
+    },
+  );
+
   return u;
 }
 

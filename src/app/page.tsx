@@ -13,6 +13,7 @@
 //   4. Client refreshes in the background (SWR) to catch any new posts.
 
 import ForYouClient from "./for-you-client";
+import { normalizeImageUrl } from "@/lib/source-info";
 
 // SSR per request. Otherwise Next.js pre-renders this at build time, fails
 // the localhost fetch (no server running), and bakes empty HTML into the
@@ -75,7 +76,10 @@ async function fetchForYou(): Promise<FetchResult> {
 
 export default async function Page() {
   const initial = await fetchForYou();
-  const firstImage = initial.items.find((it) => it.image_url)?.image_url || null;
+  // Normalize the URL so the preload matches the rewritten URL the <img>
+  // tag actually requests — otherwise the browser fetches both.
+  const firstImageRaw = initial.items.find((it) => it.image_url)?.image_url || null;
+  const firstImage = firstImageRaw ? normalizeImageUrl(firstImageRaw) : null;
 
   return (
     <>
