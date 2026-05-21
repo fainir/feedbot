@@ -10,3 +10,8 @@ coverage/
 .claude/plans/
 supabase/.temp/
 tailwindcss-40586.log
+
+# Claude Code local harness config (per-developer)
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
