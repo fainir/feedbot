@@ -40,10 +40,14 @@ const FEEDS = [
   { id: "energy", name: "Energy", icon: "⚡" },
 ];
 
-// Feed name mapping (matches TAB_MAP in API)
+// Feed name mapping (matches TAB_MAP in API). Must stay in sync with
+// DEFAULT_FOR_YOU_FEEDS in src/app/page.tsx so SSR and client hit the
+// same cache key — otherwise the client's background fetch returns a
+// different (possibly empty) cached response and overwrites the SSR-
+// served items on hydration.
 const FEED_NAME_MAP: Record<string, string> = {
   ai: "AI & ML", tech: "Tech News", startups: "Startups", dev: "Dev", science: "Science",
-  crypto: "Crypto", design: "Design", security: "Security", gaming: "Gaming", business: "Business",
+  design: "Design", security: "Security", gaming: "Gaming", business: "Business",
   space: "Space", health: "Health", "open-source": "Open Source", robotics: "Robotics", energy: "Energy",
 };
 

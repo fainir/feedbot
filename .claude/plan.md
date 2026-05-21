@@ -97,6 +97,8 @@
 - [x] Speedup pass: SSR homepage, loopback SSR, SW SWR for API, first-image preload, dynamic / (L)
 - [x] Fix cache-warmer key mismatch — use long queries so SSR cache HITs (S)
 - [x] Cap Medium/dev.to image sizes to 800px (was 1536px) — 2.3MB → ~400KB on hero (S)
+- [x] Fix client/SSR feed-list mismatch — both must use same 14 feeds (S)
+- [x] Cache poison guard: don't cache empty "all" responses (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
