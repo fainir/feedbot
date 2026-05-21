@@ -40,11 +40,12 @@ type FetchResult = {
 };
 
 function originUrl(): string {
-  // RAILWAY_PUBLIC_DOMAIN is set in Railway env; locally fall back to dev
-  // server. The fetch hits the same instance so it goes through L1/L2 cache.
-  const domain = process.env.RAILWAY_PUBLIC_DOMAIN;
-  if (domain) return `https://${domain}`;
-  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // Loopback to ourselves — skips DNS / TLS overhead vs hitting the public
+  // domain back through Railway's edge. PORT is set automatically by Railway
+  // in prod (and defaults to 3000 locally). The route handler still hits
+  // L1/L2 cache the same way.
+  const port = process.env.PORT || "3000";
+  return `http://127.0.0.1:${port}`;
 }
 
 async function fetchInitial(slug: string): Promise<FetchResult> {

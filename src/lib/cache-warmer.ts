@@ -38,13 +38,11 @@ const SYSTEM_FEED_QUERIES: Array<{ id: string; q: string }> = [
 const TOP_COMMUNITY_LIMIT = 20;
 
 function getBaseUrl(): string {
-  // Inside Railway, this avoids the public DNS hop. Falls back to the
-  // public domain when running locally.
-  return (
-    process.env.RAILWAY_PUBLIC_DOMAIN
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-      : "https://myfeed.space"
-  );
+  // Loopback to ourselves — same Railway container handles the cron tick and
+  // the warm fetch, so we avoid DNS / TLS / public-edge overhead by hitting
+  // 127.0.0.1 directly. Saves ~50-150ms per URL warmed.
+  const port = process.env.PORT || "3000";
+  return `http://127.0.0.1:${port}`;
 }
 
 async function warmOne(url: string): Promise<{ url: string; status: number; xcache: string }> {
