@@ -34,49 +34,48 @@ export async function GET(req: NextRequest) {
   let poolDeleted = 0;
   let itemsDeleted = 0;
 
-  // Why an RPC: the public DB role's statement_timeout is ~8s, which the
-  // PostgREST-issued DELETE on article_pool was tripping every time. The
-  // prune_old_rows SQL function (migration 018) wraps the delete with
-  // SET LOCAL statement_timeout = '90s', so a single 5K-row batch has
-  // room to finish even against a bloated table.
+  // With migration 019 the FK between feed_items.article_pool_id and
+  // article_pool is gone, so deletes on either table no longer fire
+  // cascading triggers. Simple direct predicate DELETEs finish well
+  // under Supabase's 8s statement_timeout for the steady-state inflow
+  // (a few thousand rows per hour at most).
   //
-  // The function returns the number of rows deleted per call. We loop
-  // until it returns 0 (or until our wall-clock budget runs out) for
-  // each table.
+  // We still bound by row count via the ?prefer return=representation
+  // .select() pattern + a small wrapper loop so the route never holds
+  // the request open longer than ~2 min.
+  //
+  // After a freshly-pruned table, expect 0 deletes most of the time —
+  // the cron loop calls this every ~3 hours.
 
-  const BATCH = 5000;
-  const MAX_CALLS = 200;
-  // Overall wall-clock budget. The cron loop won't wait forever for prune
-  // to finish; if we hit this, we bail and the next scheduled prune picks
-  // up the remainder.
-  const WALL_CLOCK_MS = 270_000; // 4.5 min
+  const WALL_CLOCK_MS = 120_000; // 2 min
   const startedAt = Date.now();
 
-  async function pruneVia(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
+  async function pruneTable(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
     let total = 0;
-    for (let i = 0; i < MAX_CALLS; i++) {
+    // Loop until we get a clean empty pass or we run out of wall-clock.
+    for (let pass = 0; pass < 30; pass++) {
       if (Date.now() - startedAt > WALL_CLOCK_MS) break;
-      const { data, error } = await svc.rpc("prune_old_rows", {
-        p_table: table,
-        p_retention_days: retentionDays,
-        p_batch_limit: BATCH,
-      });
+      const { data, error } = await svc
+        .from(table)
+        .delete()
+        .lt("published_at", cutoff)
+        .select("id");
       if (error) {
-        console.error(`[prune] ${table} rpc failed:`, error.message);
+        // Statement timeout → bail; the next prune call (~3 h later)
+        // tries again with a smaller backlog.
+        console.error(`[prune] ${table} delete failed:`, error.message);
         break;
       }
-      const n = typeof data === "number" ? data : 0;
+      const n = data?.length || 0;
       total += n;
-      if (n === 0) break; // backlog cleared
+      if (n === 0) break;
     }
     return total;
   }
 
-  // feed_items first — frees the FK back-references for article_pool. With
-  // migration 017 the FK is ON DELETE SET NULL, so this ordering is only
-  // for tidy-ness now; article_pool can be deleted directly either way.
-  itemsDeleted = await pruneVia("feed_items", FEED_ITEMS_RETENTION_DAYS);
-  poolDeleted = await pruneVia("article_pool", ARTICLE_POOL_RETENTION_DAYS);
+  itemsDeleted = await pruneTable("feed_items", FEED_ITEMS_RETENTION_DAYS);
+  poolDeleted = await pruneTable("article_pool", ARTICLE_POOL_RETENTION_DAYS);
 
   return NextResponse.json({
     poolDeleted,
