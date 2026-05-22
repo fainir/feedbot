@@ -102,6 +102,8 @@
 - [x] Disk IO budget relief: schedule prune, tighten retention, slow classify, vacuum (M)
 - [x] Fix prune loop bug — was looping on same 2000 always-referenced rows, deleted nothing (S)
 - [x] Fix prune URL-length bug — IN-clause with 2000 UUIDs exceeds PostgREST URL limit, returned 0 deletes (S)
+- [x] Change feed_items.article_pool_id FK to ON DELETE SET NULL so prune isn't FK-blocked (S)
+- [x] Shrink prune window to 1 day + add LIMIT — article_pool delete was timing out at 8s (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.

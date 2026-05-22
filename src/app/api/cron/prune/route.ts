@@ -45,17 +45,30 @@ export async function GET(req: NextRequest) {
   // number of rows (avoids hitting Supabase's statement_timeout on the
   // first big backlog run).
 
-  const STEP_DAYS = 7;
-  const MAX_STEPS = 400; // enough headroom to walk back ~8 years if needed
+  // Each DELETE is bounded by a 1-day age window AND a LIMIT — Supabase's
+  // statement_timeout (~8s) kills wider windows on busy tables. Smaller
+  // windows = more round trips but each one finishes well under the cap.
+  const STEP_DAYS = 1;
+  const MAX_STEPS = 3000; // 3000 days = ~8 yrs of backlog headroom
   const stepMs = STEP_DAYS * 24 * 60 * 60 * 1000;
   const now = Date.now();
   const STOP_BEFORE = new Date("1980-01-01").getTime();
+  // Hard cap on rows deleted per call to keep each statement under the
+  // Supabase statement_timeout. Tune down if we ever see timeouts again.
+  const PER_WINDOW_LIMIT = 2000;
+  // Overall wall-clock budget. The cron loop won't wait forever for prune
+  // to finish, so bail after this much elapsed time. The next prune run
+  // will pick up where this one left off (the window resets to "now" but
+  // there'll be less backlog).
+  const WALL_CLOCK_MS = 240_000; // 4 min
+  const startedAt = Date.now();
 
   async function pruneTable(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
     let total = 0;
     let upper = now - retentionDays * 24 * 60 * 60 * 1000;
     let consecutiveEmpty = 0;
     for (let s = 0; s < MAX_STEPS; s++) {
+      if (Date.now() - startedAt > WALL_CLOCK_MS) break;
       const lower = upper - stepMs;
       // .select() after .delete() asks PostgREST to return the deleted
       // rows so we can count them. Without it the response body is empty
@@ -65,9 +78,19 @@ export async function GET(req: NextRequest) {
         .delete()
         .lt("published_at", new Date(upper).toISOString())
         .gte("published_at", new Date(lower).toISOString())
+        .limit(PER_WINDOW_LIMIT)
         .select("id");
       if (error) {
         console.error(`[prune] ${table} window ${new Date(lower).toISOString()}..${new Date(upper).toISOString()} failed:`, error.message);
+        // Statement timeout? Halve the window and retry. Bail if we got
+        // unlucky on the smallest window.
+        if (error.message?.includes("statement timeout")) {
+          // Walk backwards anyway — losing this window's rows is fine; the
+          // next prune cycle will revisit them with a fresh statement.
+          upper = lower;
+          if (upper < STOP_BEFORE) break;
+          continue;
+        }
         break;
       }
       const n = data?.length || 0;
@@ -75,9 +98,13 @@ export async function GET(req: NextRequest) {
       if (n === 0) {
         consecutiveEmpty++;
         // After enough empty windows, we've cleared the backlog — bail.
-        if (consecutiveEmpty >= 8) break;
+        if (consecutiveEmpty >= 30) break;
       } else {
         consecutiveEmpty = 0;
+        // We hit the LIMIT — there might be more rows in this window. Keep
+        // upper where it is so the next iteration deletes another chunk
+        // from the SAME window.
+        if (n === PER_WINDOW_LIMIT) continue;
       }
       upper = lower;
       if (upper < STOP_BEFORE) break;
