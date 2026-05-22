@@ -34,95 +34,49 @@ export async function GET(req: NextRequest) {
   let poolDeleted = 0;
   let itemsDeleted = 0;
 
-  // Why this shape: the previous version SELECTed 2000 ids then issued
-  // `DELETE ... WHERE id IN (uuid1,uuid2,...)`. That URL is ~75 KB and
-  // PostgREST rejects it silently (returns 0 rows affected). Direct
-  // predicate DELETE `WHERE published_at < cutoff` is one tiny SQL
-  // statement that PostgreSQL executes against the (already-existing)
-  // published_at index — no URL length issue.
+  // Why an RPC: the public DB role's statement_timeout is ~8s, which the
+  // PostgREST-issued DELETE on article_pool was tripping every time. The
+  // prune_old_rows SQL function (migration 018) wraps the delete with
+  // SET LOCAL statement_timeout = '90s', so a single 5K-row batch has
+  // room to finish even against a bloated table.
   //
-  // We walk backwards in 7-day windows so each statement deletes a bounded
-  // number of rows (avoids hitting Supabase's statement_timeout on the
-  // first big backlog run).
+  // The function returns the number of rows deleted per call. We loop
+  // until it returns 0 (or until our wall-clock budget runs out) for
+  // each table.
 
-  // Each DELETE is bounded by a 1-day age window AND a LIMIT — Supabase's
-  // statement_timeout (~8s) kills wider windows on busy tables. Smaller
-  // windows = more round trips but each one finishes well under the cap.
-  const STEP_DAYS = 1;
-  const MAX_STEPS = 3000; // 3000 days = ~8 yrs of backlog headroom
-  const stepMs = STEP_DAYS * 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  const STOP_BEFORE = new Date("1980-01-01").getTime();
-  // Hard cap on rows deleted per call to keep each statement under the
-  // Supabase statement_timeout. Tune down if we ever see timeouts again.
-  const PER_WINDOW_LIMIT = 2000;
+  const BATCH = 5000;
+  const MAX_CALLS = 200;
   // Overall wall-clock budget. The cron loop won't wait forever for prune
-  // to finish, so bail after this much elapsed time. The next prune run
-  // will pick up where this one left off (the window resets to "now" but
-  // there'll be less backlog).
-  const WALL_CLOCK_MS = 240_000; // 4 min
+  // to finish; if we hit this, we bail and the next scheduled prune picks
+  // up the remainder.
+  const WALL_CLOCK_MS = 270_000; // 4.5 min
   const startedAt = Date.now();
 
-  async function pruneTable(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
+  async function pruneVia(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
     let total = 0;
-    let upper = now - retentionDays * 24 * 60 * 60 * 1000;
-    let consecutiveEmpty = 0;
-    for (let s = 0; s < MAX_STEPS; s++) {
+    for (let i = 0; i < MAX_CALLS; i++) {
       if (Date.now() - startedAt > WALL_CLOCK_MS) break;
-      const lower = upper - stepMs;
-      // .select() after .delete() asks PostgREST to return the deleted
-      // rows so we can count them. Without it the response body is empty
-      // and supabase-js gives us data:null.
-      const { data, error } = await svc
-        .from(table)
-        .delete()
-        .lt("published_at", new Date(upper).toISOString())
-        .gte("published_at", new Date(lower).toISOString())
-        .limit(PER_WINDOW_LIMIT)
-        .select("id");
+      const { data, error } = await svc.rpc("prune_old_rows", {
+        p_table: table,
+        p_retention_days: retentionDays,
+        p_batch_limit: BATCH,
+      });
       if (error) {
-        console.error(`[prune] ${table} window ${new Date(lower).toISOString()}..${new Date(upper).toISOString()} failed:`, error.message);
-        // Statement timeout? Halve the window and retry. Bail if we got
-        // unlucky on the smallest window.
-        if (error.message?.includes("statement timeout")) {
-          // Walk backwards anyway — losing this window's rows is fine; the
-          // next prune cycle will revisit them with a fresh statement.
-          upper = lower;
-          if (upper < STOP_BEFORE) break;
-          continue;
-        }
+        console.error(`[prune] ${table} rpc failed:`, error.message);
         break;
       }
-      const n = data?.length || 0;
+      const n = typeof data === "number" ? data : 0;
       total += n;
-      if (n === 0) {
-        consecutiveEmpty++;
-        // After enough empty windows, we've cleared the backlog — bail.
-        if (consecutiveEmpty >= 30) break;
-      } else {
-        consecutiveEmpty = 0;
-        // We hit the LIMIT — there might be more rows in this window. Keep
-        // upper where it is so the next iteration deletes another chunk
-        // from the SAME window.
-        if (n === PER_WINDOW_LIMIT) continue;
-      }
-      upper = lower;
-      if (upper < STOP_BEFORE) break;
+      if (n === 0) break; // backlog cleared
     }
     return total;
   }
 
-  // feed_items first — old rows hold FK references to article_pool that
-  // would block step 2's delete (FK has no ON DELETE clause, so PostgreSQL
-  // refuses to delete a referenced row).
-  itemsDeleted = await pruneTable("feed_items", FEED_ITEMS_RETENTION_DAYS);
-
-  // article_pool — now that the FK references are gone, this can delete
-  // the matching old rows freely. Anything still referenced by a recent
-  // feed_item will be blocked by the FK and skipped by Postgres (the
-  // statement deletes only what it can; remaining rows raise an error
-  // we catch and continue).
-  poolDeleted = await pruneTable("article_pool", ARTICLE_POOL_RETENTION_DAYS);
+  // feed_items first — frees the FK back-references for article_pool. With
+  // migration 017 the FK is ON DELETE SET NULL, so this ordering is only
+  // for tidy-ness now; article_pool can be deleted directly either way.
+  itemsDeleted = await pruneVia("feed_items", FEED_ITEMS_RETENTION_DAYS);
+  poolDeleted = await pruneVia("article_pool", ARTICLE_POOL_RETENTION_DAYS);
 
   return NextResponse.json({
     poolDeleted,

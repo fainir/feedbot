@@ -104,6 +104,7 @@
 - [x] Fix prune URL-length bug — IN-clause with 2000 UUIDs exceeds PostgREST URL limit, returned 0 deletes (S)
 - [x] Change feed_items.article_pool_id FK to ON DELETE SET NULL so prune isn't FK-blocked (S)
 - [x] Shrink prune window to 1 day + add LIMIT — article_pool delete was timing out at 8s (S)
+- [x] Move prune to a SQL function with statement_timeout=90s — every window was timing out (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
