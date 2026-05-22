@@ -17,11 +17,11 @@ const CACHE_HEADERS = {
 };
 
 function responseCacheKey(req: NextRequest): string {
-  // Bump the v2 prefix to invalidate any stale cached entries (e.g. an
-  // empty response cached during a transient backend issue). Saves
-  // waiting 20min for the TTL to elapse.
+  // Bump prefix when we need to invalidate all cached entries. Last
+  // bumps: v2 (cache-poison guard), v3 (empty responses cached during
+  // the bulk-prune window when the DB was briefly missing rows).
   const p = req.nextUrl.searchParams;
-  return "feeds:v2:" + [
+  return "feeds:v3:" + [
     p.get("q") ?? "",
     p.get("cursor") ?? "",
     p.get("limit") ?? "",
@@ -448,11 +448,12 @@ export async function GET(req: NextRequest) {
     nextCursor: hasMore ? page[page.length - 1].published_at : null,
   });
   // Fire-and-forget cache write so we don't hold the response on Redis.
-  // Guard: a blended "all" feed (For You) should never legitimately be
-  // empty — caching that result poisons the cache for 20 min and breaks
-  // the homepage. Skip the write so the next request retries from DB.
-  const isPoisonCandidate = isAll && page.length === 0;
-  if (!isPoisonCandidate) {
+  // Guard: never cache empty responses. They poison the cache for the
+  // full TTL whenever a transient backend issue (prune window, DB blip,
+  // mid-deploy state) makes a query temporarily return nothing. A real
+  // empty result for a custom feed retries on the next request — that
+  // costs one DB roundtrip until items show up, which is fine.
+  if (page.length > 0) {
     void cachePut(cacheKey, body, RESPONSE_TTL_MS);
   }
   return new NextResponse(body, {

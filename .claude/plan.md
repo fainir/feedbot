@@ -105,6 +105,7 @@
 - [x] Change feed_items.article_pool_id FK to ON DELETE SET NULL so prune isn't FK-blocked (S)
 - [x] Shrink prune window to 1 day + add LIMIT — article_pool delete was timing out at 8s (S)
 - [x] Drop FK + bulk prune 351K article_pool rows via SQL editor + simplify prune route (M)
+- [x] Bust cache v2→v3 + never cache empty responses (S)
 - [x] Move prune to a SQL function with statement_timeout=90s — every window was timing out (S)
 
 ## Vision
