@@ -1,11 +1,18 @@
 /**
  * Next.js Instrumentation hook — runs once when the server starts.
- * Calls scan via internal localhost (bypasses Railway proxy timeout).
- * Runs every 15 minutes. Splits scan and classify into separate calls.
+ *
+ * - Scan + classify every 30 min (was 15 min). News doesn't refresh that
+ *   fast and halving the cron rate halves the per-tick DB write load,
+ *   which was straight-up doubling the Supabase Disk IO budget burn.
+ * - Prune every 6th cycle ≈ every 3 hours. Without this, article_pool
+ *   and feed_items grow unbounded; the prune cron was sitting in code
+ *   but never scheduled, so retention never kicked in.
+ * - Cache warm runs after every classify (handled inside scan-and-match).
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const INTERVAL = 15 * 60 * 1000; // 15 minutes
+    const INTERVAL = 30 * 60 * 1000; // 30 minutes
+    const PRUNE_EVERY_N_CYCLES = 6; // ~ every 3 hours
     const cronSecret = process.env.CRON_SECRET;
 
     if (!cronSecret) {
@@ -17,8 +24,21 @@ export async function register() {
 
     const internalUrl = "http://localhost:3000";
 
-    setTimeout(() => runCycle(internalUrl, cronSecret), 30_000);
-    setInterval(() => runCycle(internalUrl, cronSecret), INTERVAL);
+    let cycleCount = 0;
+    const tick = async () => {
+      cycleCount++;
+      await runCycle(internalUrl, cronSecret);
+      // Run prune on the Nth cycle. The cycle counter survives restarts
+      // because each container has its own counter — if Railway restarts
+      // us at the wrong cadence, we just over-prune by a few cycles, which
+      // is fine (prune is idempotent within its retention windows).
+      if (cycleCount % PRUNE_EVERY_N_CYCLES === 0) {
+        await runPrune(internalUrl, cronSecret);
+      }
+    };
+
+    setTimeout(tick, 30_000);
+    setInterval(tick, INTERVAL);
   }
 }
 
@@ -59,4 +79,21 @@ async function runCycle(baseUrl: string, cronSecret: string) {
     const result = await sendDigests();
     if (result.sent > 0) console.log(`[Cron] Digests: ${result.sent} sent`);
   } catch {}
+}
+
+async function runPrune(baseUrl: string, cronSecret: string) {
+  // 5 min timeout — prune can process up to 20×2000 rows per table, which
+  // is plenty of headroom but still bounded so a runaway can't wedge the
+  // cron loop.
+  try {
+    console.log("[Cron] Prune: starting...");
+    const res = await fetch(`${baseUrl}/api/cron/prune`, {
+      headers: { Authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(300_000),
+    });
+    const data = await res.json();
+    console.log(`[Cron] Prune done: pool=${data.poolDeleted || 0}, items=${data.itemsDeleted || 0}`);
+  } catch (err) {
+    console.error("[Cron] Prune failed:", err);
+  }
 }

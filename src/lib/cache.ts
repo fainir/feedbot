@@ -16,10 +16,11 @@ type Entry = { body: string; expiresAt: number };
 
 const L1 = new Map<string, Entry>();
 const L1_MAX = 128;
-// Defaults to 20min so a value promoted from L2 → L1 has the same shelf
-// life as the L2 entry it came from (which is also 20min — see route
-// handlers). Per-call TTL still wins via `ttlMs` arg.
-const DEFAULT_TTL_MS = 1_200_000;
+// Defaults to 40min so a value promoted from L2 → L1 has the same shelf
+// life as the L2 entry it came from (which is also 40min — see route
+// handlers). 40 outlives the 30min cron interval so the warmer always
+// overwrites before expiry. Per-call TTL still wins via `ttlMs` arg.
+const DEFAULT_TTL_MS = 2_400_000;
 
 let redis: Redis | null = null;
 

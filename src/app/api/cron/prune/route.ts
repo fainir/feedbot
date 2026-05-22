@@ -2,14 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 
 /**
- * Daily prune. Keeps the I/O budget from drifting back into the red.
+ * Hourly prune. Keeps the I/O budget from drifting back into the red.
  *
- * - article_pool rows older than 14 days that no feed_item references → delete
- * - feed_items rows older than 60 days → delete
+ * News content has a short half-life — anything older than a week is dead
+ * weight that bloats the indexes and slows every query. We're aggressive on
+ * retention because:
+ *   - article_pool: scratch buffer for classification, no value once consumed
+ *   - feed_items: shown in the UI, but 30d back is far longer than anyone
+ *     scrolls; older rows are pure write-amplification
  *
  * Both deletes use a small LIMIT per batch and loop, so we never hold a long
  * lock or blow the statement timeout. Cap total work at MAX_BATCHES per run.
+ *
+ * After delete, autovacuum reclaims space on its next pass — no explicit
+ * VACUUM needed (Supabase's autovacuum is tuned aggressive enough for our
+ * row counts).
  */
+
+// Aggressive retention: news has a short half-life, anything older is bloat.
+const ARTICLE_POOL_RETENTION_DAYS = 7;
+const FEED_ITEMS_RETENTION_DAYS = 30;
+
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") || "";
   const expected = `Bearer ${process.env.CRON_SECRET || ""}`;
@@ -25,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   // 1) Prune unreferenced old article_pool rows.
   for (let i = 0; i < MAX_BATCHES; i++) {
-    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - ARTICLE_POOL_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const { data: victims } = await svc
       .from("article_pool")
       .select("id")
@@ -55,7 +68,7 @@ export async function GET(req: NextRequest) {
 
   // 2) Prune old feed_items.
   for (let i = 0; i < MAX_BATCHES; i++) {
-    const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - FEED_ITEMS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const { data: victims } = await svc
       .from("feed_items")
       .select("id")
@@ -71,5 +84,9 @@ export async function GET(req: NextRequest) {
     if (victims.length < BATCH) break;
   }
 
-  return NextResponse.json({ poolDeleted, itemsDeleted });
+  return NextResponse.json({
+    poolDeleted,
+    itemsDeleted,
+    retention: { articlePoolDays: ARTICLE_POOL_RETENTION_DAYS, feedItemsDays: FEED_ITEMS_RETENTION_DAYS },
+  });
 }

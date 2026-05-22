@@ -10,9 +10,9 @@ function getSupabase() {
 }
 
 // Two-tier cache: L1 in-memory + L2 Redis. See src/lib/cache.ts.
-// Server-side TTL is 20min — longer than the 15min cron interval so the
+// Server-side TTL is 40min — longer than the 30min cron interval so the
 // next cron warm always overwrites the existing entry before it expires.
-const TTL_MS = 1_200_000;
+const TTL_MS = 2_400_000;
 const CACHE_HEADERS = {
   "Content-Type": "application/json",
   "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
