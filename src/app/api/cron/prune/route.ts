@@ -31,82 +31,71 @@ export async function GET(req: NextRequest) {
   }
 
   const svc = getServiceClient();
-  const BATCH = 2000;
-  const MAX_BATCHES = 60; // higher cap — we have months of backlog to chew through on first runs
   let poolDeleted = 0;
   let itemsDeleted = 0;
 
-  // ── 1) feed_items first ──
-  // Once an old feed_item is gone, the article_pool row it referenced is
-  // free to be pruned in step 2. Doing this in this order also avoids the
-  // "all first 2000 rows are FK-referenced" loop bug where the SELECT
-  // returns the same batch every iteration.
+  // Why this shape: the previous version SELECTed 2000 ids then issued
+  // `DELETE ... WHERE id IN (uuid1,uuid2,...)`. That URL is ~75 KB and
+  // PostgREST rejects it silently (returns 0 rows affected). Direct
+  // predicate DELETE `WHERE published_at < cutoff` is one tiny SQL
+  // statement that PostgreSQL executes against the (already-existing)
+  // published_at index — no URL length issue.
   //
-  // We order ASC by published_at so each batch is the oldest available
-  // rows. PostgREST has no offset cursor here, but since we delete the
-  // rows we just listed, the next "oldest BATCH" will be a different set.
-  for (let i = 0; i < MAX_BATCHES; i++) {
-    const cutoff = new Date(Date.now() - FEED_ITEMS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    const { data: victims } = await svc
-      .from("feed_items")
-      .select("id")
-      .lt("published_at", cutoff)
-      .order("published_at", { ascending: true })
-      .limit(BATCH);
-    if (!victims || victims.length === 0) break;
-    const { data: deleted } = await svc
-      .from("feed_items")
-      .delete()
-      .in("id", victims.map((v) => v.id))
-      .select("id");
-    itemsDeleted += deleted?.length || 0;
-    // If we got less than a full batch, we're done for this run.
-    if (victims.length < BATCH) break;
-  }
+  // We walk backwards in 7-day windows so each statement deletes a bounded
+  // number of rows (avoids hitting Supabase's statement_timeout on the
+  // first big backlog run).
 
-  // ── 2) Prune unreferenced old article_pool rows ──
-  // Track ids we've already considered this run so a batch full of
-  // FK-referenced rows doesn't trap us in an infinite loop.
-  const skipIds = new Set<string>();
-  for (let i = 0; i < MAX_BATCHES; i++) {
-    const cutoff = new Date(Date.now() - ARTICLE_POOL_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    let q = svc
-      .from("article_pool")
-      .select("id")
-      .lt("published_at", cutoff)
-      .order("published_at", { ascending: true })
-      .limit(BATCH);
-    // Skip ids we've already inspected and found to be referenced. Supabase
-    // caps not.in to ~1000 ids per query, so flush the skip set when it
-    // gets close to that — at worst we re-inspect 1000 rows.
-    if (skipIds.size > 0 && skipIds.size < 1000) {
-      q = q.not("id", "in", `(${[...skipIds].join(",")})`);
-    } else if (skipIds.size >= 1000) {
-      skipIds.clear();
+  const STEP_DAYS = 7;
+  const MAX_STEPS = 400; // enough headroom to walk back ~8 years if needed
+  const stepMs = STEP_DAYS * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const STOP_BEFORE = new Date("1980-01-01").getTime();
+
+  async function pruneTable(table: "feed_items" | "article_pool", retentionDays: number): Promise<number> {
+    let total = 0;
+    let upper = now - retentionDays * 24 * 60 * 60 * 1000;
+    let consecutiveEmpty = 0;
+    for (let s = 0; s < MAX_STEPS; s++) {
+      const lower = upper - stepMs;
+      // .select() after .delete() asks PostgREST to return the deleted
+      // rows so we can count them. Without it the response body is empty
+      // and supabase-js gives us data:null.
+      const { data, error } = await svc
+        .from(table)
+        .delete()
+        .lt("published_at", new Date(upper).toISOString())
+        .gte("published_at", new Date(lower).toISOString())
+        .select("id");
+      if (error) {
+        console.error(`[prune] ${table} window ${new Date(lower).toISOString()}..${new Date(upper).toISOString()} failed:`, error.message);
+        break;
+      }
+      const n = data?.length || 0;
+      total += n;
+      if (n === 0) {
+        consecutiveEmpty++;
+        // After enough empty windows, we've cleared the backlog — bail.
+        if (consecutiveEmpty >= 8) break;
+      } else {
+        consecutiveEmpty = 0;
+      }
+      upper = lower;
+      if (upper < STOP_BEFORE) break;
     }
-    const { data: victims } = await q;
-    if (!victims || victims.length === 0) break;
-
-    const ids = victims.map((v) => v.id);
-    const { data: refs } = await svc
-      .from("feed_items")
-      .select("article_pool_id")
-      .in("article_pool_id", ids);
-    const referenced = new Set((refs || []).map((r) => r.article_pool_id));
-    const safeIds = ids.filter((id) => !referenced.has(id));
-    // Remember the ones we can't delete this run so the next batch doesn't
-    // hand them to us again.
-    for (const id of ids) if (referenced.has(id)) skipIds.add(id);
-    if (safeIds.length === 0) continue;
-
-    const { data: deleted } = await svc
-      .from("article_pool")
-      .delete()
-      .in("id", safeIds)
-      .select("id");
-    poolDeleted += deleted?.length || 0;
-    if (victims.length < BATCH) break;
+    return total;
   }
+
+  // feed_items first — old rows hold FK references to article_pool that
+  // would block step 2's delete (FK has no ON DELETE clause, so PostgreSQL
+  // refuses to delete a referenced row).
+  itemsDeleted = await pruneTable("feed_items", FEED_ITEMS_RETENTION_DAYS);
+
+  // article_pool — now that the FK references are gone, this can delete
+  // the matching old rows freely. Anything still referenced by a recent
+  // feed_item will be blocked by the FK and skipped by Postgres (the
+  // statement deletes only what it can; remaining rows raise an error
+  // we catch and continue).
+  poolDeleted = await pruneTable("article_pool", ARTICLE_POOL_RETENTION_DAYS);
 
   return NextResponse.json({
     poolDeleted,
