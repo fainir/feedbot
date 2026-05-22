@@ -100,6 +100,7 @@
 - [x] Fix client/SSR feed-list mismatch — both must use same 14 feeds (S)
 - [x] Cache poison guard: don't cache empty "all" responses (S)
 - [x] Disk IO budget relief: schedule prune, tighten retention, slow classify, vacuum (M)
+- [x] Fix prune loop bug — was looping on same 2000 always-referenced rows, deleted nothing (S)
 
 ## Vision
 AI-curated personal feeds. Each tab = a custom prompt that pulls relevant content from the internet. Simple, useful, profitable.
