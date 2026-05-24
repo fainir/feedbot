@@ -1,6 +1,8 @@
 # FeedBot — Company Plan
 
 ## Active
+- [~] Classify-side freshness filter + one-time prune of stale article_pool rows (S)
+- [x] Filter article_pool to last 7 days + null out Brave fake published_at (S)
 - [x] Light mode color fix — gray page bg, white card bg (S)
 - [x] Add text labels to like/dislike buttons (S)
 - [x] White header bar in light mode (S)
@@ -166,6 +168,7 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
 - [ ] Test end-to-end Stripe flow
 - [x] Usage limit enforcement (3 feeds on free)
+- [x] Filter classify query to last 7d published_at + prune stale article_pool (S)
 
 ## Phase 5: Growth [IN PROGRESS]
 - [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config

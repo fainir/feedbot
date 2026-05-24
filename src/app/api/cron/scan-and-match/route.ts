@@ -89,6 +89,7 @@ async function classify(supabase: SupabaseClient) {
     .from("article_pool")
     .select("id, title, summary, source, url, image_url, published_at")
     .gte("created_at", cutoff)
+    .gte("published_at", new Date(Date.now() - 7 * 24 * 3600000).toISOString())
     .order("created_at", { ascending: false })
     .limit(200);
 
