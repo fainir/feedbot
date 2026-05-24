@@ -17,7 +17,7 @@ interface RawArticle {
   source: string;
   image_url: string | null;
   category: string;
-  published_at: string;
+  published_at: string | null;
 }
 
 // ─── TIER 1: High-quality curated sources (always scanned) ───
@@ -657,6 +657,18 @@ function cleanSummary(summary: string, title: string): string {
 export async function insertToPool(articles: RawArticle[]): Promise<number> {
   if (articles.length === 0) return 0;
 
+  // Drop articles older than 7 days. Evergreen pages (e.g. Medium listicles,
+  // Brave web-search hits with "indexed past day" semantics) otherwise flood
+  // the pool with stale content that classifies highly and pushes real news
+  // out of the per-feed sort order. Null/unparseable dates are kept.
+  const MAX_AGE_MS = 7 * 24 * 3600_000;
+  const now = Date.now();
+  articles = articles.filter((a) => {
+    if (!a.published_at) return true;
+    const t = new Date(a.published_at).getTime();
+    return isNaN(t) || now - t < MAX_AGE_MS;
+  });
+
   // Filter junk articles
   articles = articles.filter((a) => !isJunkArticle(a));
 
@@ -833,7 +845,10 @@ export async function scanBrave(queries?: string[]): Promise<{ scanned: number; 
         source: new URL(r.url).hostname.replace("www.", ""),
         image_url: null,
         category,
-        published_at: new Date().toISOString(),
+        // Brave web search does not return a publish date. Leaving null is
+        // honest; the freshness filter keeps null-dated items (we don't know
+        // they're stale).
+        published_at: null,
       }));
 
       totalAdded += await insertToPool(articles);
@@ -961,7 +976,8 @@ export async function scanBraveVideos(queries?: string[]): Promise<{ scanned: nu
           source: "YouTube",
           image_url: r.thumbnail?.src || null,
           category: "video",
-          published_at: new Date().toISOString(),
+          // Brave video search does not return a real publish date.
+          published_at: null,
         }));
 
       totalAdded += await insertToPool(articles);
