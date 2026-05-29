@@ -64,7 +64,12 @@ async function runCycle(baseUrl: string, cronSecret: string) {
     console.log("[Cron] Phase 2: Classifying articles...");
     const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=classify`, {
       headers,
-      signal: AbortSignal.timeout(180_000), // 3 min for classify
+      // 4.5 min: the classify route drains up to 6 pages but caps NEW page
+      // starts at a 150s internal budget. A page already in flight (≈20
+      // sequential LLM calls, ~60s) can finish past 150s, so we give the
+      // client abort headroom to ~270s rather than killing an in-flight
+      // page (which would just be redone next tick — wasteful, not lossy).
+      signal: AbortSignal.timeout(270_000),
     });
     const data = await res.json();
     const c = data.classify || {};
