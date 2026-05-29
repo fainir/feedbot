@@ -29,6 +29,33 @@ async function setScanState(supabase: SupabaseClient, key: string, value: string
   await supabase.from("scan_state").upsert({ category: key, last_scanned_at: value }, { onConflict: "category" });
 }
 
+// ── Lossless classify cursor ──
+// A forward keyset position on article_pool (created_at, id). We process
+// oldest-unclassified first and only ever advance PAST rows we actually
+// fetched, so no article is ever skipped (the old "newest-200 then jump
+// cutoff to now()" scheme silently dropped the tail of every >200 burst).
+const CLASSIFY_CURSOR_KEY = "classify_cursor";
+type ClassifyCursor = { createdAt: string; id: string };
+
+async function getClassifyCursor(supabase: SupabaseClient): Promise<ClassifyCursor | null> {
+  const { data } = await supabase
+    .from("scan_state")
+    .select("last_scanned_at, cursor_id")
+    .eq("category", CLASSIFY_CURSOR_KEY)
+    .single();
+  if (!data?.last_scanned_at || !data?.cursor_id) return null;
+  return { createdAt: data.last_scanned_at as string, id: data.cursor_id as string };
+}
+
+async function setClassifyCursor(supabase: SupabaseClient, c: ClassifyCursor): Promise<void> {
+  await supabase
+    .from("scan_state")
+    .upsert(
+      { category: CLASSIFY_CURSOR_KEY, last_scanned_at: c.createdAt, cursor_id: c.id },
+      { onConflict: "category" },
+    );
+}
+
 // ════════════════════════════════════════════════════════════════
 // STEP 1: SCAN — fetch RSS + Brave → article_pool
 // ════════════════════════════════════════════════════════════════
@@ -74,6 +101,16 @@ async function scan(supabase: SupabaseClient) {
 // STEP 2: CLASSIFY — give AI the articles + feed prompts → matches
 // ════════════════════════════════════════════════════════════════
 
+// One page of the keyset scan. 200 keeps each classifyAndInsert pass
+// (BATCH=10 → 20 LLM calls) within memory + time bounds.
+const CLASSIFY_PAGE = 200;
+// Drain up to this many pages per tick so a tick can process 200–1,200
+// articles and clear bursts (avg intake ~215/tick). Bounded so a tick
+// can't run unbounded.
+const CLASSIFY_MAX_PAGES = 6;
+// Stay comfortably under the cron's 180s phase abort.
+const CLASSIFY_TIME_BUDGET_MS = 150_000;
+
 async function classify(supabase: SupabaseClient) {
   const { data: feeds } = await supabase
     .from("feeds")
@@ -82,43 +119,92 @@ async function classify(supabase: SupabaseClient) {
 
   if (!feeds || feeds.length === 0) return { error: "No active feeds" };
 
-  const lastClassified = await getScanState(supabase, "last_classified_at");
-  const cutoff = lastClassified || new Date(Date.now() - 24 * 3600_000).toISOString();
+  const startedAt = Date.now();
+  const recencyFloor = new Date(Date.now() - 7 * 24 * 3600000).toISOString();
 
-  const { data: articles } = await supabase
-    .from("article_pool")
-    .select("id, title, summary, source, url, image_url, published_at")
-    .gte("created_at", cutoff)
-    .gte("published_at", new Date(Date.now() - 7 * 24 * 3600000).toISOString())
-    .order("created_at", { ascending: false })
-    .limit(200);
+  // First run (no cursor yet): start 24h back so we don't try to drain the
+  // entire 7-day pool in one go. Subsequent runs continue from the cursor.
+  let cursor = await getClassifyCursor(supabase);
+  const bootstrapFloor = cursor ? null : new Date(Date.now() - 24 * 3600_000).toISOString();
 
-  if (!articles || articles.length === 0) {
-    await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return { articles: 0, matches: 0, inserted: 0 };
+  let totalArticles = 0;
+  let totalNew = 0;
+  let totalSkipped = 0;
+  let totalMatches = 0;
+  let totalInserted = 0;
+  let pages = 0;
+
+  while (pages < CLASSIFY_MAX_PAGES && Date.now() - startedAt < CLASSIFY_TIME_BUDGET_MS) {
+    pages++;
+
+    let query = supabase
+      .from("article_pool")
+      .select("id, title, summary, source, url, image_url, published_at, created_at")
+      .gte("published_at", recencyFloor)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(CLASSIFY_PAGE);
+
+    if (cursor) {
+      // Strict keyset: rows after (cursor.createdAt, cursor.id). The id
+      // tie-break is essential — bulk inserts share created_at via now().
+      query = query.or(
+        `created_at.gt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.gt.${cursor.id})`,
+      );
+    } else if (bootstrapFloor) {
+      query = query.gte("created_at", bootstrapFloor);
+    }
+
+    const { data: articles } = await query;
+    if (!articles || articles.length === 0) break;
+
+    totalArticles += articles.length;
+
+    // Advance the cursor to the LAST fetched row — always, even for rows
+    // that match no feed. Otherwise no-match articles would be re-fetched
+    // forever at the boundary. Persist after each page so a mid-tick crash
+    // resumes cleanly instead of re-classifying.
+    const last = articles[articles.length - 1];
+    cursor = { createdAt: last.created_at as string, id: last.id };
+
+    // Safety net: skip anything already in feed_items (e.g. classified by a
+    // per-feed refresh between ticks).
+    const ids = articles.map((a) => a.id);
+    const { data: alreadyMatched } = await supabase
+      .from("feed_items")
+      .select("article_pool_id")
+      .in("article_pool_id", ids);
+    const matchedSet = new Set(
+      (alreadyMatched || []).map((r: { article_pool_id: string }) => r.article_pool_id),
+    );
+    const newArticles = articles.filter((a) => !matchedSet.has(a.id));
+    totalSkipped += articles.length - newArticles.length;
+    totalNew += newArticles.length;
+
+    if (newArticles.length > 0) {
+      const result = await classifyAndInsert(newArticles, feeds, supabase);
+      totalMatches += result.matches;
+      totalInserted += result.inserted;
+    }
+
+    await setClassifyCursor(supabase, cursor);
+
+    if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
+      (global as { gc: () => void }).gc();
+    }
+
+    // Less than a full page means we've drained everything available.
+    if (articles.length < CLASSIFY_PAGE) break;
   }
 
-  // Skip articles already matched to any feed
-  const articleIds = articles.map(a => a.id);
-  const { data: alreadyMatched } = await supabase
-    .from("feed_items")
-    .select("article_pool_id")
-    .in("article_pool_id", articleIds.slice(0, 200));
-  const matchedSet = new Set((alreadyMatched || []).map((r: { article_pool_id: string }) => r.article_pool_id));
-  const newArticles = articles.filter(a => !matchedSet.has(a.id));
-
-  if (newArticles.length === 0) {
-    await setScanState(supabase, "last_classified_at", new Date().toISOString());
-    return { articles: articles.length, skipped: articles.length, matches: 0, inserted: 0 };
-  }
-
-  const result = await classifyAndInsert(newArticles, feeds, supabase);
-
-  // Update last_refreshed_at for feeds that got new items — best effort
-  const now = new Date().toISOString();
-  await setScanState(supabase, "last_classified_at", now);
-
-  return { articles: articles.length, newArticles: newArticles.length, skipped: articles.length - newArticles.length, ...result };
+  return {
+    articles: totalArticles,
+    newArticles: totalNew,
+    skipped: totalSkipped,
+    matches: totalMatches,
+    inserted: totalInserted,
+    pages,
+  };
 }
 
 // ════════════════════════════════════════════════════════════════

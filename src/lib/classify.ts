@@ -48,10 +48,10 @@ SCORING:
 - Below 65: SKIP — tangential mention, off-topic, or background context only.
 
 RULES:
-- Assign to at most 1 feed unless the article is genuinely cross-topic (e.g. AI + security).
+- Default to 1 feed. Assign to 2 feeds when the article is genuinely about both and BOTH score >= 70 (e.g. an AI security exploit → AI and Security; a robot that uses a new ML model → Robotics and AI). Do not pad with weak second matches.
 - Reddit posts (reddit.com/r/*/comments/): cap score at 55 — discussions are not primary sources.
 - Listicles ("Top 10…", "Best X for…"), agency promotions, tutorials with no news value: cap at 50.
-- "Company uses AI for X" → that's an X article, not an AI article. Score 0 for AI feeds.
+- AI-feed routing: if a story is fundamentally about a non-AI domain that merely adopts AI tooling, prefer the domain feed. But if the AI capability, model, technique, launch, benchmark, or research result IS the news, score it for the AI feed normally — don't penalize it just because a company is named.
 - Skip: spam, ads, non-English content, generic opinion pieces with no new information.
 
 Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
