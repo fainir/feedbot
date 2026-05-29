@@ -19,9 +19,11 @@ const CACHE_HEADERS = {
 function responseCacheKey(req: NextRequest): string {
   // Bump prefix when we need to invalidate all cached entries. Last
   // bumps: v2 (cache-poison guard), v3 (empty responses cached during
-  // the bulk-prune window when the DB was briefly missing rows).
+  // the bulk-prune window), v4 (umbrella-feed backfill — surface the
+  // newly-populated AI & ML items immediately instead of waiting for
+  // the 40min TTL / next cron warm).
   const p = req.nextUrl.searchParams;
-  return "feeds:v3:" + [
+  return "feeds:v4:" + [
     p.get("q") ?? "",
     p.get("cursor") ?? "",
     p.get("limit") ?? "",
