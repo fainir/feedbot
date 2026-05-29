@@ -173,7 +173,9 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Tune cron classify timeout headroom (180s→270s) so drain pages finish (S)
 - [x] Umbrella feeds: /ai (AI & ML) also gets LLM Research/AI Tools/Computer Vision matches (S)
 - [x] Bump cache v3→v4 to instantly surface umbrella backfill on /ai (S) — /ai now 50/50 fresh (was 13)
-- [~] Bulk embedding writes — 256 UPDATEs/page → 1 unnest UPDATE (fix embed-phase timeout) (S)
+- [x] Bulk embedding writes — 256 UPDATEs/page → 1 unnest UPDATE (fix embed-phase timeout) (S)
+- [x] INCIDENT: embeddings/HNSW too IO-heavy for free-tier Supabase — cron reverted to lightweight
+      classify path (lossless cursor + umbrella); embed/fill env-gated behind EVO_SEMANTIC=1 (M)
 - [x] PRODUCT FIX: semantic pull-fill — any prompt gets top-60 relevant/7d via embeddings (XL)
   - DoD MET: pgvector+HNSW; per-feed vector pull fills feed_items; floor 0.40 calibrated live;
     fill 117 feeds/57s; every feed healthy (Tech 10→80, Dev 20→92, Energy 0→13, Quantum 39, Oceans 22, AI 539);

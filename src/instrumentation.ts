@@ -59,32 +59,45 @@ async function runCycle(baseUrl: string, cronSecret: string) {
     console.error("[Cron] Scan failed:", err);
   }
 
-  // Phase 2: embed any new pool rows (semantic retrieval needs vectors).
-  try {
-    console.log("[Cron] Phase 2: Embedding new articles...");
-    const res = await fetch(`${baseUrl}/api/cron/embed`, {
-      headers,
-      signal: AbortSignal.timeout(200_000),
-    });
-    const data = await res.json();
-    console.log(`[Cron] Embed done: embedded=${data.embedded || 0}, pages=${data.pages || 0}`);
-  } catch (err) {
-    console.error("[Cron] Embed failed:", err);
-  }
-
-  // Phase 3: fill feeds by semantic pull (each feed gets its top-N relevant
-  // recent articles). Replaces the old per-article push-classify.
-  try {
-    console.log("[Cron] Phase 3: Filling feeds (semantic pull)...");
-    const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=fill`, {
-      headers,
-      signal: AbortSignal.timeout(200_000),
-    });
-    const data = await res.json();
-    const f = data.fill || {};
-    console.log(`[Cron] Fill done: feeds=${f.feeds || 0}, promptsEmbedded=${f.embeddedPrompts || 0}, inserted=${f.inserted || 0}`);
-  } catch (err) {
-    console.error("[Cron] Fill failed:", err);
+  // Phase 2: classify new articles into feeds (lossless keyset cursor +
+  // umbrella). Lightweight — fits the free-tier Disk IO budget.
+  //
+  // NOTE: the semantic embed+fill path (pgvector/HNSW) is implemented and
+  // env-gated behind EVO_SEMANTIC=1. It's OFF by default because HNSW write
+  // amplification + continuous embedding writes exceed free-tier Supabase
+  // IO (it saturated the instance during rollout). Enable it only on paid
+  // compute. When off, classify keeps every feed fresh as before.
+  if (process.env.EVO_SEMANTIC === "1") {
+    try {
+      console.log("[Cron] Phase 2a: Embedding new articles...");
+      const res = await fetch(`${baseUrl}/api/cron/embed`, { headers, signal: AbortSignal.timeout(200_000) });
+      const data = await res.json();
+      console.log(`[Cron] Embed done: embedded=${data.embedded || 0}, pages=${data.pages || 0}`);
+    } catch (err) {
+      console.error("[Cron] Embed failed:", err);
+    }
+    try {
+      console.log("[Cron] Phase 2b: Filling feeds (semantic pull)...");
+      const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=fill`, { headers, signal: AbortSignal.timeout(200_000) });
+      const data = await res.json();
+      const f = data.fill || {};
+      console.log(`[Cron] Fill done: feeds=${f.feeds || 0}, inserted=${f.inserted || 0}`);
+    } catch (err) {
+      console.error("[Cron] Fill failed:", err);
+    }
+  } else {
+    try {
+      console.log("[Cron] Phase 2: Classifying articles...");
+      const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=classify`, {
+        headers,
+        signal: AbortSignal.timeout(270_000),
+      });
+      const data = await res.json();
+      const c = data.classify || {};
+      console.log(`[Cron] Classify done: articles=${c.articles || 0}, new=${c.newArticles || 0}, inserted=${c.inserted || 0}, pages=${c.pages || 0}`);
+    } catch (err) {
+      console.error("[Cron] Classify failed:", err);
+    }
   }
 
   // Digests

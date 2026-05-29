@@ -237,14 +237,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ fill: fillResult });
   }
 
-  // phase=all: scan → fill (semantic pull) → warm. Embedding of new pool
-  // rows runs in its own /api/cron/embed step (called by the cron loop
-  // between scan and fill) to keep each phase within its time budget.
+  // phase=all: scan → classify → warm. Classify (lossless cursor + umbrella)
+  // is the default, free-tier-friendly path. Semantic fill is env-gated.
   const scanResult = await scan(supabase);
   if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
     (global as { gc: () => void }).gc();
   }
-  const fillResult = await fillFeeds(supabase);
+  const classifyResult = process.env.EVO_SEMANTIC === "1"
+    ? await fillFeeds(supabase)
+    : await classify(supabase);
 
   // Pre-warm the public feed caches on every cron tick — not just when new
   // items landed. The L1/L2 TTL is shorter than the cron interval, so even
@@ -260,5 +261,5 @@ export async function GET(request: NextRequest) {
     console.warn("[cron] cache warm failed:", (e as Error).message);
   }
 
-  return NextResponse.json({ scan: scanResult, fill: fillResult, warm: warmResult });
+  return NextResponse.json({ scan: scanResult, classify: classifyResult, warm: warmResult });
 }

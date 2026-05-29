@@ -142,13 +142,15 @@ export async function POST(request: NextRequest) {
   const newFeed = { id: feedId, name: feed.name as string, query_text: query_text };
   Promise.resolve().then(async () => {
     try {
-      // 1) Instant: pull the most-relevant articles already in the pool via
-      //    semantic search, so the feed is populated within a second or two
-      //    of creation (works for any prompt the pool has coverage for).
-      await fillFeeds(svc, { feedIds: [feedId] });
-      // 2) Fresh: Brave-discover targeted results for the exact prompt and
-      //    classify them in — covers prompts whose content isn't yet in the
-      //    shared pool. (Ongoing freshness is handled by the cron embed+fill.)
+      // Instant semantic pull from the pool — only on paid compute
+      // (EVO_SEMANTIC=1); the embed/vector path is too IO-heavy for
+      // free-tier Supabase. See instrumentation.ts.
+      if (process.env.EVO_SEMANTIC === "1") {
+        await fillFeeds(svc, { feedIds: [feedId] });
+      }
+      // Brave-discover targeted results for the exact prompt + classify in.
+      // This is the free-tier population path for a new feed; the cron then
+      // keeps it fresh via classify.
       const discovered = await discoverFeeds(query_text);
       if (discovered.length > 0) {
         await classifyAndInsert(discovered, [newFeed], svc);
