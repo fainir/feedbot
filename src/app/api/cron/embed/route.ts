@@ -17,12 +17,15 @@ function isAuthorized(request: NextRequest): boolean {
 }
 
 // Embed article_pool rows that don't have an embedding yet, newest first
-// (fresh content matters most for feeds). Bounded by a wall-clock budget so
-// it fits inside a cron tick; callable repeatedly to drain a backlog.
+// (fresh content matters most for feeds). Bounded so it stays gentle on the
+// instance's Disk IO budget — embedding writes maintain the HNSW index,
+// which is write-amplifying. We only embed the last few days (news value is
+// concentrated there anyway) so the cron doesn't perpetually grind the
+// older tail, and cap rows/tick to keep write IO modest.
 const PAGE = 256;
-const MAX_PAGES = 12; // up to ~3,000 rows/call
-const TIME_BUDGET_MS = 150_000;
-const RECENCY_DAYS = 7;
+const MAX_PAGES = 6; // up to ~1,500 rows/call
+const TIME_BUDGET_MS = 120_000;
+const RECENCY_DAYS = 3;
 
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
