@@ -171,6 +171,7 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Filter classify query to last 7d published_at + prune stale article_pool (S)
 - [x] Feed freshness: lossless keyset cursor + drain loop + AI-routing prompt fix (M)
 - [x] Tune cron classify timeout headroom (180s→270s) so drain pages finish (S)
+- [x] Umbrella feeds: /ai (AI & ML) also gets LLM Research/AI Tools/Computer Vision matches (S)
 
 ## Phase 5: Growth [IN PROGRESS]
 - [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config

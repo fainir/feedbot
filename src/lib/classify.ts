@@ -120,9 +120,32 @@ export async function classifyAndInsert(
     }
   }
 
+  // ── Umbrella feeds ──
+  // A broad top-level feed should also receive everything matched to its
+  // more-specific siblings. Without this, the "assign to 1 feed" rule
+  // routes most AI stories to LLM Research / AI Tools / Computer Vision,
+  // starving the "AI & ML" tab that users actually open (observed: AI & ML
+  // got 22 fresh/day while LLM Research got 322). Child feed NAME → umbrella
+  // feed NAME. Only fires when BOTH feeds are in this call's feed list, so
+  // it activates on the full cron classify but not on single-feed refreshes.
+  const UMBRELLA_OF: Record<string, string> = {
+    "LLM Research": "AI & ML",
+    "AI Tools": "AI & ML",
+    "Computer Vision": "AI & ML",
+  };
+  const feedIdxByName = new Map(feeds.map((f, i) => [f.name, i]));
+  const expandedMatches = [...allMatches];
+  for (const m of allMatches) {
+    const umbrellaName = UMBRELLA_OF[feeds[m.feedIdx]?.name];
+    if (!umbrellaName) continue;
+    const ui = feedIdxByName.get(umbrellaName);
+    if (ui === undefined || ui === m.feedIdx) continue;
+    expandedMatches.push({ ...m, feedIdx: ui });
+  }
+
   // Keep highest quality per article-feed pair
   const bestByKey = new Map<string, (typeof allMatches)[0]>();
-  for (const m of allMatches) {
+  for (const m of expandedMatches) {
     const key = `${articles[m.articleIdx].url}::${feeds[m.feedIdx].id}`;
     const existing = bestByKey.get(key);
     if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
