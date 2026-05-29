@@ -7,8 +7,11 @@ const TARGET_POSTS = 60;
 const RECENCY_DAYS = 7;
 // Cosine-similarity floor. Below this we'd be padding a feed with
 // off-topic content — better to show fewer, relevant posts. Calibrated
-// against text-embedding-3-small (relevant prompts↔articles land ~0.30+).
-const MIN_SIMILARITY = 0.3;
+// against text-embedding-3-small @ 512d on the live pool: genuinely
+// on-topic articles land ~0.40–0.67 (Quantum Computing 0.52–0.67, Oceans
+// 0.40–0.53), tangential/noise sits below ~0.38. 0.40 separates them
+// while keeping niche feeds reasonably full.
+const MIN_SIMILARITY = 0.4;
 const CANDIDATES = 250; // HNSW pulls this many most-similar, then we recency-rank
 
 type SupabaseClient = ReturnType<typeof getServiceClient>;
