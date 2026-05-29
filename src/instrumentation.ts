@@ -59,23 +59,32 @@ async function runCycle(baseUrl: string, cronSecret: string) {
     console.error("[Cron] Scan failed:", err);
   }
 
-  // Phase 2: AI classify + insert into feeds
+  // Phase 2: embed any new pool rows (semantic retrieval needs vectors).
   try {
-    console.log("[Cron] Phase 2: Classifying articles...");
-    const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=classify`, {
+    console.log("[Cron] Phase 2: Embedding new articles...");
+    const res = await fetch(`${baseUrl}/api/cron/embed`, {
       headers,
-      // 4.5 min: the classify route drains up to 6 pages but caps NEW page
-      // starts at a 150s internal budget. A page already in flight (≈20
-      // sequential LLM calls, ~60s) can finish past 150s, so we give the
-      // client abort headroom to ~270s rather than killing an in-flight
-      // page (which would just be redone next tick — wasteful, not lossy).
-      signal: AbortSignal.timeout(270_000),
+      signal: AbortSignal.timeout(200_000),
     });
     const data = await res.json();
-    const c = data.classify || {};
-    console.log(`[Cron] Classify done: articles=${c.articles || 0}, new=${c.newArticles || 0}, skipped=${c.skipped || 0}, calls=${c.apiCalls || 0}, matches=${c.matches || 0}, inserted=${c.inserted || 0}, feeds=${c.feedsUpdated || 0}`);
+    console.log(`[Cron] Embed done: embedded=${data.embedded || 0}, pages=${data.pages || 0}`);
   } catch (err) {
-    console.error("[Cron] Classify failed:", err);
+    console.error("[Cron] Embed failed:", err);
+  }
+
+  // Phase 3: fill feeds by semantic pull (each feed gets its top-N relevant
+  // recent articles). Replaces the old per-article push-classify.
+  try {
+    console.log("[Cron] Phase 3: Filling feeds (semantic pull)...");
+    const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=fill`, {
+      headers,
+      signal: AbortSignal.timeout(200_000),
+    });
+    const data = await res.json();
+    const f = data.fill || {};
+    console.log(`[Cron] Fill done: feeds=${f.feeds || 0}, promptsEmbedded=${f.embeddedPrompts || 0}, inserted=${f.inserted || 0}`);
+  } catch (err) {
+    console.error("[Cron] Fill failed:", err);
   }
 
   // Digests

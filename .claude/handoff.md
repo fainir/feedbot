@@ -1,31 +1,31 @@
 # Context Handoff
-*Auto-generated: 2026-05-15T11:26:39Z*
-*Session tool calls: ? | Branch: claude/stoic-snyder-826dad*
+*Auto-generated: 2026-05-29T11:50:14Z*
+*Session tool calls: ? | Branch: main*
 
 ## Plan Progress
-Done: 182 | In Progress: 0 | Todo: 2 | Total: 184
+Done: 198 | In Progress: 1 | Todo: 2 | Total: 201
 
 ## Active Tasks (RESUME THESE)
-No active tasks
+172:- [~] Feed freshness: lossless keyset cursor + drain loop + AI-routing prompt fix (M)
 
 ## Next Pending Tasks
-153:- [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
-154:- [ ] Test end-to-end Stripe flow
+168:- [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
+169:- [ ] Test end-to-end Stripe flow
 
 ## Blocked Tasks
-158:- [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
-159:- [!] Brave Search API key for real content — BLOCKED: needs API key
-161:- [!] Custom domain (feedbot.app?) — BLOCKED: needs domain purchase
+175:- [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
+176:- [!] Brave Search API key for real content — BLOCKED: needs API key
+178:- [!] Custom domain (feedbot.app?) — BLOCKED: needs domain purchase
 
 ## Process State
 No process-maker.json found
 
 ## Recent Commits
-36a1466 perf(cache): add Redis L2 + persistent client SWR for instant feed loads
-77a981d chore: add SOURCE_INFO_BUILD marker to detect chunk freshness
-dc3ca48 chore: touch [feed]/page.tsx to force Railway chunk rebuild
-3b77e94 chore: force redeploy (real-publisher chip fix)
-cb2ee3d fix(source-chip): show real publisher, not generic "News"
+21f5dc1 fix(classify): only classify articles published within last 7 days
+40cd163 fix(ingest): drop articles older than 7 days at insertToPool
+bb25239 fix(cache): bump key v2→v3 + never cache empty responses
+edf8e49 fix(db): drop article_pool FK, bulk-prune backlog, simplify prune route
+9117691 fix(prune): use a SECURITY DEFINER SQL function to bypass 8s timeout
 
 ## Uncommitted Changes
 ### Staged
@@ -33,6 +33,9 @@ None
 
 ### Modified
 .claude/handoff.md
+.claude/plan.md
+src/app/api/cron/scan-and-match/route.ts
+src/lib/classify.ts
 
 ## What the Next Session Should Do
 1. Read .claude/plan.md — find [~] tasks and continue them

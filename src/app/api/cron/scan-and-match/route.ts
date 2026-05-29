@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews } from "@/lib/global-scanner";
 import { classifyAndInsert } from "@/lib/classify";
+import { fillFeeds } from "@/lib/feed-fill";
 import { warmFeedCache } from "@/lib/cache-warmer";
 
 function isAuthorized(request: NextRequest): boolean {
@@ -225,16 +226,25 @@ export async function GET(request: NextRequest) {
   }
 
   if (phase === "classify") {
+    // Legacy push-classify. Superseded by semantic fill (phase=fill) but
+    // kept callable for ad-hoc use / the instant new-feed path.
     const classifyResult = await classify(supabase);
     return NextResponse.json({ classify: classifyResult });
   }
 
-  // phase=all: scan then classify
+  if (phase === "fill") {
+    const fillResult = await fillFeeds(supabase);
+    return NextResponse.json({ fill: fillResult });
+  }
+
+  // phase=all: scan → fill (semantic pull) → warm. Embedding of new pool
+  // rows runs in its own /api/cron/embed step (called by the cron loop
+  // between scan and fill) to keep each phase within its time budget.
   const scanResult = await scan(supabase);
   if (typeof global !== "undefined" && (global as { gc?: () => void }).gc) {
     (global as { gc: () => void }).gc();
   }
-  const classifyResult = await classify(supabase);
+  const fillResult = await fillFeeds(supabase);
 
   // Pre-warm the public feed caches on every cron tick — not just when new
   // items landed. The L1/L2 TTL is shorter than the cron interval, so even
@@ -250,5 +260,5 @@ export async function GET(request: NextRequest) {
     console.warn("[cron] cache warm failed:", (e as Error).message);
   }
 
-  return NextResponse.json({ scan: scanResult, classify: classifyResult, warm: warmResult });
+  return NextResponse.json({ scan: scanResult, fill: fillResult, warm: warmResult });
 }
