@@ -50,16 +50,23 @@ export async function GET(request: NextRequest) {
     const vectors = await embedTexts(rows.map((r) => articleEmbedText(r)));
     if (!vectors) break; // embeddings unavailable — stop cleanly
 
-    // Update rows. Chunk the concurrent updates so we don't exhaust the
-    // connection pool.
-    const updates = rows.map((r, i) => ({ id: r.id, embedding: toVectorLiteral(vectors[i]) }));
-    for (let i = 0; i < updates.length; i += 25) {
-      const chunk = updates.slice(i, i + 25);
-      await Promise.all(
-        chunk.map((u) =>
-          supabase.from("article_pool").update({ embedding: u.embedding }).eq("id", u.id),
-        ),
-      );
+    const literals = vectors.map((v) => toVectorLiteral(v));
+    // Fast path: one bulk UPDATE per page via unnest() (256 round-trips → 1).
+    const { error } = await supabase.rpc("set_article_embeddings", {
+      p_ids: rows.map((r) => r.id),
+      p_embeddings: literals,
+    });
+    if (error) {
+      // Fallback (e.g. the RPC migration hasn't landed yet): chunked
+      // individual updates. Slower but keeps embedding working.
+      for (let i = 0; i < rows.length; i += 25) {
+        const chunk = rows.slice(i, i + 25);
+        await Promise.all(
+          chunk.map((r, j) =>
+            supabase.from("article_pool").update({ embedding: literals[i + j] }).eq("id", r.id),
+          ),
+        );
+      }
     }
     embedded += rows.length;
 
