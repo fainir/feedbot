@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { discoverFeeds } from "@/lib/feed-engine";
 import { classifyAndInsert } from "@/lib/classify";
+import { fillFeeds } from "@/lib/feed-fill";
 import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
 import { generateSearchPlan } from "@/lib/prompt-intelligence";
 
@@ -141,13 +142,18 @@ export async function POST(request: NextRequest) {
   const newFeed = { id: feedId, name: feed.name as string, query_text: query_text };
   Promise.resolve().then(async () => {
     try {
+      // 1) Instant: pull the most-relevant articles already in the pool via
+      //    semantic search, so the feed is populated within a second or two
+      //    of creation (works for any prompt the pool has coverage for).
+      await fillFeeds(svc, { feedIds: [feedId] });
+      // 2) Fresh: Brave-discover targeted results for the exact prompt and
+      //    classify them in — covers prompts whose content isn't yet in the
+      //    shared pool. (Ongoing freshness is handled by the cron embed+fill.)
       const discovered = await discoverFeeds(query_text);
       if (discovered.length > 0) {
-        const { inserted } = await classifyAndInsert(discovered, [newFeed], svc);
-        if (inserted > 0) {
-          await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
-        }
+        await classifyAndInsert(discovered, [newFeed], svc);
       }
+      await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", feedId);
     } catch {}
   });
 

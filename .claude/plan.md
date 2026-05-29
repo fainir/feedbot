@@ -173,8 +173,10 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Tune cron classify timeout headroom (180s→270s) so drain pages finish (S)
 - [x] Umbrella feeds: /ai (AI & ML) also gets LLM Research/AI Tools/Computer Vision matches (S)
 - [x] Bump cache v3→v4 to instantly surface umbrella backfill on /ai (S) — /ai now 50/50 fresh (was 13)
-- [~] PRODUCT FIX: semantic pull-fill — any prompt gets top-60 relevant/7d via embeddings (XL)
-  - DoD: a niche arbitrary prompt fills with relevant posts; replaces push-classify + umbrella hacks; ~$0.05/day
+- [x] PRODUCT FIX: semantic pull-fill — any prompt gets top-60 relevant/7d via embeddings (XL)
+  - DoD MET: pgvector+HNSW; per-feed vector pull fills feed_items; floor 0.40 calibrated live;
+    fill 117 feeds/57s; every feed healthy (Tech 10→80, Dev 20→92, Energy 0→13, Quantum 39, Oceans 22, AI 539);
+    /quantum live serves 49 relevant; new feeds fill instantly from pool on create; ~$0.05/day (cheaper than classify)
 
 ## Phase 5: Growth [IN PROGRESS]
 - [!] Google OAuth provider setup in Supabase — BLOCKED: needs Supabase dashboard config
