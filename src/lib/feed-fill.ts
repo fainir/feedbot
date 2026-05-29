@@ -60,13 +60,12 @@ export async function fillFeeds(
     }
   }
 
-  let inserted = 0;
-  let filledFeeds = 0;
-  for (const f of feeds) {
+  // Fill one feed: vector-search its top matches, upsert into feed_items.
+  async function fillOne(f: { id: string; name: string; embedding: unknown }): Promise<number> {
     // DB returns vector as a "[...]" string; reuse it directly. Newly
     // embedded prompts use the literal we just computed.
-    const emb = promptEmbedding.get(f.id) ?? (f.embedding as unknown as string | null);
-    if (!emb) continue; // embeddings unavailable for this feed — skip
+    const emb = promptEmbedding.get(f.id) ?? (f.embedding as string | null);
+    if (!emb) return -1; // embeddings unavailable — skip (distinct from "0 matches")
 
     const { data: matches, error } = await supabase.rpc("match_feed_articles", {
       p_embedding: emb,
@@ -75,7 +74,7 @@ export async function fillFeeds(
       p_candidates: CANDIDATES,
       p_limit: TARGET_POSTS,
     });
-    if (error || !matches || matches.length === 0) continue;
+    if (error || !matches || matches.length === 0) return 0;
 
     const rows = (matches as Array<{
       id: string;
@@ -102,9 +101,23 @@ export async function fillFeeds(
     const { error: upErr } = await supabase
       .from("feed_items")
       .upsert(rows, { onConflict: "feed_id,url", ignoreDuplicates: true });
-    if (!upErr) {
-      inserted += rows.length;
-      filledFeeds++;
+    return upErr ? 0 : rows.length;
+  }
+
+  // Process feeds in bounded-concurrency chunks. 125+ sequential RPC+upsert
+  // round-trips blew past the cron's time budget; ~8-wide cuts wall time ~8x
+  // while staying well within memory + the Supabase connection pool.
+  const CONCURRENCY = 8;
+  let inserted = 0;
+  let filledFeeds = 0;
+  for (let i = 0; i < feeds.length; i += CONCURRENCY) {
+    const chunk = feeds.slice(i, i + CONCURRENCY);
+    const counts = await Promise.all(chunk.map((f) => fillOne(f)));
+    for (const n of counts) {
+      if (n > 0) {
+        inserted += n;
+        filledFeeds++;
+      }
     }
   }
 
