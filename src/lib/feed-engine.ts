@@ -1,5 +1,7 @@
 import RssParser from "rss-parser";
 import type { Feed, FeedItem } from "@/types/database";
+import type { getServiceClient } from "@/lib/supabase";
+import { preFilterArticles } from "@/lib/ai-matcher";
 
 const rssParser = new RssParser({
   timeout: 10_000,
@@ -246,4 +248,123 @@ export async function refreshFeed(
   );
 
   return items.slice(0, 50);
+}
+
+// ════════════════════════════════════════════════════════════════
+// Demand-driven top-up — makes EVERY feed (incl. brand-new, niche, and
+// arbitrary user prompts) reach a good number of fresh posts.
+//
+// The shared RSS pool covers mainstream topics well but not niche ones,
+// so niche/new feeds starve. The fix is targeted search PER FEED — but
+// only for feeds actually below the freshness SLO, so rich feeds cost $0.
+//
+// Cost model (cost-effective by design):
+//   - Primary source: Google News RSS search on the feed's exact prompt —
+//     FREE (just outbound HTTP), covers the vast majority of topics.
+//   - Supplement: Brave web search — only when a Brave key is configured
+//     AND within a per-tick budget, for non-news niches Google News misses.
+//   - Relevance gate: preFilterArticles (keyword + spam, no LLM) — free.
+// ════════════════════════════════════════════════════════════════
+
+type ServiceClient = ReturnType<typeof getServiceClient>;
+
+export interface TopUpResult {
+  checked: number;
+  filled: number;
+  inserted: number;
+  braveUsed: number;
+}
+
+export async function topUpStarvingFeeds(
+  svc: ServiceClient,
+  opts?: { maxFeeds?: number; bravePerTick?: number; minFresh?: number; sinceHours?: number },
+): Promise<TopUpResult> {
+  const maxFeeds = opts?.maxFeeds ?? 10;
+  const minFresh = opts?.minFresh ?? 8;
+  const sinceHours = opts?.sinceHours ?? 48;
+  // Brave is paid; default to a small per-tick budget. 0 ⇒ free (Google
+  // News only). Even with a Brave key, this caps spend.
+  let braveBudget = opts?.bravePerTick ?? 3;
+
+  const { data: feeds, error } = await svc.rpc("starving_feeds", {
+    p_min_fresh: minFresh,
+    p_max: maxFeeds,
+    p_since_hours: sinceHours,
+  });
+  if (error || !feeds || feeds.length === 0) {
+    return { checked: 0, filled: 0, inserted: 0, braveUsed: 0 };
+  }
+
+  let inserted = 0;
+  let filled = 0;
+  let braveUsed = 0;
+
+  for (const f of feeds as Array<{ id: string; name: string; query_text: string | null; fresh: number }>) {
+    const query = f.query_text || f.name;
+    if (!query) continue;
+    const terms = queryToSearchTerms(query);
+
+    // Free targeted search (Google News RSS). Add a Brave call only if we
+    // still have budget — covers non-news niches.
+    const useBrave = braveBudget > 0;
+    if (useBrave) braveBudget--;
+    const settled = await Promise.allSettled([
+      fetchRssItems(buildGoogleNewsUrl(terms.join(" "))),
+      ...(useBrave ? [fetchBraveResults(query)] : []),
+    ]);
+    if (useBrave && settled[1]?.status === "fulfilled" && (settled[1].value as DiscoveredItem[]).length > 0) {
+      braveUsed++;
+    }
+
+    const found: DiscoveredItem[] = [];
+    const seen = new Set<string>();
+    for (const r of settled) {
+      if (r.status !== "fulfilled") continue;
+      for (const it of r.value as DiscoveredItem[]) {
+        const key = it.url.split("?")[0];
+        if (seen.has(key)) continue;
+        seen.add(key);
+        found.push(it);
+      }
+    }
+    if (found.length === 0) continue;
+
+    // Free relevance gate (keyword + spam). Targeted results are mostly
+    // on-topic already; if the gate is too strict and drops everything,
+    // fall back to the raw targeted results so the feed still fills.
+    const poolFmt = found.map((it, i) => ({ id: String(i), title: it.title, summary: it.summary, source: it.source, url: it.url }));
+    const passed = preFilterArticles(query, poolFmt);
+    const passedUrls = new Set(passed.map((p) => p.url));
+    let relevant = found.filter((it) => passedUrls.has(it.url));
+    if (relevant.length < 5) relevant = found.slice(0, 15);
+
+    // Dedup vs what the feed already has.
+    const { data: existing } = await svc.from("feed_items").select("url").eq("feed_id", f.id).limit(1000);
+    const have = new Set((existing || []).map((e: { url: string }) => e.url.split("?")[0]));
+
+    const rows = relevant
+      .filter((it) => !have.has(it.url.split("?")[0]))
+      .slice(0, 30)
+      .map((it) => ({
+        feed_id: f.id,
+        title: it.title,
+        url: it.url,
+        summary: it.summary || "",
+        source: it.source || "",
+        image_url: it.image_url ?? null,
+        published_at: it.published_at,
+        relevance_score: 72,
+      }));
+
+    if (rows.length > 0) {
+      const { error: upErr } = await svc.from("feed_items").upsert(rows, { onConflict: "feed_id,url", ignoreDuplicates: true });
+      if (!upErr) {
+        inserted += rows.length;
+        filled++;
+      }
+    }
+    await svc.from("feeds").update({ last_refreshed_at: new Date().toISOString() }).eq("id", f.id);
+  }
+
+  return { checked: feeds.length, filled, inserted, braveUsed };
 }

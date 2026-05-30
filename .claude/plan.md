@@ -177,6 +177,8 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] INCIDENT: embeddings/HNSW too IO-heavy for free-tier Supabase — cron reverted to lightweight
       classify path (lossless cursor + umbrella); embed/fill env-gated behind EVO_SEMANTIC=1 (M)
 - [x] PRODUCT FIX: semantic pull-fill — any prompt gets top-60 relevant/7d via embeddings (XL)
+- [x] Demand-driven top-up: starving feeds (incl. new) get targeted Google News search (free) + capped Brave (M)
+  - DoD: any feed below freshness SLO auto-fills from targeted search; new niche feeds reach good numbers; ~free
   - DoD MET: pgvector+HNSW; per-feed vector pull fills feed_items; floor 0.40 calibrated live;
     fill 117 feeds/57s; every feed healthy (Tech 10→80, Dev 20→92, Energy 0→13, Quantum 39, Oceans 22, AI 539);
     /quantum live serves 49 relevant; new feeds fill instantly from pool on create; ~$0.05/day (cheaper than classify)

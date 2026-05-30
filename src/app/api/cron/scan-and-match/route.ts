@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase";
 import { scanGlobal, scanBrave, scanBraveVideos, scanGoogleNews } from "@/lib/global-scanner";
 import { classifyAndInsert } from "@/lib/classify";
 import { fillFeeds } from "@/lib/feed-fill";
+import { topUpStarvingFeeds } from "@/lib/feed-engine";
 import { warmFeedCache } from "@/lib/cache-warmer";
 
 function isAuthorized(request: NextRequest): boolean {
@@ -235,6 +236,13 @@ export async function GET(request: NextRequest) {
   if (phase === "fill") {
     const fillResult = await fillFeeds(supabase);
     return NextResponse.json({ fill: fillResult });
+  }
+
+  if (phase === "topup") {
+    // Demand-driven targeted search for feeds below the freshness SLO
+    // (niche + brand-new). Free Google News + capped Brave.
+    const topupResult = await topUpStarvingFeeds(supabase);
+    return NextResponse.json({ topup: topupResult });
   }
 
   // phase=all: scan → classify → warm. Classify (lossless cursor + umbrella)

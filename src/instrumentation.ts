@@ -100,6 +100,22 @@ async function runCycle(baseUrl: string, cronSecret: string) {
     }
   }
 
+  // Phase 3: demand-driven top-up — targeted search for feeds below the
+  // freshness SLO (niche + brand-new). Makes EVERY feed reach good numbers,
+  // not just mainstream ones. Free Google News + capped Brave.
+  try {
+    console.log("[Cron] Phase 3: Topping up starving feeds...");
+    const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=topup`, {
+      headers,
+      signal: AbortSignal.timeout(200_000),
+    });
+    const data = await res.json();
+    const t = data.topup || {};
+    console.log(`[Cron] Top-up done: checked=${t.checked || 0}, filled=${t.filled || 0}, inserted=${t.inserted || 0}, braveUsed=${t.braveUsed || 0}`);
+  } catch (err) {
+    console.error("[Cron] Top-up failed:", err);
+  }
+
   // Digests
   try {
     const { sendDigests } = await import("@/lib/email-digest");
