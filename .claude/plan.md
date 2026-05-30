@@ -1,6 +1,7 @@
 # FeedBot — Company Plan
 
 ## Active
+- [x] Fix Reddit source: browser UA + parseString (rss-parser bot UA was silently 0) (S)
 - [x] All-feeds content: free multi-source top-up (Google News localized + Reddit search), Brave last-resort (M)
 - [x] Retune top-up SLO to 30d-total (full page) not 48h-fresh — niche topics can't be forced fresh (S)
 - [x] Classify-side freshness filter + one-time prune of stale article_pool rows (S)

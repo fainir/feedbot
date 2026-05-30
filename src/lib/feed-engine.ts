@@ -97,6 +97,41 @@ function extractImageUrl(item: RssParser.Item): string | null {
   return null;
 }
 
+// Like fetchRssItems but fetches with a browser-like User-Agent and parses
+// the body ourselves. rss-parser's parseURL sends a bot UA that some hosts
+// (notably Reddit) reject, silently yielding zero items. Used by the
+// top-up's free targeted sources so Reddit/community content actually flows.
+async function fetchRssItemsUA(url: string): Promise<DiscoveredItem[]> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+      },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const feed = await rssParser.parseString(xml);
+    const sourceName = feed.title || new URL(url).hostname;
+    return (feed.items || []).map((item) => ({
+      title: item.title || "Untitled",
+      url: item.link || url,
+      summary: summarizeItem(item.title || "", item.contentSnippet || item.content || ""),
+      source: sourceName,
+      image_url: extractImageUrl(item),
+      published_at: item.pubDate
+        ? new Date(item.pubDate).toISOString()
+        : item.isoDate
+          ? new Date(item.isoDate).toISOString()
+          : new Date().toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function fetchRssItems(url: string): Promise<DiscoveredItem[]> {
   try {
     const feed = await rssParser.parseURL(url);
@@ -345,8 +380,8 @@ export async function topUpStarvingFeeds(
     // language) + Reddit search (hobbies/communities/niches). Together these
     // cover almost any prompt — news, non-news, and non-English — at $0.
     const freeResults = await Promise.allSettled([
-      fetchRssItems(buildGoogleNewsUrl(terms.join(" "), locale)),
-      fetchRssItems(buildRedditSearchUrl(query)),
+      fetchRssItemsUA(buildGoogleNewsUrl(terms.join(" "), locale)),
+      fetchRssItemsUA(buildRedditSearchUrl(query)),
     ]);
     for (const r of freeResults) if (r.status === "fulfilled") collect(r.value as DiscoveredItem[]);
 
