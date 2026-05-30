@@ -280,8 +280,14 @@ export async function topUpStarvingFeeds(
   opts?: { maxFeeds?: number; bravePerTick?: number; minFresh?: number; sinceHours?: number },
 ): Promise<TopUpResult> {
   const maxFeeds = opts?.maxFeeds ?? 10;
-  const minFresh = opts?.minFresh ?? 8;
-  const sinceHours = opts?.sinceHours ?? 48;
+  // "Starving" = doesn't have a full scrollable page within the retention
+  // window (~30d), NOT "lacks N brand-new posts per 48h". Low-volume topics
+  // (e.g. drum covers) genuinely don't publish 8 fresh items every 2 days —
+  // no search can manufacture that. What we CAN guarantee is a full page.
+  // Measuring by 30d-total also stops us re-searching (and re-deduping) a
+  // feed that already has a healthy backlog every single tick.
+  const minFresh = opts?.minFresh ?? 25;
+  const sinceHours = opts?.sinceHours ?? 720; // 30 days ≈ total (prune horizon)
   // Brave is paid; default to a small per-tick budget. 0 ⇒ free (Google
   // News only). Even with a Brave key, this caps spend.
   let braveBudget = opts?.bravePerTick ?? 3;
