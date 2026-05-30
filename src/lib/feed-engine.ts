@@ -43,8 +43,27 @@ function queryToSearchTerms(query: string): string[] {
   return terms.length > 0 ? terms : base.split(" ").filter((w) => w.length > 1);
 }
 
-function buildGoogleNewsUrl(query: string): string {
+// Pick a Google News locale from the prompt's script so non-English feeds
+// (e.g. Hebrew, Arabic, Russian) get results in their language — free.
+function googleNewsLocale(q: string): { hl: string; gl: string } | undefined {
+  if (/[֐-׿]/.test(q)) return { hl: "he", gl: "IL" };
+  if (/[؀-ۿ]/.test(q)) return { hl: "ar", gl: "EG" };
+  if (/[Ѐ-ӿ]/.test(q)) return { hl: "ru", gl: "RU" };
+  if (/[぀-ヿ]/.test(q)) return { hl: "ja", gl: "JP" };
+  return undefined; // default en-US
+}
+
+// Reddit search RSS — free, targeted, and covers hobby/community/niche
+// topics that Google News (news-only) misses (drum covers, design, etc).
+function buildRedditSearchUrl(query: string): string {
+  return `https://www.reddit.com/search.rss?q=${encodeURIComponent(query)}&sort=new&limit=25&type=link`;
+}
+
+function buildGoogleNewsUrl(query: string, locale?: { hl: string; gl: string }): string {
   const encoded = encodeURIComponent(query);
+  if (locale) {
+    return `https://news.google.com/rss/search?q=${encoded}&hl=${locale.hl}&gl=${locale.gl}&ceid=${locale.gl}:${locale.hl}`;
+  }
   return `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`;
 }
 
@@ -309,30 +328,42 @@ export async function topUpStarvingFeeds(
     const query = f.query_text || f.name;
     if (!query) continue;
     const terms = queryToSearchTerms(query);
-
-    // Free targeted search (Google News RSS). Add a Brave call only if we
-    // still have budget — covers non-news niches.
-    const useBrave = braveBudget > 0;
-    if (useBrave) braveBudget--;
-    const settled = await Promise.allSettled([
-      fetchRssItems(buildGoogleNewsUrl(terms.join(" "))),
-      ...(useBrave ? [fetchBraveResults(query)] : []),
-    ]);
-    if (useBrave && settled[1]?.status === "fulfilled" && (settled[1].value as DiscoveredItem[]).length > 0) {
-      braveUsed++;
-    }
+    const locale = googleNewsLocale(query);
 
     const found: DiscoveredItem[] = [];
     const seen = new Set<string>();
-    for (const r of settled) {
-      if (r.status !== "fulfilled") continue;
-      for (const it of r.value as DiscoveredItem[]) {
+    const collect = (items: DiscoveredItem[]) => {
+      for (const it of items) {
         const key = it.url.split("?")[0];
         if (seen.has(key)) continue;
         seen.add(key);
         found.push(it);
       }
+    };
+
+    // FREE targeted sources first: Google News (localized for the prompt's
+    // language) + Reddit search (hobbies/communities/niches). Together these
+    // cover almost any prompt — news, non-news, and non-English — at $0.
+    const freeResults = await Promise.allSettled([
+      fetchRssItems(buildGoogleNewsUrl(terms.join(" "), locale)),
+      fetchRssItems(buildRedditSearchUrl(query)),
+    ]);
+    for (const r of freeResults) if (r.status === "fulfilled") collect(r.value as DiscoveredItem[]);
+
+    // Brave only as a LAST RESORT: free sources came up short AND we have
+    // budget. (Brave free tier is 2k/mo; demand-driven + this guard keeps
+    // usage tiny. It no-ops on 429/quota, so this degrades gracefully.)
+    if (found.length < 10 && braveBudget > 0) {
+      braveBudget--;
+      try {
+        const bz = await fetchBraveResults(query);
+        if (bz.length > 0) {
+          braveUsed++;
+          collect(bz);
+        }
+      } catch { /* quota/rate — ignore, free sources stand */ }
     }
+
     if (found.length === 0) continue;
 
     // Free relevance gate (keyword + spam). Targeted results are mostly
