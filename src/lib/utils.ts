@@ -20,6 +20,17 @@ export function readingTime(text: string): string {
   return `${minutes} min read`;
 }
 
+/**
+ * Normalize user-typed feed text (a feed name or prompt): trim surrounding
+ * whitespace and collapse internal whitespace runs (incl. stray newlines) to
+ * single spaces. Without this, a trailing space or a pasted newline produces a
+ * near-duplicate feed with a divergent slug (e.g. "Drum covers" vs "\nDrum
+ * covers"). Returns "" for non-strings so callers can reject empty input.
+ */
+export function normalizeFeedText(input: unknown): string {
+  return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
+}
+
 export function timeAgo(date: string) {
   const seconds = Math.floor(
     (Date.now() - new Date(date).getTime()) / 1000

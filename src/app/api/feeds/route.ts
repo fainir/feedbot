@@ -6,6 +6,7 @@ import { classifyAndInsert } from "@/lib/classify";
 import { fillFeeds } from "@/lib/feed-fill";
 import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
 import { generateSearchPlan } from "@/lib/prompt-intelligence";
+import { normalizeFeedText } from "@/lib/utils";
 
 export async function GET() {
   const supabase = await createClient();
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { name, query_text, description, schedule, notify_email, notify_push, notify_whatsapp, is_public } =
+  const { name: nameRaw, query_text: queryRaw, description, schedule, notify_email, notify_push, notify_whatsapp, is_public } =
     body as {
       name?: string;
       query_text?: string;
@@ -62,6 +63,11 @@ export async function POST(request: NextRequest) {
       notify_whatsapp?: boolean;
       is_public?: boolean;
     };
+
+  // Trim + collapse whitespace so a trailing space or pasted newline can't
+  // create a near-duplicate feed / junk slug. Empty-after-trim is rejected below.
+  const name = normalizeFeedText(nameRaw);
+  const query_text = normalizeFeedText(queryRaw);
 
   if (!name || !query_text) {
     return NextResponse.json(

@@ -1,6 +1,10 @@
 # FeedBot — Company Plan
 
 ## Active
+- [x] Feed health verification (2026-05-31): query fresh-30d distribution across all active feeds, confirm the 6 mid (25-49) feeds are climbing toward 50, flag any stalled/empty (S)
+  - DoD MET: 126 active → 120 full(50+)/5 mid/1 thin(24)/0 empty. All 6 sub-50 are PRIVATE user test feeds (only Esports public), all refreshed today (not stalled). Causes: niche-foreign (חייזרים ~24 ceiling), niche hobby (Drum covers), + whitespace-dupe test feeds. System feeds all 50+. Verdict: healthy, working as designed.
+- [x] Fix feed-name whitespace dupes (2026-05-31): trim+collapse user input on feed create (POST) + update (PATCH) so a trailing space / pasted newline can't spawn near-duplicate feeds & junk slugs (S)
+  - DoD MET: normalizeFeedText() in utils.ts; applied in both routes; whitespace-only now rejected on create / dropped on update; 6-case regression test (src/lib/utils.test.ts) green; tsc-clean on changed files. Root cause of the observed חייזרים /\nDrum covers dupes.
 - [x] Fix Reddit source: browser UA + parseString (rss-parser bot UA was silently 0) (S)
 - [x] All-feeds content: free multi-source top-up (Google News localized + Reddit search), Brave last-resort (M)
 - [x] Retune top-up SLO to 30d-total (full page) not 48h-fresh — niche topics can't be forced fresh (S)

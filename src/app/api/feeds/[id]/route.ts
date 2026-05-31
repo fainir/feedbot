@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { getServiceClient } from "@/lib/supabase";
 import { getAllowedSchedules } from "@/lib/usage";
+import { normalizeFeedText } from "@/lib/utils";
 
 export async function GET(
   request: NextRequest,
@@ -80,6 +81,16 @@ export async function PATCH(
   for (const field of allowedFields) {
     if (field in body) {
       updates[field] = body[field];
+    }
+  }
+
+  // Normalize whitespace on the user-typed fields (mirrors create-feed). Drop a
+  // whitespace-only name/query edit rather than blanking a required field.
+  for (const field of ["name", "query_text"] as const) {
+    if (typeof updates[field] === "string") {
+      const normalized = normalizeFeedText(updates[field] as string);
+      if (normalized) updates[field] = normalized;
+      else delete updates[field];
     }
   }
 
