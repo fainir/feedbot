@@ -1,6 +1,7 @@
 # FeedBot — Company Plan
 
 ## Active
+- [x] Verify feedbot-cron's automatic SCHEDULED run fires (web cron now disabled, so scheduled runs are the sole path) — CONFIRMED: 17:00 UTC run advanced classify_cursor 16:40→17:03 + inserted fresh feed_items (17:05). Recurring schedule works. (S)
 - [x] Phase 1 cost design: move cron off the always-on web process into a Railway Cron Job (scales to zero) so the web service can slim down (M)
   - DoD MET: instrumentation.ts SERVICE_ROLE=cron one-shot (commit 3930c36) + DISABLE_INPROCESS_CRON web gate, tsc-clean, pushed. Railway service `feedbot-cron` created (same repo, vars via ${{feedbot.*}} refs, unexposed, schedule `*/30 * * * *`). VERIFIED: "Run now" one-shot ran a full cycle (classify_cursor advanced, 84 fresh feed_items, last_prune_at written by maybePrune = clean exit). Then set DISABLE_INPROCESS_CRON=1 on web → web redeploys cron-free. Web stays warm (no product impact); cron now bills only ~minutes/run instead of 24/7.
 - [x] Feed health verification (2026-05-31): query fresh-30d distribution across all active feeds, confirm the 6 mid (25-49) feeds are climbing toward 50, flag any stalled/empty (S)
