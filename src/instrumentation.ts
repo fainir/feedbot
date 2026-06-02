@@ -1,44 +1,134 @@
 /**
  * Next.js Instrumentation hook — runs once when the server starts.
  *
- * - Scan + classify every 30 min (was 15 min). News doesn't refresh that
- *   fast and halving the cron rate halves the per-tick DB write load,
- *   which was straight-up doubling the Supabase Disk IO budget burn.
- * - Prune every 6th cycle ≈ every 3 hours. Without this, article_pool
- *   and feed_items grow unbounded; the prune cron was sitting in code
- *   but never scheduled, so retention never kicked in.
- * - Cache warm runs after every classify (handled inside scan-and-match).
+ * Two modes, selected by env (so the same image runs both Railway services):
+ *
+ *  - WEB (default): serves the site. Historically it ALSO ran the scan/
+ *    classify/top-up loop in-process every 30 min — which pinned the
+ *    container awake AND sized its memory for the cron's working set. Set
+ *    DISABLE_INPROCESS_CRON=1 to shed that loop once the cron service below
+ *    is verified, so the web container can slim down (and could later sleep).
+ *  - CRON (SERVICE_ROLE=cron): a separate Railway Cron Job runs this image on
+ *    a schedule. It boots, runs ONE cycle (+ a time-gated prune) against its
+ *    own loopback server, then exits — so Railway bills only the minutes it
+ *    runs, not 24/7. This is where the heavy pipeline now lives.
+ *
+ * Cadence (both modes): scan + classify every tick; prune ~every 3 hours.
  */
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const INTERVAL = 30 * 60 * 1000; // 30 minutes
-    const PRUNE_EVERY_N_CYCLES = 6; // ~ every 3 hours
-    const cronSecret = process.env.CRON_SECRET;
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-    if (!cronSecret) {
-      console.log("[Cron] CRON_SECRET not set, skipping auto-scan");
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.log("[Cron] CRON_SECRET not set, skipping auto-scan");
+    return;
+  }
+
+  const internalUrl = "http://localhost:3000";
+
+  // ── Cron-service mode (Railway Cron Job — scales to zero) ───────────────
+  if (process.env.SERVICE_ROLE === "cron") {
+    console.log("[Cron] cron-service mode — running one cycle then exiting");
+    // Don't await: let register() return so Next finishes booting and starts
+    // listening; the one-shot polls until the loopback server is up.
+    void runOnceAndExit(internalUrl, cronSecret);
+    return;
+  }
+
+  // ── Web-service mode ────────────────────────────────────────────────────
+  // Kept for a zero-gap rollout: deploy this, stand up + verify the cron
+  // service, THEN set DISABLE_INPROCESS_CRON=1 here so only it ticks.
+  if (process.env.DISABLE_INPROCESS_CRON === "1") {
+    console.log("[Cron] in-process scheduler disabled — handled by the cron service");
+    return;
+  }
+
+  const INTERVAL = 30 * 60 * 1000; // 30 minutes
+  const PRUNE_EVERY_N_CYCLES = 6; // ~ every 3 hours
+  console.log(`[Cron] Starting auto-scan loop every ${INTERVAL / 60000} minutes`);
+
+  let cycleCount = 0;
+  const tick = async () => {
+    cycleCount++;
+    await runCycle(internalUrl, cronSecret);
+    // Run prune on the Nth cycle. The cycle counter survives restarts
+    // because each container has its own counter — if Railway restarts
+    // us at the wrong cadence, we just over-prune by a few cycles, which
+    // is fine (prune is idempotent within its retention windows).
+    if (cycleCount % PRUNE_EVERY_N_CYCLES === 0) {
+      await runPrune(internalUrl, cronSecret);
+    }
+  };
+
+  setTimeout(tick, 30_000);
+  setInterval(tick, INTERVAL);
+}
+
+// One-shot entry for the Railway Cron Job: wait for this container's own
+// server to accept requests, run a single cycle, prune if due, then exit so
+// Railway closes out the run (and stops billing) instead of leaving a server
+// up. Exit non-zero on a hard failure so the On-Failure policy retries.
+async function runOnceAndExit(baseUrl: string, cronSecret: string) {
+  try {
+    await waitForServer(baseUrl);
+    await runCycle(baseUrl, cronSecret);
+    await maybePrune(baseUrl, cronSecret);
+  } catch (err) {
+    console.error("[Cron] one-shot cycle failed:", err);
+    process.exit(1);
+  }
+  console.log("[Cron] one-shot cycle complete — exiting");
+  process.exit(0);
+}
+
+// Poll our own server until it answers. No auth header → the cron route
+// returns 401, which is a perfectly good "socket is open, routes are live"
+// signal (any HTTP status counts; we never trigger work here).
+async function waitForServer(baseUrl: string, timeoutMs = 90_000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(`${baseUrl}/api/cron/scan-and-match?phase=ping`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (res.status > 0) {
+        console.log(`[Cron] server ready after ${Math.round((Date.now() - start) / 1000)}s`);
+        return;
+      }
+    } catch {
+      // not up yet
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  console.warn("[Cron] server readiness timed out — proceeding anyway");
+}
+
+// Prune is heavy on free-tier Supabase, so the web scheduler only ran it
+// every 6th cycle (~3h). Cron-job containers are ephemeral and can't keep an
+// in-memory counter, so gate on a persisted timestamp in scan_state instead
+// (same table/pattern as the Brave rate-limit).
+async function maybePrune(baseUrl: string, cronSecret: string) {
+  const PRUNE_INTERVAL_MS = 3 * 60 * 60_000; // ~3 hours
+  try {
+    const { getServiceClient } = await import("@/lib/supabase");
+    const svc = getServiceClient();
+    const { data } = await svc
+      .from("scan_state")
+      .select("last_scanned_at")
+      .eq("category", "last_prune_at")
+      .single();
+    const last = data?.last_scanned_at ? new Date(data.last_scanned_at).getTime() : 0;
+    if (Date.now() - last < PRUNE_INTERVAL_MS) {
+      console.log("[Cron] prune skipped — ran recently");
       return;
     }
-
-    console.log(`[Cron] Starting auto-scan loop every ${INTERVAL / 60000} minutes`);
-
-    const internalUrl = "http://localhost:3000";
-
-    let cycleCount = 0;
-    const tick = async () => {
-      cycleCount++;
-      await runCycle(internalUrl, cronSecret);
-      // Run prune on the Nth cycle. The cycle counter survives restarts
-      // because each container has its own counter — if Railway restarts
-      // us at the wrong cadence, we just over-prune by a few cycles, which
-      // is fine (prune is idempotent within its retention windows).
-      if (cycleCount % PRUNE_EVERY_N_CYCLES === 0) {
-        await runPrune(internalUrl, cronSecret);
-      }
-    };
-
-    setTimeout(tick, 30_000);
-    setInterval(tick, INTERVAL);
+    await runPrune(baseUrl, cronSecret);
+    await svc.from("scan_state").upsert(
+      { category: "last_prune_at", last_scanned_at: new Date().toISOString() },
+      { onConflict: "category" },
+    );
+  } catch (err) {
+    console.error("[Cron] prune gate failed:", err);
   }
 }
 
