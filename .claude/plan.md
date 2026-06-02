@@ -1,8 +1,8 @@
 # FeedBot — Company Plan
 
 ## Active
-- [~] Phase 1 cost design: move cron off the always-on web process into a Railway Cron Job (scales to zero) so the web service can slim down (M)
-  - DoD: instrumentation.ts supports SERVICE_ROLE=cron one-shot (run 1 cycle + time-gated prune, then exit) + DISABLE_INPROCESS_CRON web gate (safe rollout, no cron gap); tsc-clean; pushed. Railway cron service created + verified; then web scheduler disabled. No product impact (web stays warm).
+- [x] Phase 1 cost design: move cron off the always-on web process into a Railway Cron Job (scales to zero) so the web service can slim down (M)
+  - DoD MET: instrumentation.ts SERVICE_ROLE=cron one-shot (commit 3930c36) + DISABLE_INPROCESS_CRON web gate, tsc-clean, pushed. Railway service `feedbot-cron` created (same repo, vars via ${{feedbot.*}} refs, unexposed, schedule `*/30 * * * *`). VERIFIED: "Run now" one-shot ran a full cycle (classify_cursor advanced, 84 fresh feed_items, last_prune_at written by maybePrune = clean exit). Then set DISABLE_INPROCESS_CRON=1 on web → web redeploys cron-free. Web stays warm (no product impact); cron now bills only ~minutes/run instead of 24/7.
 - [x] Feed health verification (2026-05-31): query fresh-30d distribution across all active feeds, confirm the 6 mid (25-49) feeds are climbing toward 50, flag any stalled/empty (S)
   - DoD MET: 126 active → 120 full(50+)/5 mid/1 thin(24)/0 empty. All 6 sub-50 are PRIVATE user test feeds (only Esports public), all refreshed today (not stalled). Causes: niche-foreign (חייזרים ~24 ceiling), niche hobby (Drum covers), + whitespace-dupe test feeds. System feeds all 50+. Verdict: healthy, working as designed.
 - [x] Fix feed-name whitespace dupes (2026-05-31): trim+collapse user input on feed create (POST) + update (PATCH) so a trailing space / pasted newline can't spawn near-duplicate feeds & junk slugs (S)

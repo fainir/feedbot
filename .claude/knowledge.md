@@ -18,9 +18,21 @@ prompt → gets a feed of relevant fresh content. ~103 system feeds (tabs + Expl
 - **DB:** Supabase project `mdgzaizkjqbefovcgljr`, **FREE tier — IO/compute
   fragile**. Migrations via `supabase db push --linked`; verify with
   `supabase migration list --linked` (synced through 026).
-- **Cron:** in-process loop in `src/instrumentation.ts`, every 30 min:
-  scan → classify → top-up → (digests). Phases hit
-  `/api/cron/scan-and-match?phase=…`, `/api/cron/embed`, `/api/cron/prune`.
+- **Cron (split out — Phase 1 cost redesign, 2026-06-02):** a SEPARATE Railway
+  service `feedbot-cron` (same repo/image, `SERVICE_ROLE=cron`, Cron Schedule
+  `*/30 * * * *`, unexposed, vars via `${{feedbot.*}}` references) runs the
+  loop and EXITS — a Railway Cron Job that scales to zero, so it bills only the
+  ~minutes it runs instead of 24/7. The web service has `DISABLE_INPROCESS_CRON=1`
+  so it no longer schedules the loop (stays warm, serves only, slimmer memory).
+  - Mechanism: `src/instrumentation.ts` register() branches on env. Cron mode =
+    `runOnceAndExit` (waitForServer → runCycle → time-gated `maybePrune` via
+    scan_state `last_prune_at` ~3h → `process.exit`). Same loopback path as
+    before (scan → classify → top-up → digests; phases hit
+    `/api/cron/scan-and-match?phase=…`, `/api/cron/prune`).
+  - Roll back: unset `DISABLE_INPROCESS_CRON` on web (in-process loop resumes),
+    or delete `feedbot-cron`. The flag defaults OFF so the web path is intact.
+  - Why: the bill is ~100% Railway memory; bundling the heavy loop with the
+    always-on web server meant paying 24/7 for the cron's working set.
 - **Secrets:** Railway env + local `.env.local` (NOT git): `CRON_SECRET`,
   `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `OPENAI_API_KEY` (gpt-4o-mini),
