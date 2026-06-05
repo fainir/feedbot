@@ -736,13 +736,14 @@ export default function ForYouClient({
                   ) : null}
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => trackEvent("article_click", { source: item.source, feed: "for-you" })}>
                     {!ytId && hasImage && !/imgs\.search\.brave\.com|favicons?\.|\/favicon\.|:32:32|:16:16|:64:64/i.test(item.image_url || "") && (
-                      <div className="w-full h-36 sm:h-40 overflow-hidden relative">
+                      <div className="w-full h-36 sm:h-40 overflow-hidden relative bg-bg-hover">
                         <img
                           src={normalizeImageUrl(item.image_url)}
                           alt={title}
                           className="w-full h-full object-cover"
                           loading={i === 0 ? "eager" : "lazy"}
                           fetchPriority={i === 0 ? "high" : "auto"}
+                          onLoad={(e) => { const img = e.target as HTMLImageElement; if (img.naturalWidth < 32 || img.naturalHeight < 32) { const c = img.parentElement; if (c) c.style.display = "none"; } }}
                           onError={(e) => { const container = (e.target as HTMLImageElement).parentElement; if (container) container.style.display = "none"; }}
                         />
                       </div>

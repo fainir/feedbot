@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cacheGet, cachePut } from "@/lib/cache";
+import { isLowQualityItem, sanitizeSummary, sourceKey } from "@/lib/content-quality";
 
 function getSupabase() {
   return createClient(
@@ -63,7 +64,8 @@ export async function GET(req: NextRequest) {
     .select("id, title, url, summary, source, image_url, published_at, relevance_score")
     .eq("feed_id", feed.id)
     .order("published_at", { ascending: false })
-    .limit(limit + 1);
+    // Over-fetch so the junk filter + diversity cap below still leave a full page.
+    .limit(Math.min(limit * 3, 150));
 
   if (cursor) {
     query = query.lt("published_at", cursor);
@@ -85,8 +87,22 @@ export async function GET(req: NextRequest) {
     return true;
   });
 
-  const hasMore = deduped.length > limit;
-  const page = hasMore ? deduped.slice(0, limit) : deduped;
+  // Community/custom feeds skipped the cron quality gate for rows already in
+  // feed_items — enforce junk/scam filtering + per-source diversity here so
+  // one platform (e.g. *.medium.com) can't dominate the page.
+  const cleaned = deduped.filter((item) => !isLowQualityItem(item.title, item.source || "", item.url));
+  const maxPerSource = Math.max(3, Math.ceil(limit * 0.2));
+  const srcCounts = new Map<string, number>();
+  const diversified = cleaned.filter((item) => {
+    const k = sourceKey(item.source || "");
+    const c = srcCounts.get(k) || 0;
+    if (c >= maxPerSource) return false;
+    srcCounts.set(k, c + 1);
+    return true;
+  });
+
+  const hasMore = diversified.length > limit;
+  const page = hasMore ? diversified.slice(0, limit) : diversified;
 
   const profile = feed.profiles as unknown as { name: string | null; email: string } | null;
 
@@ -101,7 +117,7 @@ export async function GET(req: NextRequest) {
     items: page.map((item) => ({
       id: item.id,
       title: item.title,
-      summary: item.summary,
+      summary: sanitizeSummary(item.summary),
       source: item.source,
       url: item.url,
       image_url: item.image_url,

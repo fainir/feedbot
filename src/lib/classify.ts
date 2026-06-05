@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { getServiceClient } from "@/lib/supabase";
+import { isLowQualityItem, sanitizeSummary } from "@/lib/content-quality";
 
 const AI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
@@ -53,8 +54,11 @@ RULES:
 - Listicles ("Top 10…", "Best X for…"), agency promotions, tutorials with no news value: cap at 50.
 - AI-feed routing: if a story is fundamentally about a non-AI domain that merely adopts AI tooling, prefer the domain feed. But if the AI capability, model, technique, launch, benchmark, or research result IS the news, score it for the AI feed normally — don't penalize it just because a company is named.
 - Skip: spam, ads, non-English content, generic opinion pieces with no new information.
+- Skip crypto "recover stolen funds / reclaim lost bitcoin / hire a hacker" posts (these are scams) and auto-generated SEO content-farm listicles (e.g. "Ultimate 2026 Guide" pieces with a brand name repeated several times).
 
-Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one sentence summary"},...]}`;
+The "s" summary must describe ONLY the article's own content in one neutral sentence. NEVER mention the feed, the reader, relevance, "this topic", "fitting", or why it was matched.
+
+Return JSON: {"m":[{"a":articleIndex,"f":[feedIndex],"q":qualityScore0to100,"s":"one neutral sentence about the article"},...]}`;
 
 /**
  * Classify articles against feeds using AI, then insert matched items to feed_items.
@@ -151,20 +155,26 @@ export async function classifyAndInsert(
     if (!existing || m.quality > existing.quality) bestByKey.set(key, m);
   }
 
-  const toInsert = [...bestByKey.values()].map((m) => {
-    const a = articles[m.articleIdx];
-    return {
-      feed_id: feeds[m.feedIdx].id,
-      article_pool_id: a.id ?? null,
-      title: a.title,
-      url: a.url,
-      summary: m.summary || a.summary || "",
-      source: a.source || "",
-      image_url: a.image_url ?? null,
-      relevance_score: m.quality,
-      published_at: a.published_at || new Date().toISOString(),
-    };
-  });
+  const toInsert = [...bestByKey.values()]
+    // Drop junk sources / scam posts before they ever land in feed_items.
+    .filter((m) => {
+      const a = articles[m.articleIdx];
+      return !isLowQualityItem(a.title, a.source || "", a.url);
+    })
+    .map((m) => {
+      const a = articles[m.articleIdx];
+      return {
+        feed_id: feeds[m.feedIdx].id,
+        article_pool_id: a.id ?? null,
+        title: a.title,
+        url: a.url,
+        summary: sanitizeSummary(m.summary || a.summary || ""),
+        source: a.source || "",
+        image_url: a.image_url ?? null,
+        relevance_score: m.quality,
+        published_at: a.published_at || new Date().toISOString(),
+      };
+    });
 
   let inserted = 0;
   for (let i = 0; i < toInsert.length; i += 100) {

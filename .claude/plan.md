@@ -1,6 +1,17 @@
 # FeedBot — Company Plan
 
 ## Active
+- [x] Bug 1: RESERVED_SLUGS blocklist + cleaner slug gen in feed create (re-slug "Privacy" feed = pending DB step) (S)
+- [x] Bug 2: image loading placeholder (bg-bg-hover) + onLoad blank guard in feed-client + for-you-client (S)
+- [x] Bug 3: classify prompt forbids feed-meta in summary + sanitizeSummary at ingest AND serve (feed-by-slug + public/feeds, covers existing rows) (S)
+- [x] Quality: src/lib/content-quality.ts (isLowQualityItem junk+scam, sourceKey, sanitizeSummary) +10-case test; applied in classify (ingest reject), feed-by-slug (filter+diversity cap+sanitize), public/feeds (filter+sanitize) (M)
+- [~] Verify public/private mechanism + new-feed quality (re-slug Privacy; create public+private test feeds, confirm visibility + slug-collision fix + content quality, then clean up) (S)
+- [x] QA pass (2026-06-02): site rendering + per-feed post counts + post quality across representative feeds (M)
+  - COUNTS: 126 active (104 public / 22 private); 121 full(50+)/5 mid/0 thin/0 empty; public pages render 39-50 articles. Healthy.
+  - BUGS FOUND: (1) /privacy slug collision — public "Privacy" feed shadowed by privacy-policy page (0 articles); (2) summaries leak classifier meta ("fitting well with the feed dedicated to health research"); (3) failed/Medium images render as large empty blocks.
+  - QUALITY ISSUES: Medium/DEV over-domination (diversity cap evaded by *.medium.com subdomains — Health 9/15, PF 7/15); SEO content farms leak (venezart, seositestool, gitnux, gitnexa, thefounders.group, newsbeep, alpha-maven); off-topic contamination ("Luxury Hotel" in Health; Health 1772 items = over-matching); possible crypto recovery scam ("HOW TO RECOVER BITCOIN..."); dedup leakage (same story x2 aggregators).
+  - CONFIG: 22 private feeds incl. content-rich Crypto Market/Startup News/AI News/Python Weekly/JS Weekly/Product Hunt Daily/Tech Startups/Climate Science — invisible to public (intentional?).
+  - GOOD: Space/Gaming/Earth+Climate Science/Astronomy/DevOps high quality + reputable sources; no app console errors; clean responsive dark UI.
 - [x] Verify feedbot-cron's automatic SCHEDULED run fires (web cron now disabled, so scheduled runs are the sole path) — CONFIRMED: 17:00 UTC run advanced classify_cursor 16:40→17:03 + inserted fresh feed_items (17:05). Recurring schedule works. (S)
 - [x] Phase 1 cost design: move cron off the always-on web process into a Railway Cron Job (scales to zero) so the web service can slim down (M)
   - DoD MET: instrumentation.ts SERVICE_ROLE=cron one-shot (commit 3930c36) + DISABLE_INPROCESS_CRON web gate, tsc-clean, pushed. Railway service `feedbot-cron` created (same repo, vars via ${{feedbot.*}} refs, unexposed, schedule `*/30 * * * *`). VERIFIED: "Run now" one-shot ran a full cycle (classify_cursor advanced, 84 fresh feed_items, last_prune_at written by maybePrune = clean exit). Then set DISABLE_INPROCESS_CRON=1 on web → web redeploys cron-free. Web stays warm (no product impact); cron now bills only ~minutes/run instead of 24/7.

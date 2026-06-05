@@ -8,6 +8,15 @@ import { canCreateFeed, getAllowedSchedules } from "@/lib/usage";
 import { generateSearchPlan } from "@/lib/prompt-intelligence";
 import { normalizeFeedText } from "@/lib/utils";
 
+// Top-level page routes a feed slug must NOT collide with, or the static page
+// would shadow the feed (e.g. /privacy → privacy policy). Keep in sync with
+// the directories under src/app/.
+const RESERVED_SLUGS = new Set([
+  "auth", "bookmarks", "contact", "dashboard", "explore", "forgot-password",
+  "login", "my", "privacy", "terms", "api", "onboarding", "getting-started",
+  "settings", "account", "pricing", "about", "blog", "signup", "signin",
+]);
+
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -97,7 +106,19 @@ export async function POST(request: NextRequest) {
     : allowedSchedules[0];
 
   // Generate URL-safe slug from name
-  const baseSlug = name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").slice(0, 50);
+  let baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50);
+  // A reserved-route or empty slug would be shadowed by a real page (e.g. a
+  // feed named "Privacy" → /privacy renders the privacy-policy page, never the
+  // feed). Suffix it so the feed gets its own reachable URL.
+  if (!baseSlug || RESERVED_SLUGS.has(baseSlug)) {
+    baseSlug = `${baseSlug || "feed"}-${Date.now().toString(36).slice(-4)}`;
+  }
   let feedSlug = baseSlug;
   // Check for conflicts with existing slugs
   const { data: existingSlug } = await serviceClient

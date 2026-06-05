@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cacheGet, cachePut } from "@/lib/cache";
+import { isLowQualityItem, sanitizeSummary } from "@/lib/content-quality";
 
 const SYSTEM_USER = "9c313e5c-1468-467b-a797-6ceb9bd7d09b";
 
@@ -322,6 +323,8 @@ export async function GET(req: NextRequest) {
     if (/[ğışçöüĞİŞÇÖÜ]/.test(title) && (title.match(/[ğışçöüĞİŞÇÖÜ]/g) || []).length >= 2) return false;
     // API-level spam + low-quality filter for articles already in DB
     if (/Fidelity Capital Investment|cost me \$\d|that'?s why we'?re building|something bigger than just|top .{0,20}designer in|APK.*download|APK.*guide|you need to know about .{0,10}(fitness|gym)|how to start a cryptocurrency exchange|TRX Airdrop|claim \d+.*TRX|claim \d+.*tokens|free airdrop|best gym in|best .{0,20}locations for unforgettable|wedding photography in|free download|maximize your sales|email list$|buy chatgpt.*discount|#ULKQ|#Keywords:/i.test(title)) return false;
+    // Shared junk-source (SEO/AI content-farm) + crypto-recovery-scam filter (QA 2026-06-02).
+    if (isLowQualityItem(title, item.source || "", item.url)) return false;
     // Filter learning diary posts ("Day 1:", "Day 21:", etc.) — personal logs, not curated content
     if (/^Day \d+\s*[:\-–—]/i.test(title)) return false;
     // Filter "Soul in Motion" style personal journal DEV posts
@@ -440,7 +443,7 @@ export async function GET(req: NextRequest) {
     items: page.map((item) => ({
       id: item.id,
       title: item.title,
-      summary: item.summary,
+      summary: sanitizeSummary(item.summary),
       source: item.source,
       url: item.url,
       image_url: item.image_url,
