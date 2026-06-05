@@ -5,7 +5,10 @@
 - [x] Bug 2: image loading placeholder (bg-bg-hover) + onLoad blank guard in feed-client + for-you-client (S)
 - [x] Bug 3: classify prompt forbids feed-meta in summary + sanitizeSummary at ingest AND serve (feed-by-slug + public/feeds, covers existing rows) (S)
 - [x] Quality: src/lib/content-quality.ts (isLowQualityItem junk+scam, sourceKey, sanitizeSummary) +10-case test; applied in classify (ingest reject), feed-by-slug (filter+diversity cap+sanitize), public/feeds (filter+sanitize) (M)
-- [~] Verify public/private mechanism + new-feed quality (re-slug Privacy; create public+private test feeds, confirm visibility + slug-collision fix + content quality, then clean up) (S)
+- [x] Verify public/private mechanism + new-feed quality (re-slug Privacy; create public+private test feeds, confirm visibility + slug-collision fix + content quality, then clean up) (S)
+  - DONE: re-slugged "Privacy" -> /data-privacy (now renders 50; /privacy = policy). Slug-gen fix validated (reserved+empty names get suffix). Public/private mechanism confirmed (private feeds 404 for anon). Serve-layer LIVE-verified: junk=0, metaLeak=0, Medium cap 60%->20% across animation/health/PF/tech/startups. New test feed filled via top-up = 100% relevant crypto, junk=0/scams=0.
+  - FOLLOW-UP FIX (59e67a2): diversity cap was collapsing top-up rows to ~10 (they store query as source) -> now key off extractTitleSource(title). PENDING: delete test feed zzz-qa-crypto-test after final re-check.
+  - NOT FIXED (out of scope, flagged): topic CONTAMINATION ("Luxury Hotel" in Health, Health 1772 items over-matching) — a classify relevance-threshold issue, not a junk-source; needs per-feed thresholds or the semantic path. Stricter prompt may help new classifications only.
 - [x] QA pass (2026-06-02): site rendering + per-feed post counts + post quality across representative feeds (M)
   - COUNTS: 126 active (104 public / 22 private); 121 full(50+)/5 mid/0 thin/0 empty; public pages render 39-50 articles. Healthy.
   - BUGS FOUND: (1) /privacy slug collision — public "Privacy" feed shadowed by privacy-policy page (0 articles); (2) summaries leak classifier meta ("fitting well with the feed dedicated to health research"); (3) failed/Medium images render as large empty blocks.
