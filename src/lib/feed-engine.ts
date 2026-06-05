@@ -2,6 +2,7 @@ import RssParser from "rss-parser";
 import type { Feed, FeedItem } from "@/types/database";
 import type { getServiceClient } from "@/lib/supabase";
 import { preFilterArticles } from "@/lib/ai-matcher";
+import { isLowQualityItem, sanitizeSummary } from "@/lib/content-quality";
 
 const rssParser = new RssParser({
   timeout: 10_000,
@@ -415,13 +416,13 @@ export async function topUpStarvingFeeds(
     const have = new Set((existing || []).map((e: { url: string }) => e.url.split("?")[0]));
 
     const rows = relevant
-      .filter((it) => !have.has(it.url.split("?")[0]))
+      .filter((it) => !have.has(it.url.split("?")[0]) && !isLowQualityItem(it.title, it.source || "", it.url))
       .slice(0, 30)
       .map((it) => ({
         feed_id: f.id,
         title: it.title,
         url: it.url,
-        summary: it.summary || "",
+        summary: sanitizeSummary(it.summary || ""),
         source: it.source || "",
         image_url: it.image_url ?? null,
         published_at: it.published_at,
