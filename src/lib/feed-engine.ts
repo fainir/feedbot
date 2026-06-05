@@ -3,6 +3,7 @@ import type { Feed, FeedItem } from "@/types/database";
 import type { getServiceClient } from "@/lib/supabase";
 import { preFilterArticles } from "@/lib/ai-matcher";
 import { isLowQualityItem, sanitizeSummary } from "@/lib/content-quality";
+import { extractTitleSource } from "@/lib/source-info";
 
 const rssParser = new RssParser({
   timeout: 10_000,
@@ -423,7 +424,10 @@ export async function topUpStarvingFeeds(
         title: it.title,
         url: it.url,
         summary: sanitizeSummary(it.summary || ""),
-        source: it.source || "",
+        // Google-News results carry the query as `source`; the real publisher
+        // is in the title suffix. Store it so the diversity cap (and the card)
+        // see the true publisher, not one giant "<query>" bucket.
+        source: extractTitleSource(it.title) || it.source || "",
         image_url: it.image_url ?? null,
         published_at: it.published_at,
         relevance_score: 72,

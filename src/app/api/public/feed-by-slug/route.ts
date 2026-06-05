@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cacheGet, cachePut } from "@/lib/cache";
 import { isLowQualityItem, sanitizeSummary, sourceKey } from "@/lib/content-quality";
+import { extractTitleSource } from "@/lib/source-info";
 
 function getSupabase() {
   return createClient(
@@ -94,7 +95,8 @@ export async function GET(req: NextRequest) {
   const maxPerSource = Math.max(3, Math.ceil(limit * 0.2));
   const srcCounts = new Map<string, number>();
   const diversified = cleaned.filter((item) => {
-    const k = sourceKey(item.source || "");
+    // Key off the real publisher (top-up rows store the query as `source`).
+    const k = sourceKey(extractTitleSource(item.title) || item.source || "");
     const c = srcCounts.get(k) || 0;
     if (c >= maxPerSource) return false;
     srcCounts.set(k, c + 1);
