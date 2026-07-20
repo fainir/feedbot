@@ -189,6 +189,7 @@ AI-curated personal feeds. Each tab = a custom prompt that pulls relevant conten
 - [x] Stripe checkout/portal/webhook routes (code ready)
 - [x] Upgrade to Pro button in dashboard
 - [x] Checkout success banner
+- [x] Build pricing page (/pricing) - Free vs Pro comparison (M)
 - [ ] Set Stripe env vars on Vercel (sk_test, pk_test, whsec, price_id)
 - [ ] Test end-to-end Stripe flow
 - [x] Usage limit enforcement (3 feeds on free)

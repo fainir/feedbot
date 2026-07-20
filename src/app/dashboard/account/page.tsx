@@ -122,7 +122,7 @@ export default function AccountPage() {
             </div>
           </div>
           <Link
-            href="/#pricing"
+            href="/pricing"
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
           >
             <Crown className="h-3.5 w-3.5" />
