@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss, Layers } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss, Layers, ChevronDown } from "lucide-react";
 import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pull-to-refresh";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -13,6 +13,13 @@ import { cleanSummary, cleanTitle, getSourceInfo, getSourceFavicon, timeAgo, nor
 import { useFeedPrefetch } from "@/components/feed/use-feed-prefetch";
 import type { User } from "@supabase/supabase-js";
 
+interface RelatedArticle {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+}
+
 interface FeedItem {
   id: string;
   title: string;
@@ -21,6 +28,8 @@ interface FeedItem {
   source: string;
   image_url?: string;
   publishedAt: string;
+  relatedCount?: number;
+  related?: RelatedArticle[];
 }
 
 const FEEDS = [
@@ -120,6 +129,7 @@ export default function ForYouClient({
   const [systemFeedMap, setSystemFeedMap] = useState<Record<string, string>>({}); // slug -> uuid
   const [heroDismissed, setHeroDismissed] = useState(false);
   const [hiddenFeeds, setHiddenFeeds] = useState<Set<string>>(new Set());
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   useThemeSync(user);
   const prefetchFeed = useFeedPrefetch();
@@ -373,7 +383,7 @@ export default function ForYouClient({
     return () => { cancelled = true; };
   }, [fetchFeed, feedNames]);
 
-  const { dedupedItems, trendingTopics, clusterSize } = useMemo(() => {
+  const { dedupedItems, trendingTopics } = useMemo(() => {
     // Load source preferences for personalization
     let sourcePrefs: Record<string, number> = {};
     try { sourcePrefs = JSON.parse(localStorage.getItem("myfeed-source-prefs") || "{}"); } catch {}
@@ -397,11 +407,12 @@ export default function ForYouClient({
       });
     }
 
-    // Story clustering -group by similar titles, keep best + track trending
+    // Story clustering - group by similar titles, keep best + track related + trending
     const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
-    const clusters: typeof urlDeduped = [];
+    type ClusteredFeedItem = FeedItem & { _related?: RelatedArticle[] };
+    const clusters: ClusteredFeedItem[] = [];
     const clusterKeys = new Map<string, number>();
-    const clusterCounts = new Map<number, number>(); // cluster index → count of similar stories
+    const clusterCounts = new Map<number, number>();
     for (const item of urlDeduped) {
       const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w)).slice(0, 5);
       const key = words.join(" ");
@@ -411,6 +422,9 @@ export default function ForYouClient({
         const overlap = words.filter((w) => ek.includes(w)).length;
         if (overlap >= 3) {
           clusterCounts.set(idx, (clusterCounts.get(idx) || 1) + 1);
+          // Track the related article
+          if (!clusters[idx]._related) clusters[idx]._related = [];
+          clusters[idx]._related!.push({ title: item.title, url: item.url, source: item.source, publishedAt: item.publishedAt });
           matched = true;
           break;
         }
@@ -422,12 +436,19 @@ export default function ForYouClient({
     for (const [idx, count] of clusterCounts) {
       if (count >= 3 && clusters[idx]) trending.add(clusters[idx].id);
     }
-    // Build clusterSize map: item id → total similar stories (including self)
-    const clusterSize = new Map<string, number>();
-    for (const [idx, count] of clusterCounts) {
-      if (count > 1 && clusters[idx]) clusterSize.set(clusters[idx].id, count);
-    }
-    return { dedupedItems: clusters, trendingTopics: trending, clusterSize };
+    // Merge server-side related (from API) + client-side related into final items
+    const finalItems = clusters.map((item) => {
+      const serverRelated = item.related || [];
+      const clientRelated = item._related || [];
+      const allRelated = [...serverRelated, ...clientRelated].slice(0, 5);
+      return {
+        ...item,
+        relatedCount: allRelated.length || undefined,
+        related: allRelated.length > 0 ? allRelated : undefined,
+        _related: undefined,
+      };
+    });
+    return { dedupedItems: finalItems, trendingTopics: trending };
   }, [items]);
 
   const loadMore = () => {
@@ -761,7 +782,26 @@ export default function ForYouClient({
                         </span>
                         <span className="text-[10px] text-text-muted">{timeAgo(item.publishedAt)}</span>
                           {trendingTopics.has(item.id) && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-400">Trending</span>}
-                          {(clusterSize.get(item.id) || 0) > 1 && <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400"><Layers className="h-2.5 w-2.5" />{clusterSize.get(item.id)! - 1} more</span>}
+                          {(item.relatedCount || 0) > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedClusters((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(item.id)) next.delete(item.id);
+                                  else next.add(item.id);
+                                  return next;
+                                });
+                              }}
+                              className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                              aria-label={`${item.relatedCount} more source${item.relatedCount === 1 ? "" : "s"}`}
+                            >
+                              <Layers className="h-2.5 w-2.5" />
+                              {item.relatedCount} more {item.relatedCount === 1 ? "source" : "sources"}
+                              <ChevronDown className={`h-2.5 w-2.5 transition-transform ${expandedClusters.has(item.id) ? "rotate-180" : ""}`} />
+                            </button>
+                          )}
                       </div>
                       <h2 className="font-semibold text-text leading-tight text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
                       {summary && summary !== title && summary.length > 10 && (
@@ -779,6 +819,34 @@ export default function ForYouClient({
                       </div>
                     </div>
                   </a>
+                  {(item.relatedCount || 0) > 0 && expandedClusters.has(item.id) && item.related && (
+                    <div className="border-t border-border/50 bg-bg-hover/30 px-3 sm:px-4 py-2 space-y-0.5">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-1">Also covered by</p>
+                      {item.related.map((rel, ri) => {
+                        const relSrc = getSourceInfo(rel.source, rel.title);
+                        const relFavicon = relSrc.icon || getSourceFavicon(rel.source, rel.url);
+                        const relTitleRaw = cleanTitle(rel.title);
+                        const relTitle = relSrc.name && relTitleRaw.endsWith(` - ${relSrc.name}`)
+                          ? relTitleRaw.slice(0, -3 - relSrc.name.length).trim()
+                          : relTitleRaw;
+                        return (
+                          <a
+                            key={ri}
+                            href={rel.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2 py-1.5 px-2 -mx-1 rounded-lg hover:bg-bg-hover transition-colors"
+                          >
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0 mt-0.5 ${relSrc.color}`}>
+                              {relFavicon ? <img src={relFavicon} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                              {relSrc.name}
+                            </span>
+                            <span className="text-xs text-text leading-snug line-clamp-1">{relTitle}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                 </article>
               );
             })}
