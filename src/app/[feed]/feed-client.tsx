@@ -533,7 +533,7 @@ export default function FeedPage({
     return () => clearInterval(interval);
   }, [activeTab, items]);
 
-  const { dedupedItems, clusterSize } = useMemo(() => {
+  const dedupedItems = useMemo(() => {
     // URL dedup
     const seenUrls = new Set<string>();
     const urlDeduped = items.filter((item) => {
@@ -542,11 +542,11 @@ export default function FeedPage({
       seenUrls.add(key);
       return true;
     });
-    // Story clustering: group similar titles, keep best + track counts
+    // Story clustering: group similar titles, keep best + track related
     const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
-    const clusters: typeof urlDeduped = [];
+    type ClusteredFeedItem = FeedItem & { _related?: RelatedArticle[] };
+    const clusters: ClusteredFeedItem[] = [];
     const clusterKeys = new Map<string, number>();
-    const clusterCounts = new Map<number, number>();
     for (const item of urlDeduped) {
       const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w)).slice(0, 5);
       const key = words.join(" ");
@@ -555,18 +555,26 @@ export default function FeedPage({
       for (const [ek, idx] of clusterKeys) {
         const overlap = words.filter((w) => ek.includes(w)).length;
         if (overlap >= 3) {
-          clusterCounts.set(idx, (clusterCounts.get(idx) || 1) + 1);
+          if (!clusters[idx]._related) clusters[idx]._related = [];
+          clusters[idx]._related!.push({ title: item.title, url: item.url, source: item.source, publishedAt: item.publishedAt });
           matched = true;
           break;
         }
       }
-      if (!matched) { clusterKeys.set(key, clusters.length); clusterCounts.set(clusters.length, 1); clusters.push(item); }
+      if (!matched) { clusterKeys.set(key, clusters.length); clusters.push(item); }
     }
-    const sizes = new Map<string, number>();
-    for (const [idx, count] of clusterCounts) {
-      if (count > 1 && clusters[idx]) sizes.set(clusters[idx].id, count);
-    }
-    return { dedupedItems: clusters, clusterSize: sizes };
+    // Merge server-side related (from API) + client-side related
+    return clusters.map((item) => {
+      const serverRelated = item.related || [];
+      const clientRelated = item._related || [];
+      const allRelated = [...serverRelated, ...clientRelated].slice(0, 5);
+      return {
+        ...item,
+        relatedCount: allRelated.length || undefined,
+        related: allRelated.length > 0 ? allRelated : undefined,
+        _related: undefined,
+      };
+    });
   }, [items]);
 
   // No date-window filter — the feed is always shown in full. We keep a
