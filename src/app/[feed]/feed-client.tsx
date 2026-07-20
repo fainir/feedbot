@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, Zap, Globe, TrendingUp, MoreVertical, LogIn, RefreshCw, Search, Mail, SlidersHorizontal, Rss, Layers, ChevronDown } from "lucide-react";
 import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pull-to-refresh";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -14,6 +14,13 @@ import { useFeedPrefetch } from "@/components/feed/use-feed-prefetch";
 import { cleanSummary, cleanTitle, cleanSourceDisplay, getSourceInfo, getSourceFavicon, timeAgo, normalizeImageUrl } from "@/lib/source-info";
 import type { User } from "@supabase/supabase-js";
 
+interface RelatedArticle {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+}
+
 interface FeedItem {
   id: string;
   title: string;
@@ -22,6 +29,8 @@ interface FeedItem {
   source: string;
   image_url?: string;
   publishedAt: string;
+  relatedCount?: number;
+  related?: RelatedArticle[];
 }
 
 // All system feeds -any of these can be loaded by slug
@@ -233,6 +242,7 @@ export default function FeedPage({
   const [userReactions, setUserReactions] = useState<Record<string, "like" | "dislike">>({});
   const [userBookmarks, setUserBookmarks] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
   const tabBarRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   useThemeSync(user);
@@ -522,20 +532,40 @@ export default function FeedPage({
     return () => clearInterval(interval);
   }, [activeTab, items]);
 
-  const dedupedItems = useMemo(() => {
+  const { dedupedItems, clusterSize } = useMemo(() => {
+    // URL dedup
     const seenUrls = new Set<string>();
-    const seenTitles = new Set<string>();
-    return items.filter((item) => {
+    const urlDeduped = items.filter((item) => {
       const key = item.url.split("?")[0].split("#")[0];
       if (seenUrls.has(key)) return false;
       seenUrls.add(key);
-      // Fuzzy title dedup: normalize to lowercase words, skip if 80%+ overlap
-      const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(w => w.length > 3);
-      const titleKey = words.sort().join(" ");
-      if (seenTitles.has(titleKey)) return false;
-      seenTitles.add(titleKey);
       return true;
     });
+    // Story clustering: group similar titles, keep best + track counts
+    const stopWords = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there","your","more","just","into"]);
+    const clusters: typeof urlDeduped = [];
+    const clusterKeys = new Map<string, number>();
+    const clusterCounts = new Map<number, number>();
+    for (const item of urlDeduped) {
+      const words = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w)).slice(0, 5);
+      const key = words.join(" ");
+      if (key.length < 8) { clusters.push(item); continue; }
+      let matched = false;
+      for (const [ek, idx] of clusterKeys) {
+        const overlap = words.filter((w) => ek.includes(w)).length;
+        if (overlap >= 3) {
+          clusterCounts.set(idx, (clusterCounts.get(idx) || 1) + 1);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) { clusterKeys.set(key, clusters.length); clusterCounts.set(clusters.length, 1); clusters.push(item); }
+    }
+    const sizes = new Map<string, number>();
+    for (const [idx, count] of clusterCounts) {
+      if (count > 1 && clusters[idx]) sizes.set(clusters[idx].id, count);
+    }
+    return { dedupedItems: clusters, clusterSize: sizes };
   }, [items]);
 
   // No date-window filter — the feed is always shown in full. We keep a
@@ -963,6 +993,7 @@ export default function FeedPage({
                           {src.name}
                         </span>
                         <span className="text-[10px] text-text-muted">{timeAgo(item.publishedAt)}</span>
+                          {(clusterSize.get(item.id) || 0) > 1 && <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400"><Layers className="h-2.5 w-2.5" />{clusterSize.get(item.id)! - 1} more</span>}
                       </div>
                       <h2 className="font-semibold text-text leading-tight text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
                       {summary && summary !== title && summary.length > 10 && (

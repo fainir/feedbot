@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss } from "lucide-react";
+import { Plus, Sun, Moon, Sparkles, ThumbsUp, ThumbsDown, X, Bookmark, BookmarkCheck, Share2, MoreVertical, LogIn, SlidersHorizontal, Check, Mail, Search, RefreshCw, Rss, Layers } from "lucide-react";
 import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pull-to-refresh";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -373,7 +373,7 @@ export default function ForYouClient({
     return () => { cancelled = true; };
   }, [fetchFeed, feedNames]);
 
-  const { dedupedItems, trendingTopics } = useMemo(() => {
+  const { dedupedItems, trendingTopics, clusterSize } = useMemo(() => {
     // Load source preferences for personalization
     let sourcePrefs: Record<string, number> = {};
     try { sourcePrefs = JSON.parse(localStorage.getItem("myfeed-source-prefs") || "{}"); } catch {}
@@ -422,7 +422,12 @@ export default function ForYouClient({
     for (const [idx, count] of clusterCounts) {
       if (count >= 3 && clusters[idx]) trending.add(clusters[idx].id);
     }
-    return { dedupedItems: clusters, trendingTopics: trending };
+    // Build clusterSize map: item id → total similar stories (including self)
+    const clusterSize = new Map<string, number>();
+    for (const [idx, count] of clusterCounts) {
+      if (count > 1 && clusters[idx]) clusterSize.set(clusters[idx].id, count);
+    }
+    return { dedupedItems: clusters, trendingTopics: trending, clusterSize };
   }, [items]);
 
   const loadMore = () => {
@@ -756,6 +761,7 @@ export default function ForYouClient({
                         </span>
                         <span className="text-[10px] text-text-muted">{timeAgo(item.publishedAt)}</span>
                           {trendingTopics.has(item.id) && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-400">Trending</span>}
+                          {(clusterSize.get(item.id) || 0) > 1 && <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400"><Layers className="h-2.5 w-2.5" />{clusterSize.get(item.id)! - 1} more</span>}
                       </div>
                       <h2 className="font-semibold text-text leading-tight text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
                       {summary && summary !== title && summary.length > 10 && (

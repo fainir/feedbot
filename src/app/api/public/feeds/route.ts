@@ -385,15 +385,20 @@ export async function GET(req: NextRequest) {
     return { ...item, _finalScore: baseScore * freshness * summaryPenalty * devPenalty * devSpamPenalty * mediumBylinePenalty };
   });
 
-  // ── Story clustering: group similar titles, keep best per cluster ──
-  const clusters: typeof scored = [];
+  // ── Story clustering: group similar titles, keep best + track related ──
+  type ScoredItem = (typeof scored)[number];
+  type ClusteredItem = ScoredItem & {
+    _related?: { title: string; url: string; source: string; publishedAt: string }[];
+  };
+  const clusters: ClusteredItem[] = [];
   const clusterKeys = new Map<string, number>(); // key → index in clusters
+  const CLUSTER_STOPS = new Set(["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there"]);
   for (const item of scored) {
     // Extract 4-5 significant words as cluster key
     const words = (item.title || "").toLowerCase()
       .replace(/[^a-z0-9\s]/g, "")
       .split(/\s+/)
-      .filter((w: string) => w.length > 3 && !["this","that","with","from","have","been","will","they","their","about","what","when","which","these","those","would","could","should","here","there"].includes(w))
+      .filter((w: string) => w.length > 3 && !CLUSTER_STOPS.has(w))
       .slice(0, 5);
     const key = words.join(" ");
 
@@ -408,10 +413,17 @@ export async function GET(req: NextRequest) {
       const existingWords = existingKey.split(" ");
       const overlap = words.filter((w: string) => existingWords.includes(w)).length;
       if (overlap >= 3) {
-        // Same story — keep the higher-scored one
-        if (item._finalScore > clusters[idx]._finalScore) {
-          clusters[idx] = item;
-        }
+        // Same story - track the lower-scored one as related
+        const winner = item._finalScore > clusters[idx]._finalScore ? item : clusters[idx];
+        const loser = item._finalScore > clusters[idx]._finalScore ? clusters[idx] : item;
+        const existing = clusters[idx]._related || [];
+        existing.push({
+          title: loser.title,
+          url: loser.url,
+          source: loser.source,
+          publishedAt: loser.published_at,
+        });
+        clusters[idx] = { ...winner, _related: existing };
         matched = true;
         break;
       }
@@ -440,15 +452,22 @@ export async function GET(req: NextRequest) {
   const page = hasMore ? diverse.slice(0, limit) : diverse;
 
   const body = JSON.stringify({
-    items: page.map((item) => ({
-      id: item.id,
-      title: item.title,
-      summary: sanitizeSummary(item.summary),
-      source: item.source,
-      url: item.url,
-      image_url: item.image_url,
-      publishedAt: item.published_at,
-    })),
+    items: page.map((item) => {
+      const out: Record<string, unknown> = {
+        id: item.id,
+        title: item.title,
+        summary: sanitizeSummary(item.summary),
+        source: item.source,
+        url: item.url,
+        image_url: item.image_url,
+        publishedAt: item.published_at,
+      };
+      if (item._related && item._related.length > 0) {
+        out.relatedCount = item._related.length;
+        out.related = item._related.slice(0, 5); // cap at 5 related
+      }
+      return out;
+    }),
     hasMore,
     nextCursor: hasMore ? page[page.length - 1].published_at : null,
   });
