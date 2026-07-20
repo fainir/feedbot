@@ -458,6 +458,7 @@ export default function FeedPage({
     } else {
       setCommunityFeed(null);
       setNotFound(false);
+      setExpandedClusters(new Set());
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -965,6 +966,8 @@ export default function FeedPage({
               const hasImage = !!item.image_url;
               const ytMatch = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
               const ytId = ytMatch?.[1];
+              const hasRelated = (item.relatedCount || 0) > 0;
+              const isExpanded = expandedClusters.has(item.id);
               return (
                 <article key={item.id || i} className="group rounded-xl border border-border overflow-hidden bg-bg-card hover:border-text/20 transition-colors duration-150">
                   {ytId ? (
@@ -993,7 +996,26 @@ export default function FeedPage({
                           {src.name}
                         </span>
                         <span className="text-[10px] text-text-muted">{timeAgo(item.publishedAt)}</span>
-                          {(clusterSize.get(item.id) || 0) > 1 && <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400"><Layers className="h-2.5 w-2.5" />{clusterSize.get(item.id)! - 1} more</span>}
+                        {hasRelated && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setExpandedClusters((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) next.delete(item.id);
+                                else next.add(item.id);
+                                return next;
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                            aria-label={`${item.relatedCount} more source${item.relatedCount === 1 ? "" : "s"}`}
+                          >
+                            <Layers className="h-2.5 w-2.5" />
+                            {item.relatedCount} more {item.relatedCount === 1 ? "source" : "sources"}
+                            <ChevronDown className={`h-2.5 w-2.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                        )}
                       </div>
                       <h2 className="font-semibold text-text leading-tight text-[15px] group-hover:text-text/80 transition-colors">{title}</h2>
                       {summary && summary !== title && summary.length > 10 && (
@@ -1011,6 +1033,36 @@ export default function FeedPage({
                       </div>
                     </div>
                   </a>
+                  {/* Related articles from other sources covering the same story */}
+                  {hasRelated && isExpanded && item.related && (
+                    <div className="border-t border-border/50 bg-bg-hover/30 px-3 sm:px-4 py-2 space-y-0.5">
+                      <p className="text-[10px] text-text-muted uppercase tracking-wider font-medium mb-1">Also covered by</p>
+                      {item.related.map((rel, ri) => {
+                        const relSrc = getSourceInfo(rel.source, rel.title);
+                        const relFavicon = relSrc.icon || getSourceFavicon(rel.source, rel.url);
+                        const relTitleRaw = cleanTitle(rel.title);
+                        const relTitle = relSrc.name && relTitleRaw.endsWith(` - ${relSrc.name}`)
+                          ? relTitleRaw.slice(0, -3 - relSrc.name.length).trim()
+                          : relTitleRaw;
+                        return (
+                          <a
+                            key={ri}
+                            href={rel.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2 py-1.5 px-2 -mx-1 rounded-lg hover:bg-bg-hover transition-colors"
+                            onClick={() => trackEvent("related_click", { source: rel.source, feed: feedSlug })}
+                          >
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md shrink-0 mt-0.5 ${relSrc.color}`}>
+                              {relFavicon ? <img src={relFavicon} alt="" referrerPolicy="no-referrer" loading="lazy" className="w-3 h-3 rounded-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
+                              {relSrc.name}
+                            </span>
+                            <span className="text-xs text-text leading-snug line-clamp-1">{relTitle}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                 </article>
               );
             })}
