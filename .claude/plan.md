@@ -1,6 +1,7 @@
 # FeedBot — Company Plan
 
 ## Active
+- [~] INCIDENT (2026-09-29): myfeed.space down — Railway edge 404, web service had ZERO active deployments since 2026-07-20 (all REMOVED; cron+redis unaffected, so not billing). Action: railway redeploy queued build c00c9577; verify site up, then root-cause why the July 20 deployment was removed + check cron/content freshness (M)
 - [x] Bug 1: RESERVED_SLUGS blocklist + cleaner slug gen in feed create (re-slug "Privacy" feed = pending DB step) (S)
 - [x] Bug 2: image loading placeholder (bg-bg-hover) + onLoad blank guard in feed-client + for-you-client (S)
 - [x] Bug 3: classify prompt forbids feed-meta in summary + sanitizeSummary at ingest AND serve (feed-by-slug + public/feeds, covers existing rows) (S)
