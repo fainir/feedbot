@@ -1,7 +1,7 @@
 # FeedBot — Company Plan
 
 ## Active
-- [~] INCIDENT (2026-09-29): myfeed.space down — Railway edge 404, web service had ZERO active deployments since 2026-07-20 (all REMOVED; cron+redis unaffected, so not billing). Action: railway redeploy queued build c00c9577; verify site up, then root-cause why the July 20 deployment was removed + check cron/content freshness (M)
+- [x] INCIDENT (2026-09-29): myfeed.space down — Railway edge 404, web service had ZERO active deployments since 2026-07-20 (all REMOVED; cron+redis unaffected, so not billing). RESOLVED: railway redeploy (c00c9577 SUCCESS) restored the site. Verified in real browser: home + /gaming render 50 articles, 0 console errors. Content pipeline (feedbot-cron) ran fine the whole outage — newest feed_item ~1h old, 108,910 items. curl shows 0 <article> because the July clustering rework made lists client-rendered (SEO note, not a bug for visitors). Root-cause of the July 20 deployment removal intentionally skipped per user; user will handle future deploys themselves. (M)
 - [x] Bug 1: RESERVED_SLUGS blocklist + cleaner slug gen in feed create (re-slug "Privacy" feed = pending DB step) (S)
 - [x] Bug 2: image loading placeholder (bg-bg-hover) + onLoad blank guard in feed-client + for-you-client (S)
 - [x] Bug 3: classify prompt forbids feed-meta in summary + sanitizeSummary at ingest AND serve (feed-by-slug + public/feeds, covers existing rows) (S)
